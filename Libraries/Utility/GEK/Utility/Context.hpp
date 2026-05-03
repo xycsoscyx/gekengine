@@ -7,19 +7,24 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Hash.hpp"
-#include <source_location>
+#include "GEK/Utility/String.hpp"
 #include <functional>
-#include <typeindex>
 #include <iostream>
-#include <unordered_map>
 #include <memory>
+#include <source_location>
+#include <typeindex>
+#include <unordered_map>
 #include <vector>
 
-#define GEK_PREDECLARE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>;
-#define GEK_INTERFACE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>; struct TYPE
+#define GEK_PREDECLARE(TYPE) \
+    struct TYPE;             \
+    using TYPE##Ptr = std::unique_ptr<TYPE>;
+#define GEK_INTERFACE(TYPE)                  \
+    struct TYPE;                             \
+    using TYPE##Ptr = std::unique_ptr<TYPE>; \
+    struct TYPE
 
 namespace Gek
 {
@@ -48,15 +53,13 @@ namespace Gek
             std::string_view format;
             std::source_location location;
 
-            LocationMessage(const char *format, const std::source_location& location = std::source_location::current())
-                : format(format)
-                , location(location)
+            LocationMessage(const char *format, const std::source_location &location = std::source_location::current())
+                : format(format), location(location)
             {
             }
 
-            LocationMessage(std::string_view format, const std::source_location& location = std::source_location::current())
-                : format(format)
-                , location(location)
+            LocationMessage(std::string_view format, const std::source_location &location = std::source_location::current())
+                : format(format), location(location)
             {
             }
         };
@@ -66,12 +69,12 @@ namespace Gek
         virtual ~Context(void) = default;
 
         template <typename... PARAMETERS>
-        void log(LogLevel level, const LocationMessage& message, PARAMETERS&&... args) const
+        void log(LogLevel level, const LocationMessage &message, PARAMETERS &&...args) const
         {
             vlog(level, message, std::make_format_args(args...));
         }
 
-        virtual void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const = 0;
+        virtual void vlog(LogLevel level, const LocationMessage &message, std::format_args args) const = 0;
 
         virtual void setLogSinkMask(uint8_t sinkMask) = 0;
         virtual uint8_t getLogSinkMask(void) const = 0;
@@ -81,12 +84,12 @@ namespace Gek
         virtual bool getRuntimeMetric(std::string_view name, double &value) const = 0;
         virtual std::unordered_map<std::string, double> getRuntimeMetricSnapshot(void) const = 0;
 
-		virtual void setCachePath(FileSystem::Path const &path) = 0;
-		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
+        virtual void setCachePath(FileSystem::Path const &path) = 0;
+        virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
 
         virtual void addDataPath(FileSystem::Path const &path) = 0;
         virtual FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache = true) const = 0;
-		virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache = true, bool recursive = true) const = 0;
+        virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache = true, bool recursive = true) const = 0;
 
         virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<Hash> &argumentTypes) const = 0;
 
@@ -113,6 +116,6 @@ namespace Gek
             return result;
         }
 
-        virtual void listTypes(std::string_view typeName, std::function<void(std::string_view )> onType) const = 0;
+        virtual void listTypes(std::string_view typeName, std::function<void(std::string_view)> onType) const = 0;
     };
 }; // namespace Gek

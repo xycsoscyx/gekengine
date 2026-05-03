@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Math/Vector3.hpp"
 #include "API/Engine/Component.hpp"
+#include "GEK/Math/Vector3.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 
 namespace Gek
@@ -17,9 +17,9 @@ namespace Gek
     {
         GEK_COMPONENT(Model)
         {
-			GEK_COMPONENT_DATA(Model);
+            GEK_COMPONENT_DATA(Model);
 
-			std::string name;
+            std::string name;
         };
     }; // namespace Components
 

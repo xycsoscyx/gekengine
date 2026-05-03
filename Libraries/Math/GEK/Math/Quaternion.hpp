@@ -18,11 +18,11 @@ namespace Gek
         struct Quaternion
             : public Float4
         {
-        public:
+          public:
             static const Quaternion Identity;
             static const Quaternion Zero;
 
-        public:
+          public:
             inline static Quaternion MakeEulerRotation(float pitch, float yaw, float roll) noexcept
             {
                 float sinPitch(std::sin(pitch * 0.5f));
@@ -83,14 +83,14 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-        public:
-            using Float4::Float4;
-            using Float4::set;
+          public:
             using Float4::dot;
-            using Float4::getMagnitude;
+            using Float4::Float4;
             using Float4::getLength;
+            using Float4::getMagnitude;
             using Float4::getNormal;
             using Float4::normalize;
+            using Float4::set;
 
             inline Quaternion(void) noexcept
             {
@@ -201,21 +201,29 @@ namespace Gek
                 return result;
             }
 
-            inline bool operator == (Quaternion const &quaternion) const noexcept
+            inline bool operator==(Quaternion const &quaternion) const noexcept
             {
-                if (x != quaternion.x) return false;
-                if (y != quaternion.y) return false;
-                if (z != quaternion.z) return false;
-                if (w != quaternion.w) return false;
+                if (x != quaternion.x)
+                    return false;
+                if (y != quaternion.y)
+                    return false;
+                if (z != quaternion.z)
+                    return false;
+                if (w != quaternion.w)
+                    return false;
                 return true;
             }
 
-            inline bool operator != (Quaternion const &quaternion) const noexcept
+            inline bool operator!=(Quaternion const &quaternion) const noexcept
             {
-                if (x != quaternion.x) return true;
-                if (y != quaternion.y) return true;
-                if (z != quaternion.z) return true;
-                if (w != quaternion.w) return true;
+                if (x != quaternion.x)
+                    return true;
+                if (y != quaternion.y)
+                    return true;
+                if (z != quaternion.z)
+                    return true;
+                if (w != quaternion.w)
+                    return true;
                 return false;
             }
 
@@ -230,7 +238,7 @@ namespace Gek
                 return (vector + (w * twoCross) + xyz().cross(twoCross));
             }
 
-            inline Quaternion operator * (Quaternion const &quaternion) const noexcept
+            inline Quaternion operator*(Quaternion const &quaternion) const noexcept
             {
                 return Quaternion(
                     (w * quaternion.x + x * quaternion.w + y * quaternion.z - z * quaternion.y),
@@ -239,12 +247,12 @@ namespace Gek
                     (w * quaternion.w - x * quaternion.x - y * quaternion.y - z * quaternion.z));
             }
 
-            inline void operator *= (Quaternion const &quaternion) noexcept
+            inline void operator*=(Quaternion const &quaternion) noexcept
             {
                 (*this) = ((*this) * quaternion);
             }
 
-            inline Quaternion &operator = (Quaternion const &quaternion) noexcept
+            inline Quaternion &operator=(Quaternion const &quaternion) noexcept
             {
                 x = quaternion.x;
                 y = quaternion.y;
@@ -253,7 +261,7 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator /= (float scalar) noexcept
+            inline void operator/=(float scalar) noexcept
             {
                 float inverseScalar = (1.0f / scalar);
                 x *= inverseScalar;
@@ -262,7 +270,7 @@ namespace Gek
                 w *= inverseScalar;
             }
 
-            inline void operator *= (float scalar) noexcept
+            inline void operator*=(float scalar) noexcept
             {
                 x *= scalar;
                 y *= scalar;
@@ -270,7 +278,7 @@ namespace Gek
                 w *= scalar;
             }
 
-            inline Quaternion operator / (float scalar) const noexcept
+            inline Quaternion operator/(float scalar) const noexcept
             {
                 float inverseScalar = (1.0f / scalar);
                 return Quaternion(
@@ -279,8 +287,8 @@ namespace Gek
                     (z * inverseScalar),
                     (w * inverseScalar));
             }
-            
-            inline Quaternion operator + (float scalar) const noexcept
+
+            inline Quaternion operator+(float scalar) const noexcept
             {
                 return Quaternion(
                     (x + scalar),
@@ -289,7 +297,7 @@ namespace Gek
                     (w + scalar));
             }
 
-            inline Quaternion operator * (float scalar) const noexcept
+            inline Quaternion operator*(float scalar) const noexcept
             {
                 return Quaternion(
                     (x * scalar),
@@ -298,7 +306,7 @@ namespace Gek
                     (w * scalar));
             }
 
-            inline Quaternion operator + (Quaternion const &quaternion) const noexcept
+            inline Quaternion operator+(Quaternion const &quaternion) const noexcept
             {
                 return Quaternion(
                     (x + quaternion.x),

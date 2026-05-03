@@ -1,29 +1,29 @@
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/String.hpp"
 
-#include <ktx.h>
 #include <bc7enc.h>
+#include <ktx.h>
 #include <rgbcx.h>
 
 // VkFormat values used for KTX2 container (from vulkan/vulkan_core.h)
-#define GEK_VK_FORMAT_UNDEFINED          0
+#define GEK_VK_FORMAT_UNDEFINED 0
 #define GEK_VK_FORMAT_BC1_RGB_SRGB_BLOCK 132
-#define GEK_VK_FORMAT_BC4_UNORM_BLOCK    139
-#define GEK_VK_FORMAT_BC7_UNORM_BLOCK    145
-#define GEK_VK_FORMAT_BC7_SRGB_BLOCK     146
+#define GEK_VK_FORMAT_BC4_UNORM_BLOCK 139
+#define GEK_VK_FORMAT_BC7_UNORM_BLOCK 145
+#define GEK_VK_FORMAT_BC7_SRGB_BLOCK 146
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <atomic>
 #include <set>
 #include <string>
 #include <thread>
@@ -82,9 +82,12 @@ char const *ToString(CompressionQuality quality)
 {
     switch (quality)
     {
-    case CompressionQuality::Fast: return "fast";
-    case CompressionQuality::High: return "high";
-    default: return "medium";
+    case CompressionQuality::Fast:
+        return "fast";
+    case CompressionQuality::High:
+        return "high";
+    default:
+        return "medium";
     }
 }
 
@@ -213,7 +216,7 @@ void ParallelForEach(uint32_t itemCount, bool enableParallel, FunctionType &&fun
     for (uint32_t threadIndex = 0; threadIndex < threadCount; ++threadIndex)
     {
         workers.emplace_back([&]()
-        {
+                             {
             while (true)
             {
                 uint32_t index = nextIndex.fetch_add(1);
@@ -223,8 +226,7 @@ void ParallelForEach(uint32_t itemCount, bool enableParallel, FunctionType &&fun
                 }
 
                 function(index);
-            }
-        });
+            } });
     }
 
     for (auto &worker : workers)
@@ -253,14 +255,13 @@ void CompressToBc1(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
     }
 
     ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
-    {
+                    {
         uint32_t bx = (blockIndex % blockWidth);
         uint32_t by = (blockIndex / blockWidth);
         std::array<uint8_t, 64> blockPixels{};
         GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
         size_t blockOffset = static_cast<size_t>(blockIndex) * 8;
-        rgbcx::encode_bc1(level, output.data() + blockOffset, blockPixels.data(), false, false);
-    });
+        rgbcx::encode_bc1(level, output.data() + blockOffset, blockPixels.data(), false, false); });
 }
 
 void CompressToBc4(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, bool enableParallel, std::vector<uint8_t> &output)
@@ -273,7 +274,7 @@ void CompressToBc4(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
     uint32_t blockCount = blockWidth * blockHeight;
 
     ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
-    {
+                    {
         uint32_t bx = (blockIndex % blockWidth);
         uint32_t by = (blockIndex / blockWidth);
         std::array<uint8_t, 64> blockPixels{};
@@ -286,8 +287,7 @@ void CompressToBc4(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
         else
         {
             rgbcx::encode_bc4(output.data() + blockOffset, blockPixels.data(), 4);
-        }
-    });
+        } });
 }
 
 void CompressToBc7(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, bool enableParallel, std::vector<uint8_t> &output)
@@ -323,14 +323,13 @@ void CompressToBc7(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
     uint32_t blockCount = blockWidth * blockHeight;
 
     ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
-    {
+                    {
         uint32_t bx = (blockIndex % blockWidth);
         uint32_t by = (blockIndex / blockWidth);
         std::array<uint8_t, 64> blockPixels{};
         GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
         size_t blockOffset = static_cast<size_t>(blockIndex) * 16;
-        bc7enc_compress_block(output.data() + blockOffset, blockPixels.data(), &params);
-    });
+        bc7enc_compress_block(output.data() + blockOffset, blockPixels.data(), &params); });
 }
 
 uint32_t GetMipLevelCount(uint32_t width, uint32_t height)
@@ -367,8 +366,7 @@ void GenerateNextMipLevel(
             uint32_t sourceY0 = std::min((y * 2) + 0, sourceHeight - 1);
             uint32_t sourceY1 = std::min((y * 2) + 1, sourceHeight - 1);
 
-            std::array<size_t, 4> sampleIndex =
-            {
+            std::array<size_t, 4> sampleIndex = {
                 (static_cast<size_t>(sourceY0) * sourceWidth + sourceX0) * 4,
                 (static_cast<size_t>(sourceY0) * sourceWidth + sourceX1) * 4,
                 (static_cast<size_t>(sourceY1) * sourceWidth + sourceX0) * 4,
@@ -740,8 +738,7 @@ int main(int argumentCount, char const *const argumentList[])
     }
 
     std::vector<FileSystem::Path> textureFileList;
-    const std::vector<FileSystem::Path> candidateTextureRoots =
-    {
+    const std::vector<FileSystem::Path> candidateTextureRoots = {
         engineRootPath / "data" / "textures",
         rootPath / "data" / "textures",
         (gekDataPath ? (FileSystem::Path(gekDataPath) / "textures") : FileSystem::Path()),
@@ -768,7 +765,7 @@ int main(int argumentCount, char const *const argumentList[])
         size_t rootFileCountBefore = textureFileList.size();
         context->log(Context::Info, "Scanning texture root: {}", activeRoot.getString());
         activeRoot.findFiles([&](FileSystem::Path const &filePath) -> bool
-        {
+                             {
             if (!filePath.isFile())
             {
                 return true;
@@ -786,8 +783,7 @@ int main(int argumentCount, char const *const argumentList[])
                 textureFileList.emplace_back(filePath.getString());
             }
 
-            return true;
-        });
+            return true; });
 
         const size_t rootAddedCount = (textureFileList.size() - rootFileCountBefore);
         context->log(Context::Info, "- added {} files from {}", rootAddedCount, activeRoot.getString());

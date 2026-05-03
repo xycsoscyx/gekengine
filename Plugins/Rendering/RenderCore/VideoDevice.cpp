@@ -2,13 +2,13 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/Hash.hpp"
 
-template<typename A, typename B>
+template <typename A, typename B>
 std::pair<B, A> flip_pair(const std::pair<A, B> &p)
 {
     return std::make_pair(p.second, p.first);
 }
 
-template<typename A, typename B>
+template <typename A, typename B>
 std::unordered_map<B, A> flip_map(const std::unordered_map<A, B> &src)
 {
     std::unordered_map<B, A> dst;
@@ -22,65 +22,64 @@ namespace Gek
     {
         bool HasAlpha(Format format)
         {
-            static constexpr bool HasAlphaList[] =
-            {
+            static constexpr bool HasAlphaList[] = {
                 false, // Unknown = 0,
 
-                true, //R32G32B32A32_FLOAT,
-                true, //R16G16B16A16_FLOAT,
-                false, //R32G32B32_FLOAT,
-                false, //R11G11B10_FLOAT,
-                false, //R32G32_FLOAT,
-                false, //R16G16_FLOAT,
-                false, //R32_FLOAT,
-                false, //R16_FLOAT,
+                true,  // R32G32B32A32_FLOAT,
+                true,  // R16G16B16A16_FLOAT,
+                false, // R32G32B32_FLOAT,
+                false, // R11G11B10_FLOAT,
+                false, // R32G32_FLOAT,
+                false, // R16G16_FLOAT,
+                false, // R32_FLOAT,
+                false, // R16_FLOAT,
 
-                true, //R32G32B32A32_UINT,
-                true, //R16G16B16A16_UINT,
-                true, //R10G10B10A2_UINT,
-                true, //R8G8B8A8_UINT,
-                false, //R32G32B32_UINT,
-                false, //R32G32_UINT,
-                false, //R16G16_UINT,
-                false, //R8G8_UINT,
-                false, //R32_UINT,
-                false, //R16_UINT,
-                false, //R8_UINT,
+                true,  // R32G32B32A32_UINT,
+                true,  // R16G16B16A16_UINT,
+                true,  // R10G10B10A2_UINT,
+                true,  // R8G8B8A8_UINT,
+                false, // R32G32B32_UINT,
+                false, // R32G32_UINT,
+                false, // R16G16_UINT,
+                false, // R8G8_UINT,
+                false, // R32_UINT,
+                false, // R16_UINT,
+                false, // R8_UINT,
 
-                true, //R32G32B32A32_INT,
-                true, //R16G16B16A16_INT,
-                true, //R8G8B8A8_INT,
-                false, //R32G32B32_INT,
-                false, //R32G32_INT,
-                false, //R16G16_INT,
-                false, //R8G8_INT,
-                false, //R32_INT,
-                false, //R16_INT,
-                false, //R8_INT,
+                true,  // R32G32B32A32_INT,
+                true,  // R16G16B16A16_INT,
+                true,  // R8G8B8A8_INT,
+                false, // R32G32B32_INT,
+                false, // R32G32_INT,
+                false, // R16G16_INT,
+                false, // R8G8_INT,
+                false, // R32_INT,
+                false, // R16_INT,
+                false, // R8_INT,
 
-                true, //R16G16B16A16_UNORM,
-                true, //R10G10B10A2_UNORM,
-                true, //R8G8B8A8_UNORM,
-                true, //R8G8B8A8_UNORM_SRGB,
-                false, //R16G16_UNORM,
-                false, //R8G8_UNORM,
-                false, //R16_UNORM,
-                false, //R8_UNORM,
+                true,  // R16G16B16A16_UNORM,
+                true,  // R10G10B10A2_UNORM,
+                true,  // R8G8B8A8_UNORM,
+                true,  // R8G8B8A8_UNORM_SRGB,
+                false, // R16G16_UNORM,
+                false, // R8G8_UNORM,
+                false, // R16_UNORM,
+                false, // R8_UNORM,
 
-                true, //R16G16B16A16_NORM,
-                true, //R8G8B8A8_NORM,
-                false, //R16G16_NORM,
-                false, //R8G8_NORM,
-                false, //R16_NORM,
-                false, //R8_NORM,
+                true,  // R16G16B16A16_NORM,
+                true,  // R8G8B8A8_NORM,
+                false, // R16G16_NORM,
+                false, // R8G8_NORM,
+                false, // R16_NORM,
+                false, // R8_NORM,
 
-                false, //D32_FLOAT_S8X24_UINT,
-                false, //D24_UNORM_S8_UINT,
+                false, // D32_FLOAT_S8X24_UINT,
+                false, // D24_UNORM_S8_UINT,
 
-                false, //D32_FLOAT,
-                false, //D16_UNORM,
+                false, // D32_FLOAT,
+                false, // D16_UNORM,
 
-                false, //Count,
+                false, // Count,
             };
 
             return HasAlphaList[static_cast<uint8_t>(format)];
@@ -88,8 +87,7 @@ namespace Gek
 
         std::string Buffer::GetType(Type type)
         {
-            static const std::unordered_map<Type, std::string> data =
-            {
+            static const std::unordered_map<Type, std::string> data = {
                 { Type::Raw, "Raw" },
                 { Type::Vertex, "Vertex" },
                 { Type::Index, "Index" },
@@ -103,8 +101,7 @@ namespace Gek
 
         std::string GetComparisonFunction(ComparisonFunction function)
         {
-            static const std::unordered_map<ComparisonFunction, std::string> data =
-            {
+            static const std::unordered_map<ComparisonFunction, std::string> data = {
                 { ComparisonFunction::Always, "Always" },
                 { ComparisonFunction::Never, "Never" },
                 { ComparisonFunction::Equal, "Equal" },
@@ -121,8 +118,7 @@ namespace Gek
 
         std::string GetPrimitiveType(PrimitiveType type)
         {
-            static const std::unordered_map<PrimitiveType, std::string> data =
-            {
+            static const std::unordered_map<PrimitiveType, std::string> data = {
                 { PrimitiveType::PointList, "Point List" },
                 { PrimitiveType::LineList, "Line List" },
                 { PrimitiveType::LineStrip, "Line Strip" },
@@ -136,8 +132,7 @@ namespace Gek
 
         std::string RenderState::GetFillMode(FillMode fillMode)
         {
-            static const std::unordered_map<FillMode, std::string> data =
-            {
+            static const std::unordered_map<FillMode, std::string> data = {
                 { FillMode::WireFrame, "Wire Frame" },
                 { FillMode::Solid, "olid" },
             };
@@ -148,8 +143,7 @@ namespace Gek
 
         std::string RenderState::GetCullMode(CullMode cullMode)
         {
-            static const std::unordered_map<CullMode, std::string> data =
-            {
+            static const std::unordered_map<CullMode, std::string> data = {
                 { CullMode::None, "None" },
                 { CullMode::Front, "Front" },
                 { CullMode::Back, "Back" },
@@ -161,8 +155,7 @@ namespace Gek
 
         std::string DepthState::GetWrite(Write write)
         {
-            static const std::unordered_map<Write, std::string> data =
-            {
+            static const std::unordered_map<Write, std::string> data = {
                 { Write::Zero, "Zero" },
                 { Write::All, "All" },
             };
@@ -173,8 +166,7 @@ namespace Gek
 
         std::string DepthState::GetOperation(Operation operation)
         {
-            static const std::unordered_map<Operation, std::string> data =
-            {
+            static const std::unordered_map<Operation, std::string> data = {
                 { Operation::Zero, "Zero" },
                 { Operation::Keep, "Keep" },
                 { Operation::Replace, "Replace" },
@@ -191,8 +183,7 @@ namespace Gek
 
         std::string BlendState::GetSource(Source source)
         {
-            static const std::unordered_map<Source, std::string> data =
-            {
+            static const std::unordered_map<Source, std::string> data = {
                 { Source::Zero, "Zero" },
                 { Source::One, "One" },
                 { Source::BlendFactor, "Blend Factor" },
@@ -218,8 +209,7 @@ namespace Gek
 
         std::string BlendState::GetOperation(Operation operation)
         {
-            static const std::unordered_map<Operation, std::string> data =
-            {
+            static const std::unordered_map<Operation, std::string> data = {
                 { Operation::Add, "Add" },
                 { Operation::Subtract, "ubtract" },
                 { Operation::ReverseSubtract, "Reverse Subtract" },
@@ -234,10 +224,14 @@ namespace Gek
         std::string BlendState::GetMask(uint32_t mask)
         {
             std::string result;
-            if (mask & Mask::R) result += "R";
-            if (mask & Mask::G) result += "G";
-            if (mask & Mask::B) result += "B";
-            if (mask & Mask::A) result += "A";
+            if (mask & Mask::R)
+                result += "R";
+            if (mask & Mask::G)
+                result += "G";
+            if (mask & Mask::B)
+                result += "B";
+            if (mask & Mask::A)
+                result += "A";
             return (result.empty() ? "None" : result);
         }
 
@@ -253,19 +247,17 @@ namespace Gek
 
         InputElement::Source InputElement::GetSource(std::string_view string)
         {
-			static const std::unordered_map<std::string, Source> data =
-			{
-				{ "instance", Source::Instance },
-			};
+            static const std::unordered_map<std::string, Source> data = {
+                { "instance", Source::Instance },
+            };
 
-			auto result = data.find(String::GetLower(string));
-			return (result == std::end(data) ? Source::Vertex : result->second);
+            auto result = data.find(String::GetLower(string));
+            return (result == std::end(data) ? Source::Vertex : result->second);
         }
 
         std::string InputElement::GetSource(Source elementSource)
         {
-            static const std::unordered_map<Source, std::string> data =
-            {
+            static const std::unordered_map<Source, std::string> data = {
                 { Source::Vertex, "Vertex" },
                 { Source::Instance, "Instance" },
             };
@@ -276,26 +268,27 @@ namespace Gek
 
         InputElement::Semantic InputElement::GetSemantic(std::string_view string)
         {
-			static const std::unordered_map<std::string, Semantic> data =
-			{
-				{ "position", Semantic::Position },
-				{ "tangent", Semantic::Tangent },
-				{ "bitangent", Semantic::BiTangent },
-				{ "normal", Semantic::Normal },
-				{ "color", Semantic::Color },
-			};
+            static const std::unordered_map<std::string, Semantic> data = {
+                { "position", Semantic::Position },
+                { "tangent", Semantic::Tangent },
+                { "bitangent", Semantic::BiTangent },
+                { "normal", Semantic::Normal },
+                { "color", Semantic::Color },
+            };
 
-			auto result = data.find(String::GetLower(string));
-			return (result == std::end(data) ? Semantic::TexCoord : result->second);
+            auto result = data.find(String::GetLower(string));
+            return (result == std::end(data) ? Semantic::TexCoord : result->second);
         }
 
         std::string InputElement::GetSemantic(Semantic semantic)
         {
-            static const std::unordered_map<Semantic, std::string> data =
-            {
+            static const std::unordered_map<Semantic, std::string> data = {
                 { Semantic::TexCoord, "TexCoord" },
                 { Semantic::Position, "Position" },
-                { Semantic::Tangent, "Tangent", },
+                {
+                    Semantic::Tangent,
+                    "Tangent",
+                },
                 { Semantic::BiTangent, "BiTangent" },
                 { Semantic::Normal, "Normal" },
                 { Semantic::Color, "Color" },
@@ -307,8 +300,7 @@ namespace Gek
 
         using MapStringToFormat = std::unordered_map<std::string, Render::Format>;
         using MapFormatToString = std::unordered_map<Render::Format, std::string>;
-        static const MapStringToFormat FormatTypeMap =
-        {
+        static const MapStringToFormat FormatTypeMap = {
             { "R32G32B32A32_FLOAT", Format::R32G32B32A32_FLOAT },
             { "R16G16B16A16_FLOAT", Format::R16G16B16A16_FLOAT },
             { "R32G32B32_FLOAT", Format::R32G32B32_FLOAT },
@@ -385,48 +377,45 @@ namespace Gek
 
         ComparisonFunction getComparisonFunction(std::string const &string)
         {
-			static const std::unordered_map<std::string, ComparisonFunction> data =
-			{
-				{ "never", ComparisonFunction::Never },
-				{ "equal", ComparisonFunction::Equal },
-				{ "notequal", ComparisonFunction::NotEqual },
-				{ "less", ComparisonFunction::Less },
-				{ "lessequal", ComparisonFunction::LessEqual },
-				{ "greater", ComparisonFunction::Greater },
-				{ "greaterequal", ComparisonFunction::GreaterEqual },
-			};
+            static const std::unordered_map<std::string, ComparisonFunction> data = {
+                { "never", ComparisonFunction::Never },
+                { "equal", ComparisonFunction::Equal },
+                { "notequal", ComparisonFunction::NotEqual },
+                { "less", ComparisonFunction::Less },
+                { "lessequal", ComparisonFunction::LessEqual },
+                { "greater", ComparisonFunction::Greater },
+                { "greaterequal", ComparisonFunction::GreaterEqual },
+            };
 
-			auto result = data.find(String::GetLower(string));
-			return (result == std::end(data) ? ComparisonFunction::Always : result->second);
+            auto result = data.find(String::GetLower(string));
+            return (result == std::end(data) ? ComparisonFunction::Always : result->second);
         }
 
-		void RenderState::Description::load(JSON::Object const &object, JSON::Object const &configs)
+        void RenderState::Description::load(JSON::Object const &object, JSON::Object const &configs)
         {
-			auto getFillMode = [](std::string const &string) -> auto
-			{
-				static const std::unordered_map<std::string, FillMode> data =
-				{
-					{ "wireframe", FillMode::WireFrame },
-				};
+            auto getFillMode = [](std::string const &string) -> auto
+            {
+                static const std::unordered_map<std::string, FillMode> data = {
+                    { "wireframe", FillMode::WireFrame },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? FillMode::Solid : result->second);
-			};
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? FillMode::Solid : result->second);
+            };
 
-			auto getCullMode = [](std::string const &string) -> auto
-			{
-				static const std::unordered_map<std::string, CullMode> data =
-				{
-					{ "none", CullMode::None },
-					{ "front", CullMode::Front },
-				};
+            auto getCullMode = [](std::string const &string) -> auto
+            {
+                static const std::unordered_map<std::string, CullMode> data = {
+                    { "none", CullMode::None },
+                    { "front", CullMode::Front },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? CullMode::Back : result->second);
-			};
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? CullMode::Back : result->second);
+            };
 
             fillMode = getFillMode(JSON::Value(object, "fillMode", "Solid"s));
-			cullMode = getCullMode(JSON::Value(object, "cullMode", "Back"s));
+            cullMode = getCullMode(JSON::Value(object, "cullMode", "Back"s));
             frontCounterClockwise = JSON::Value(object, "frontCounterClockwise", false);
             depthBias = JSON::Value(object, "depthBias", 0);
             depthBiasClamp = JSON::Value(object, "depthBiasClamp", 0.0f);
@@ -446,18 +435,17 @@ namespace Gek
         {
             auto getOperation = [](std::string const &string) -> auto
             {
-				static const std::unordered_map<std::string, Operation> data =
-				{
-					{ "replace", Operation::Replace },
-					{ "invert", Operation::Invert },
-					{ "increase", Operation::Increase },
-					{ "increasesaturated", Operation::IncreaseSaturated },
-					{ "decrease", Operation::Decrease },
-					{ "decreasesaturated", Operation::DecreaseSaturated },
-				};
+                static const std::unordered_map<std::string, Operation> data = {
+                    { "replace", Operation::Replace },
+                    { "invert", Operation::Invert },
+                    { "increase", Operation::Increase },
+                    { "increasesaturated", Operation::IncreaseSaturated },
+                    { "decrease", Operation::Decrease },
+                    { "decreasesaturated", Operation::DecreaseSaturated },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? Operation::Zero : result->second);
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? Operation::Zero : result->second);
             };
 
             failOperation = getOperation(JSON::Value(object, "failOperation", "Keep"s));
@@ -473,16 +461,15 @@ namespace Gek
 
         void DepthState::Description::load(JSON::Object const &object, JSON::Object const &configs)
         {
-			auto getWriteMask = [](std::string const &string) -> auto
-			{
-				static const std::unordered_map<std::string, Write> data =
-				{
-					{ "zero", Write::Zero },
-				};
+            auto getWriteMask = [](std::string const &string) -> auto
+            {
+                static const std::unordered_map<std::string, Write> data = {
+                    { "zero", Write::Zero },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? Write::All : result->second);
-			};
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? Write::All : result->second);
+            };
 
             enable = JSON::Value(object, "enable", false);
             writeMask = getWriteMask(JSON::Value(object, "writeMask", "All"s));
@@ -505,42 +492,40 @@ namespace Gek
         {
             auto GetSource = [](std::string const &string) -> Source
             {
-				static const std::unordered_map<std::string, Source> data =
-				{
-					{ "zero", Source::Zero },
-					{ "blendfactor", Source::BlendFactor },
-					{ "inverseblendfactor", Source::InverseBlendFactor },
-					{ "ourcecolor", Source::SourceColor },
-					{ "inversesourcecolor", Source::InverseSourceColor },
-					{ "ourcealpha", Source::SourceAlpha },
-					{ "inversesourcealpha", Source::InverseSourceAlpha },
-					{ "ourcealphasaturated", Source::SourceAlphaSaturated },
-					{ "destinationcolor", Source::DestinationColor },
-					{ "inversedestinationcolor", Source::InverseDestinationColor },
-					{ "destinationalpha", Source::DestinationAlpha },
-					{ "inversedestinationalpha", Source::InverseDestinationAlpha },
-					{ "econdarysourcecolor", Source::SecondarySourceColor },
-					{ "inversesecondarysourcecolor", Source::InverseSecondarySourceColor },
-					{ "econdarysourcealpha", Source::SecondarySourceAlpha },
-					{ "inversesecondarysourcealpha", Source::InverseSecondarySourceAlpha },
-				};
+                static const std::unordered_map<std::string, Source> data = {
+                    { "zero", Source::Zero },
+                    { "blendfactor", Source::BlendFactor },
+                    { "inverseblendfactor", Source::InverseBlendFactor },
+                    { "ourcecolor", Source::SourceColor },
+                    { "inversesourcecolor", Source::InverseSourceColor },
+                    { "ourcealpha", Source::SourceAlpha },
+                    { "inversesourcealpha", Source::InverseSourceAlpha },
+                    { "ourcealphasaturated", Source::SourceAlphaSaturated },
+                    { "destinationcolor", Source::DestinationColor },
+                    { "inversedestinationcolor", Source::InverseDestinationColor },
+                    { "destinationalpha", Source::DestinationAlpha },
+                    { "inversedestinationalpha", Source::InverseDestinationAlpha },
+                    { "econdarysourcecolor", Source::SecondarySourceColor },
+                    { "inversesecondarysourcecolor", Source::InverseSecondarySourceColor },
+                    { "econdarysourcealpha", Source::SecondarySourceAlpha },
+                    { "inversesecondarysourcealpha", Source::InverseSecondarySourceAlpha },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? Source::One : result->second);
-			};
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? Source::One : result->second);
+            };
 
             auto getOperation = [](std::string const &string) -> Operation
             {
-				static const std::unordered_map<std::string, Operation> data =
-				{
-					{ "ubtract", Operation::Subtract },
+                static const std::unordered_map<std::string, Operation> data = {
+                    { "ubtract", Operation::Subtract },
                     { "teversesubtract", Operation::ReverseSubtract },
                     { "minimum", Operation::Minimum },
                     { "maximum", Operation::Maximum },
-				};
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? Operation::Add : result->second);
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? Operation::Add : result->second);
             };
 
             enable = JSON::Value(object, "enable", false);
@@ -612,9 +597,8 @@ namespace Gek
         {
             auto getFilterMode = [](std::string const &string) -> FilterMode
             {
-				static const std::unordered_map<std::string, FilterMode> data =
-				{
-				    { "minificationmagnificationpointmipmaplinear", FilterMode::MinificationMagnificationPointMipMapLinear },
+                static const std::unordered_map<std::string, FilterMode> data = {
+                    { "minificationmagnificationpointmipmaplinear", FilterMode::MinificationMagnificationPointMipMapLinear },
                     { "minificationpointmagnificationlinearmipmappoint", FilterMode::MinificationPointMagnificationLinearMipMapPoint },
                     { "minificationpointmagnificationmipmaplinear", FilterMode::MinificationPointMagnificationMipMapLinear },
                     { "minificationlinearmagnificationmipmappoint", FilterMode::MinificationLinearMagnificationMipMapPoint },
@@ -649,24 +633,23 @@ namespace Gek
                     { "maximumminificationmagnificationlinearmipmappoint", FilterMode::MaximumMinificationMagnificationLinearMipMapPoint },
                     { "maximumminificationmagnificationmipmaplinear", FilterMode::MaximumMinificationMagnificationMipMapLinear },
                     { "maximumanisotropic", FilterMode::MaximumAnisotropic },
-				};
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? FilterMode::MinificationMagnificationMipMapPoint : result->second);
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? FilterMode::MinificationMagnificationMipMapPoint : result->second);
             };
 
             auto getAddressMode = [](std::string const &string) -> AddressMode
             {
-				static const std::unordered_map<std::string, AddressMode> data =
-				{
-					{ "wrap", AddressMode::Wrap },
-					{ "mirror", AddressMode::Mirror },
-					{ "mirroronce", AddressMode::MirrorOnce },
-					{ "border", AddressMode::Border },
-				};
+                static const std::unordered_map<std::string, AddressMode> data = {
+                    { "wrap", AddressMode::Wrap },
+                    { "mirror", AddressMode::Mirror },
+                    { "mirroronce", AddressMode::MirrorOnce },
+                    { "border", AddressMode::Border },
+                };
 
-				auto result = data.find(String::GetLower(string));
-				return (result == std::end(data) ? AddressMode::Clamp : result->second);
+                auto result = data.find(String::GetLower(string));
+                return (result == std::end(data) ? AddressMode::Clamp : result->second);
             };
 
             filterMode = getFilterMode(JSON::Value(object, "filterMode", "AllPoint"s));

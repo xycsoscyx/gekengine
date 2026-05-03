@@ -15,16 +15,16 @@ namespace Gek
     {
         struct Sphere
         {
-        public:
+          public:
             Math::Float3 position;
             float radius;
 
-        public:
+          public:
             Sphere(void) noexcept;
             Sphere(Sphere const &sphere) noexcept;
             Sphere(Math::Float3 const &position, float radius) noexcept;
 
-            Sphere &operator = (Sphere const &sphere) noexcept;
+            Sphere &operator=(Sphere const &sphere) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

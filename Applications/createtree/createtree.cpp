@@ -1,23 +1,23 @@
 #include "GEK/Math/Common.hpp"
-#include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Math/Vector3.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <unordered_map>
+#include "GEK/Utility/String.hpp"
 #include <algorithm>
-#include <vector>
 #include <map>
 #include <set>
 #include <sstream>
+#include <unordered_map>
+#include <vector>
 
 #include <argparse/argparse.hpp>
-#include <assimp/config.h>
 #include <assimp/cimport.h>
-#include <assimp/scene.h>
+#include <assimp/config.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -52,12 +52,12 @@ struct Mesh
     struct Face
     {
         int32_t data[3];
-        int32_t& operator [] (size_t index)
+        int32_t &operator[](size_t index)
         {
             return data[index];
         }
 
-        const int32_t& operator [] (size_t index) const
+        const int32_t &operator[](size_t index) const
         {
             return data[index];
         }
@@ -81,7 +81,7 @@ struct Parameters
     float feetPerUnit;
 };
 
-bool GetModels(Context *context, Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, Model& model, std::function<std::string(const std::string&, const std::string&)> findMaterialForMesh)
+bool GetModels(Context *context, Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &parentTransform, Model &model, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
 {
     if (inputNode == nullptr)
     {
@@ -109,7 +109,7 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
                 continue;
             }
 
-            const aiMesh* inputMesh = inputScene->mMeshes[nodeMeshIndex];
+            const aiMesh *inputMesh = inputScene->mMeshes[nodeMeshIndex];
             if (inputMesh->mNumFaces > 0)
             {
                 if (inputMesh->mFaces == nullptr)
@@ -127,7 +127,7 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
                 Mesh mesh;
 
                 aiString sceneDiffuseMaterial;
-                const aiMaterial* sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
+                const aiMaterial *sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
                 std::string diffuseName = sceneDiffuseMaterial.C_Str();
                 mesh.material = findMaterialForMesh(parameters.sourceName, diffuseName);
@@ -149,7 +149,7 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
                 mesh.faceList.reserve(inputMesh->mNumFaces);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace& face = inputMesh->mFaces[faceIndex];
+                    const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
                         context->log(Context::Error, "Skipping non-triangular face, face: {}, {} indices", faceIndex, face.mNumIndices);
@@ -190,7 +190,7 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
     return true;
 }
 
-int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
+int main(int argumentCount, char const *const argumentList[], char const *const environmentVariableList)
 {
     ContextPtr context(Context::Create(nullptr));
 
@@ -222,7 +222,7 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
 
         program.parse_args(arguments);
     }
-    catch (const std::runtime_error& err)
+    catch (const std::runtime_error &err)
     {
         if (context)
         {
@@ -262,13 +262,13 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
         context->addDataPath(rootPath.getString());
 
         aiLogStream logStream;
-        logStream.callback = [](char const* message, char* user) -> void
+        logStream.callback = [](char const *message, char *user) -> void
         {
-            Context* context = reinterpret_cast<Context*>(user);
+            Context *context = reinterpret_cast<Context *>(user);
             context->log(Context::Info, message);
         };
 
-        logStream.user = reinterpret_cast<char*>(context.get());
+        logStream.user = reinterpret_cast<char *>(context.get());
         aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
@@ -292,15 +292,15 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
             aiProcess_FindInvalidData |
             aiProcess_ImproveCacheLocality |
             aiProcess_OptimizeMeshes |
-            //aiProcess_OptimizeGraph,
+            // aiProcess_OptimizeGraph,
             0;
 
-        aiPropertyStore* propertyStore = aiCreatePropertyStore();
+        aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
-        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
+        // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
         context->log(Context::Info, "Loading: {}", filePath.getString());
@@ -345,7 +345,7 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
             texturesPath = texturesPath.substr(engineIndex);
         }
 
-        std::function<FileSystem::Path(const char*, FileSystem::Path const&)> removeRoot = [](const char* location, FileSystem::Path const& path) -> FileSystem::Path
+        std::function<FileSystem::Path(const char *, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const &path) -> FileSystem::Path
         {
             auto parentPath = path.getParentPath();
             while (parentPath.isDirectory() && parentPath != path.getRootPath())
@@ -364,8 +364,8 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
         };
 
         std::map<std::string, std::string> albedoToMaterialMap;
-        std::function<bool(FileSystem::Path const&)> findMaterials;
-        findMaterials = [&](FileSystem::Path const& filePath) -> bool
+        std::function<bool(FileSystem::Path const &)> findMaterials;
+        findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
             if (filePath.getExtension() != ".json")
             {
@@ -373,9 +373,9 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
             }
 
             JSON::Object materialNode = JSON::Load(filePath);
-            auto& shaderNode = materialNode["shader"];
-            auto& dataNode = shaderNode["data"];
-            auto& albedoNode = dataNode["albedo"];
+            auto &shaderNode = materialNode["shader"];
+            auto &dataNode = shaderNode["data"];
+            auto &albedoNode = dataNode["albedo"];
             auto albedoFile = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoPath = removeRoot("textures", context->findDataPath(albedoFile));
 
@@ -391,7 +391,7 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
             return -__LINE__;
         }
 
-        auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
+        auto findMaterialForMesh = [&](const FileSystem::Path &sourceName, std::string diffuseName) -> std::string
         {
             context->log(Context::Info, "> Searching for : {}, {}", diffuseName, (filePath / diffuseName).getString());
 
@@ -445,7 +445,7 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
         if (file.is_open())
         {
             std::set<std::string> materialList;
-            for (auto& mesh : model.meshList)
+            for (auto &mesh : model.meshList)
             {
                 materialList.insert(mesh.material);
             }
@@ -454,14 +454,14 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
             header.materialCount = materialList.size();
             header.meshCount = model.meshList.size();
             FileSystem::Write(file, &header, 1);
-            for (auto const& material : materialList)
+            for (auto const &material : materialList)
             {
                 Header::Material materialHeader;
                 std::strncpy(materialHeader.name, material.data(), 63);
                 FileSystem::Write(file, &materialHeader, 1);
             }
 
-            for (auto const& mesh : model.meshList)
+            for (auto const &mesh : model.meshList)
             {
                 context->log(Context::Info, "Material: {}", mesh.material);
                 context->log(Context::Info, "Num. Points: {}", mesh.pointList.size());
@@ -475,7 +475,7 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
                 meshHeader.pointCount = mesh.pointList.size();
                 FileSystem::Write(file, &meshHeader, 1);
                 FileSystem::Write(file, mesh.faceList.data(), meshHeader.faceCount);
-                FileSystem::Write(file, mesh.pointList.data(), meshHeader.pointCount); 
+                FileSystem::Write(file, mesh.pointList.data(), meshHeader.pointCount);
             }
 
             file.close();

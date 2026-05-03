@@ -8,8 +8,8 @@ namespace Gek
     {
         class StaticBody : public Body, public ndBodyKinematic
         {
-        public:
-            StaticBody(const Math::Float4x4& matrix, ndShapeInstance shape)
+          public:
+            StaticBody(const Math::Float4x4 &matrix, ndShapeInstance shape)
             {
                 SetMatrix(matrix.data);
                 SetCollisionShape(shape);
@@ -18,7 +18,7 @@ namespace Gek
                 SetNotifyCallback(nullptr); // No callback for static
             }
             ~StaticBody() override {}
-            ndBody* getAsNewtonBody() override { return this; }
+            ndBody *getAsNewtonBody() override { return this; }
         };
 
         using StaticBodyPtr = std::unique_ptr<StaticBody>;

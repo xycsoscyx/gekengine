@@ -7,11 +7,11 @@
 /// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
 #include "API/Engine/Component.hpp"
-#include <typeindex>
+#include "GEK/Utility/Context.hpp"
 #include <algorithm>
 #include <numeric>
+#include <typeindex>
 
 namespace Gek
 {
@@ -23,33 +23,33 @@ namespace Gek
 
             virtual bool hasComponent(Hash type) const = 0;
 
-			virtual Plugin::Component::Data *getComponent(Hash type) = 0;
-			virtual const Plugin::Component::Data *getComponent(Hash type) const = 0;
+            virtual Plugin::Component::Data *getComponent(Hash type) = 0;
+            virtual const Plugin::Component::Data *getComponent(Hash type) const = 0;
 
             template <typename COMPONENT>
             bool hasComponent(void) const
             {
-				return hasComponent(COMPONENT::GetIdentifier());
+                return hasComponent(COMPONENT::GetIdentifier());
             }
 
-            template<typename... PARAMETERS>
+            template <typename... PARAMETERS>
             bool hasComponents(void) const
             {
-				std::vector<bool> hasComponentList({ hasComponent<PARAMETERS>()... });
-				return (std::accumulate(std::begin(hasComponentList), std::end(hasComponentList), 0U) == hasComponentList.size());
+                std::vector<bool> hasComponentList({ hasComponent<PARAMETERS>()... });
+                return (std::accumulate(std::begin(hasComponentList), std::end(hasComponentList), 0U) == hasComponentList.size());
             }
 
-			template <typename COMPONENT>
-			COMPONENT &getComponent(void)
-			{
-				return *static_cast<COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
-			}
+            template <typename COMPONENT>
+            COMPONENT &getComponent(void)
+            {
+                return *static_cast<COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
+            }
 
-			template <typename COMPONENT>
-			const COMPONENT &getComponent(void) const
-			{
-				return *static_cast<const COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
-			}
-		};
+            template <typename COMPONENT>
+            const COMPONENT &getComponent(void) const
+            {
+                return *static_cast<const COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
+            }
+        };
     }; // namespace Plugin
 }; // namespace Gek

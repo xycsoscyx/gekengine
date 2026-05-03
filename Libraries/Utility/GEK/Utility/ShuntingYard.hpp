@@ -8,18 +8,18 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
-#include <unordered_map>
 #include <functional>
 #include <iostream>
 #include <optional>
 #include <random>
 #include <stack>
+#include <unordered_map>
 
 namespace Gek
 {
     class ShuntingYard
     {
-    public:
+      public:
         enum class Associations : uint8_t
         {
             Left = 0,
@@ -96,7 +96,7 @@ namespace Gek
         using TokenList = std::vector<Token>;
         using OperandList = std::vector<Operand>;
 
-    private:
+      private:
         uint32_t seed = std::mt19937::default_seed;
         std::unordered_map<std::string, float> variableMap;
         std::unordered_map<std::string, Operation> operationsMap;
@@ -105,7 +105,7 @@ namespace Gek
 
         std::unordered_map<size_t, OperandList> cache;
 
-    public:
+      public:
         ShuntingYard(void);
         ShuntingYard(ShuntingYard const &shuntingYard);
 
@@ -120,13 +120,13 @@ namespace Gek
         std::optional<float> evaluate(OperandList &rpnOperandList);
         std::optional<float> evaluate(std::string const &expression);
 
-    private:
+      private:
         bool isAssociative(std::string const &token, const Associations &type);
         int comparePrecedence(std::string const &token1, std::string const &token2);
 
-    private:
+      private:
         Operand getOperand(Token const &token);
-		bool insertToken(TokenList &infixTokenList, Token &&token);
+        bool insertToken(TokenList &infixTokenList, Token &&token);
         std::optional<TokenList> convertExpressionToInfix(std::string const &expression);
         std::optional<OperandList> convertInfixToReversePolishNotation(TokenList const &infixTokenList);
         std::optional<float> evaluateReversePolishNotation(OperandList const &rpnOperandList);

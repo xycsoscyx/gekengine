@@ -7,13 +7,13 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "API/Engine/Core.hpp"
+#include "API/System/RenderDevice.hpp"
+#include "API/System/WindowDevice.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "API/Engine/Core.hpp"
-#include "API/System/WindowDevice.hpp"
-#include "API/System/RenderDevice.hpp"
-#include <wink/signal.hpp>
 #include <imgui.h>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -25,16 +25,16 @@ namespace Gek
         GEK_INTERFACE(Core)
             : public Plugin::Core
         {
-			wink::signal<wink::slot<void(void)>> onChangedDisplay;
+            wink::signal<wink::slot<void(void)>> onChangedDisplay;
             wink::signal<wink::slot<void(void)>> onChangedSettings;
 
             virtual ~Core(void) = default;
 
-            virtual Window::Device * getWindowDevice(void) const = 0;
-            virtual Render::Device * getRenderDevice(void) const = 0;
+            virtual Window::Device *getWindowDevice(void) const = 0;
+            virtual Render::Device *getRenderDevice(void) const = 0;
 
-            virtual Engine::Population * getFullPopulation(void) const = 0;
-            virtual Engine::Resources * getFullResources(void) const = 0;
+            virtual Engine::Population *getFullPopulation(void) const = 0;
+            virtual Engine::Resources *getFullResources(void) const = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

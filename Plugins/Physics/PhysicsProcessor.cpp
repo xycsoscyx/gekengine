@@ -1,71 +1,70 @@
+#include "API/Engine/Core.hpp"
+#include "API/Engine/Editor.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
+#include "API/Engine/Processor.hpp"
+#include "API/Engine/Visualizer.hpp"
+#include "GEK/Components/Transform.hpp"
 #include "GEK/Math/Common.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Model/Base.hpp"
+#include "GEK/Physics/Base.hpp"
+#include "GEK/Physics/StaticBody.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "API/Engine/Core.hpp"
-#include "API/Engine/Processor.hpp"
-#include "API/Engine/Population.hpp"
-#include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Entity.hpp"
-#include "API/Engine/Editor.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Physics/Base.hpp"
-#include "GEK/Physics/StaticBody.hpp"
-#include "GEK/Model/Base.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
 #include <dCollision/ndContactNotify.h>
+#include <future>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-#include <future>
 
 namespace Gek
 {
     namespace Physics
     {
-        extern BodyPtr createPlayerBody(Plugin::Core* core, Plugin::Population* population, World* World, Plugin::Entity* const entity);
-        extern BodyPtr createRigidBody(World* world, Plugin::Entity* const entity);
+        extern BodyPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, World *World, Plugin::Entity *const entity);
+        extern BodyPtr createRigidBody(World *world, Plugin::Entity *const entity);
 
         class BufferReader
         {
-        private:
-            uint8_t* buffer = nullptr;
+          private:
+            uint8_t *buffer = nullptr;
             size_t index = 0;
 
-        public:
-            BufferReader(uint8_t* buffer)
+          public:
+            BufferReader(uint8_t *buffer)
                 : buffer(buffer)
             {
             }
 
             template <typename TYPE>
-            TYPE* read(uint32_t count = 1)
+            TYPE *read(uint32_t count = 1)
             {
-                TYPE* data = (TYPE*)(buffer + index);
+                TYPE *data = (TYPE *)(buffer + index);
                 index += (sizeof(TYPE) * count);
                 return data;
             }
         };
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
-            , public Plugin::Processor
-            , public World
+        , public Plugin::Processor, public World
         {
-        public:
+          public:
             struct Header
             {
                 uint32_t identifier = 0;
                 uint16_t type = 0;
-                uint16_t version =  0;
+                uint16_t version = 0;
             };
 
-			struct HullHeader : public Header
-			{
+            struct HullHeader : public Header
+            {
                 uint32_t pointCount;
-			};
+            };
 
             struct TreeHeader : public Header
             {
@@ -104,27 +103,33 @@ namespace Gek
                 uint32_t indexCount;
             };
 
-            class ContactNotify : public ndContactNotify {
-                Processor* processor;
-            public:
-                ContactNotify(ndScene* scene, Processor* processor)
+            class ContactNotify : public ndContactNotify
+            {
+                Processor *processor;
+
+              public:
+                ContactNotify(ndScene *scene, Processor *processor)
                     : ndContactNotify(scene), processor(processor) {}
-                void OnContactCallback(const ndContact* const contact, ndFloat32 timestep) const override {
-                    const auto& points = contact->GetContactPoints();
+                void OnContactCallback(const ndContact *const contact, ndFloat32 timestep) const override
+                {
+                    const auto &points = contact->GetContactPoints();
                     using NodeType = ndList<ndContactMaterial, ndContainersFreeListAlloc<ndContactMaterial>>::ndNode;
-                    for (NodeType* node = points.GetFirst(); node; node = node->GetNext())
+                    for (NodeType *node = points.GetFirst(); node; node = node->GetNext())
                     {
-                        const ndContactMaterial& cp = node->GetInfo();
-                        Plugin::Entity* entity0 = nullptr;
-                        Plugin::Entity* entity1 = nullptr;
-                        ndBodyKinematic* body0 = (ndBodyKinematic*)contact->GetBody0();
-                        ndBodyKinematic* body1 = (ndBodyKinematic*)contact->GetBody1();
-                        for (auto& pair : processor->entityBodyMap)
+                        const ndContactMaterial &cp = node->GetInfo();
+                        Plugin::Entity *entity0 = nullptr;
+                        Plugin::Entity *entity1 = nullptr;
+                        ndBodyKinematic *body0 = (ndBodyKinematic *)contact->GetBody0();
+                        ndBodyKinematic *body1 = (ndBodyKinematic *)contact->GetBody1();
+                        for (auto &pair : processor->entityBodyMap)
                         {
-                            if (pair.second && pair.second->getAsNewtonBody() == body0) entity0 = pair.first;
-                            if (pair.second && pair.second->getAsNewtonBody() == body1) entity1 = pair.first;
+                            if (pair.second && pair.second->getAsNewtonBody() == body0)
+                                entity0 = pair.first;
+                            if (pair.second && pair.second->getAsNewtonBody() == body1)
+                                entity1 = pair.first;
                         }
-                        if (!entity0 || !entity1) continue;
+                        if (!entity0 || !entity1)
+                            continue;
                         Math::Float3 position(cp.m_point.m_x, cp.m_point.m_y, cp.m_point.m_z);
                         Math::Float3 normal(cp.m_normal.m_x, cp.m_normal.m_y, cp.m_normal.m_z);
                         processor->onCollision(entity0, position, normal, entity1);
@@ -134,14 +139,14 @@ namespace Gek
 
             class NewtonWorld : public ndWorld
             {
-            public:
-                NewtonWorld(Processor* processor)
+              public:
+                NewtonWorld(Processor *processor)
                 {
                     SetContactNotify(new ContactNotify(this->GetScene(), processor));
                 }
             };
 
-        private:
+          private:
             Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
             Plugin::Visualizer *renderer = nullptr;
@@ -149,20 +154,16 @@ namespace Gek
 
             tbb::concurrent_vector<Surface> surfaceList;
             tbb::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
-            NewtonWorld* newtonWorld = nullptr;
+            NewtonWorld *newtonWorld = nullptr;
             ThreadPool loadPool;
 
-            tbb::concurrent_unordered_map<Plugin::Entity*, Physics::Body *> entityBodyMap;
+            tbb::concurrent_unordered_map<Plugin::Entity *, Physics::Body *> entityBodyMap;
             tbb::concurrent_unordered_map<Hash, std::promise<ndShape *>> shapePromiseMap;
             tbb::concurrent_unordered_map<Hash, std::shared_future<ndShape *>> shapeFutureMap;
 
-        public:
-            Processor(Context *context, Plugin::Core *core)
-                : ContextRegistration(context)
-                , core(core)
-                , population(core->getPopulation())
-                , renderer(core->getVisualizer())
-                , loadPool(5)
+          public:
+            Processor(Context * context, Plugin::Core * core)
+                : ContextRegistration(context), core(core), population(core->getPopulation()), renderer(core->getVisualizer()), loadPool(5)
             {
                 assert(core);
                 assert(population);
@@ -201,11 +202,11 @@ namespace Gek
                 }
             }
 
-            Task scheduleLoadShape(std::promise<ndShape *> &promise, Components::Model const& modelComponent)
+            Task scheduleLoadShape(std::promise<ndShape *> & promise, Components::Model const &modelComponent)
             {
                 co_await loadPool.schedule();
 
-                ndShape* shape = nullptr;
+                ndShape *shape = nullptr;
                 if (modelComponent.name == "#cube")
                 {
                     shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
@@ -225,8 +226,8 @@ namespace Gek
                     }
 
                     BufferReader reader(buffer.data());
-                    Header* header = reader.read<Header>(0);
-                    if (header->identifier != *(uint32_t*)"GEKX")
+                    Header *header = reader.read<Header>(0);
+                    if (header->identifier != *(uint32_t *)"GEKX")
                     {
                         getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
                         co_return;
@@ -241,20 +242,20 @@ namespace Gek
                     if (header->type == 1)
                     {
                         getContext()->log(Context::Info, "Loading convex hull for static scene: {}", modelComponent.name);
-                        HullHeader* hullHeader = reader.read<HullHeader>();
-                        Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
+                        HullHeader *hullHeader = reader.read<HullHeader>();
+                        Math::Float3 *points = reader.read<Math::Float3>(hullHeader->pointCount);
                         shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
                     }
                     else if (header->type == 2)
                     {
                         getContext()->log(Context::Info, "Loading tree mesh for static scene: {}", modelComponent.name);
-                        TreeHeader* treeHeader = reader.read<TreeHeader>();
+                        TreeHeader *treeHeader = reader.read<TreeHeader>();
 
                         // Read materials
                         std::vector<std::string> materialNames;
                         for (uint32_t i = 0; i < treeHeader->materialCount; ++i)
                         {
-                            TreeHeader::Material* mat = reader.read<TreeHeader::Material>();
+                            TreeHeader::Material *mat = reader.read<TreeHeader::Material>();
                             materialNames.push_back(std::string(mat->name));
                         }
 
@@ -262,20 +263,19 @@ namespace Gek
                         std::vector<TreeHeader::Mesh> meshes;
                         for (uint32_t i = 0; i < treeHeader->meshCount; ++i)
                         {
-                            TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
+                            TreeHeader::Mesh *mesh = reader.read<TreeHeader::Mesh>();
                             meshes.push_back(*mesh);
                         }
                         // Read faces and points for all meshes
                         ndPolygonSoupBuilder builder;
                         builder.Begin();
-                        for (auto& mesh : meshes)
+                        for (auto &mesh : meshes)
                         {
-                            TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh.faceCount);
-                            Math::Float3* meshPoints = reader.read<Math::Float3>(mesh.pointCount);
+                            TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh.faceCount);
+                            Math::Float3 *meshPoints = reader.read<Math::Float3>(mesh.pointCount);
                             for (uint32_t f = 0; f < mesh.faceCount; ++f)
                             {
-                                ndVector verts[3] =
-                                {
+                                ndVector verts[3] = {
                                     ndVector(meshPoints[faces[f].indices[0]].x, meshPoints[faces[f].indices[0]].y, meshPoints[faces[f].indices[0]].z, 0.0f),
                                     ndVector(meshPoints[faces[f].indices[1]].x, meshPoints[faces[f].indices[1]].y, meshPoints[faces[f].indices[1]].z, 0.0f),
                                     ndVector(meshPoints[faces[f].indices[2]].x, meshPoints[faces[f].indices[2]].y, meshPoints[faces[f].indices[2]].z, 0.0f)
@@ -301,13 +301,13 @@ namespace Gek
                 }
             }
 
-            ndShape* loadShape(Components::Model const& modelComponent)
+            ndShape *loadShape(Components::Model const &modelComponent)
             {
                 auto hash = GetHash(modelComponent.name);
                 auto shapeInsert = shapePromiseMap.insert(std::make_pair(hash, std::promise<ndShape *>()));
                 if (shapeInsert.second)
                 {
-                    auto& promise = shapeInsert.first->second;
+                    auto &promise = shapeInsert.first->second;
                     shapeFutureMap.insert(std::make_pair(hash, promise.get_future()));
                     scheduleLoadShape(promise, modelComponent);
                 }
@@ -315,15 +315,15 @@ namespace Gek
                 auto shapeFuture = shapeFutureMap.find(hash);
                 if (shapeFuture != std::end(shapeFutureMap))
                 {
-                    ndShape* shape = shapeFuture->second.get();
+                    ndShape *shape = shapeFuture->second.get();
                     return shape;
                 }
 
                 return nullptr;
             }
 
-            //concurrency::critical_section criticalSection;
-            void addEntity(Plugin::Entity * const entity)
+            // concurrency::critical_section criticalSection;
+            void addEntity(Plugin::Entity *const entity)
             {
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
@@ -335,7 +335,7 @@ namespace Gek
                         auto shape = loadShape(modelComponent);
                         if (shape)
                         {
-                            auto& transformComponent = entity->getComponent<Components::Transform>();
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
                             auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
                             if (newtonWorld)
                             {
@@ -354,7 +354,7 @@ namespace Gek
                         }
                         else if (entity->hasComponent<Components::Model>())
                         {
-                            auto const& modelComponent = entity->getComponent<Components::Model>();
+                            auto const &modelComponent = entity->getComponent<Components::Model>();
                             auto shape = loadShape(modelComponent);
                             if (shape)
                             {
@@ -374,7 +374,7 @@ namespace Gek
                     if (newtonWorld)
                     {
                         ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
-                        auto& transformComponent = entity->getComponent<Components::Transform>();
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
                         sharedBody->SetMatrix(transformComponent.getMatrix().data);
                         newtonWorld->AddBody(sharedBody);
                     }
@@ -382,14 +382,13 @@ namespace Gek
                 }
             }
 
-            void removeEntity(Plugin::Entity * const entity)
+            void removeEntity(Plugin::Entity *const entity)
             {
                 auto entitySearch = entityBodyMap.find(entity);
                 if (entitySearch != std::end(entityBodyMap))
                 {
                     newtonWorld->RemoveBody(entitySearch->second->getAsNewtonBody());
                     entityBodyMap.unsafe_erase(entitySearch);
-
                 }
             }
 
@@ -397,13 +396,12 @@ namespace Gek
             void onInitialized(void)
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
-                {
+                                     {
                     auto castCheck = dynamic_cast<Edit::Events *>(processor);
                     if (castCheck)
                     {
                         (events = castCheck)->onModified.connect(this, &Processor::onModified);
-                    }                    
-                });
+                    } });
             }
 
             void onShutdown(void)
@@ -425,7 +423,7 @@ namespace Gek
             }
 
             // Plugin::Editor Slots
-            void onModified(Plugin::Entity* const entity, Hash type)
+            void onModified(Plugin::Entity *const entity, Hash type)
             {
                 auto bodySearch = entityBodyMap.find(entity);
                 if (bodySearch == std::end(entityBodyMap))
@@ -439,7 +437,7 @@ namespace Gek
                     auto entitySearch = entityBodyMap.find(entity);
                     if (entitySearch != std::end(entityBodyMap))
                     {
-                        auto const& transformComponent = entity->getComponent<Components::Transform>();
+                        auto const &transformComponent = entity->getComponent<Components::Transform>();
                         auto matrix(transformComponent.getScaledMatrix());
                         body->getAsNewtonBody()->SetMatrix(matrix.data);
                     }
@@ -448,8 +446,8 @@ namespace Gek
                 {
                     if (!entity->hasComponent<Components::Physical>())
                     {
-                        auto const& physicalComponent = entity->getComponent<Components::Physical>();
-                        auto const& modelComponent = entity->getComponent<Components::Model>();
+                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
                         auto shape = loadShape(modelComponent);
                         body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
                         body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
@@ -459,8 +457,8 @@ namespace Gek
                 {
                     if (!entity->hasComponent<Components::Model>())
                     {
-                        auto const& physicalComponent = entity->getComponent<Components::Physical>();
-                        auto& shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
+                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                        auto &shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
                         body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
                     }
                 }
@@ -481,25 +479,25 @@ namespace Gek
                 newtonWorld->SetSubSteps(2);
                 newtonWorld->SetSolverIterations(1);
                 newtonWorld->SetThreadCount(4);
-                //newtonWorld->SelectSolver(m_solverMode);
+                // newtonWorld->SelectSolver(m_solverMode);
             }
 
-            void onEntityCreated(Plugin::Entity * const entity)
+            void onEntityCreated(Plugin::Entity *const entity)
             {
                 addEntity(entity);
             }
 
-            void onEntityDestroyed(Plugin::Entity * const entity)
+            void onEntityDestroyed(Plugin::Entity *const entity)
             {
                 removeEntity(entity);
             }
 
-            void onComponentAdded(Plugin::Entity * const entity)
+            void onComponentAdded(Plugin::Entity *const entity)
             {
                 addEntity(entity);
             }
 
-            void onComponentRemoved(Plugin::Entity * const entity)
+            void onComponentRemoved(Plugin::Entity *const entity)
             {
                 if (!entity->hasComponents<Components::Transform, Components::Physical>())
                 {
@@ -509,12 +507,12 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-				bool editorActive = core->getOption("editor", "active", false);
-				if (frameTime > 0.0f && !editorActive)
-				{
-					static constexpr float StepTime = (1.0f / 60.0f);
-					while (frameTime > 0.0f)
-					{
+                bool editorActive = core->getOption("editor", "active", false);
+                if (frameTime > 0.0f && !editorActive)
+                {
+                    static constexpr float StepTime = (1.0f / 60.0f);
+                    while (frameTime > 0.0f)
+                    {
                         if (newtonWorld)
                         {
                             newtonWorld->Update(StepTime);
@@ -522,8 +520,8 @@ namespace Gek
                         }
 
                         frameTime -= StepTime;
-					};
-				}
+                    };
+                }
             }
 
             // Newton::World
@@ -573,7 +571,7 @@ namespace Gek
                 return surfaceIndex;
             }
 
-            const Surface & getSurface(uint32_t surfaceIndex) const
+            const Surface &getSurface(uint32_t surfaceIndex) const
             {
                 static const Surface DefaultSurface;
                 return (surfaceIndex >= surfaceList.size() ? DefaultSurface : surfaceList[surfaceIndex]);

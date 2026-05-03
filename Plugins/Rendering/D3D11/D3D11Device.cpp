@@ -1,34 +1,34 @@
 #pragma warning(disable : 4005)
 
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/ContextUser.hpp"
 #include "API/System/RenderDevice.hpp"
 #include "API/System/WindowDevice.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/String.hpp"
 #include <ktx.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <wincodec.h>
-#include <atlbase.h>
-#include <dxgi1_3.h>
-#include <slang.h>
-#include <slang-com-ptr.h>
+#include <D3D11Shader.h>
 #include <algorithm>
-#include <execution>
+#include <atlbase.h>
+#include <chrono>
 #include <comdef.h>
+#include <ctime>
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include <D3D11Shader.h>
+#include <dxgi1_3.h>
+#include <execution>
 #include <fstream>
-#include <chrono>
-#include <ctime>
 #include <iomanip>
-#include <sstream>
 #include <memory>
 #include <mutex>
 #include <ppl.h>
+#include <slang-com-ptr.h>
+#include <slang.h>
+#include <sstream>
+#include <stb_image.h>
+#include <wincodec.h>
 
-extern "C" const IID IID_ID3D11ShaderReflection = {0x8d536ca1,0x0cca,0x4956,{0xa8,0x37,0x78,0x08,0x49,0xae,0xd6,0x51}};
+extern "C" const IID IID_ID3D11ShaderReflection = { 0x8d536ca1, 0x0cca, 0x4956, { 0xa8, 0x37, 0x78, 0x08, 0x49, 0xae, 0xd6, 0x51 } };
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -40,8 +40,7 @@ namespace Gek
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
-        static constexpr DXGI_FORMAT TextureFormatList[] =
-        {
+        static constexpr DXGI_FORMAT TextureFormatList[] = {
             DXGI_FORMAT_UNKNOWN,
 
             DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -101,8 +100,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Render::Format::Count), "New format added without adding to all TextureFormatList.");
 
-        static constexpr DXGI_FORMAT DepthFormatList[] =
-        {
+        static constexpr DXGI_FORMAT DepthFormatList[] = {
             DXGI_FORMAT_UNKNOWN,
 
             DXGI_FORMAT_UNKNOWN,
@@ -162,8 +160,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Render::Format::Count), "New format added without adding to all DepthFormatList.");
 
-        static constexpr DXGI_FORMAT ViewFormatList[] =
-        {
+        static constexpr DXGI_FORMAT ViewFormatList[] = {
             DXGI_FORMAT_UNKNOWN,
 
             DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -223,8 +220,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Render::Format::Count), "New format added without adding to all ViewFormatList.");
 
-        static constexpr DXGI_FORMAT BufferFormatList[] =
-        {
+        static constexpr DXGI_FORMAT BufferFormatList[] = {
             DXGI_FORMAT_UNKNOWN,
 
             DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -284,8 +280,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(BufferFormatList) == static_cast<uint8_t>(Render::Format::Count), "New format added without adding to all BufferFormatList.");
 
-        static constexpr uint32_t FormatStrideList[] =
-        {
+        static constexpr uint32_t FormatStrideList[] = {
             0, // DXGI_FORMAT_UNKNOWN,
 
             (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -300,41 +295,41 @@ namespace Gek
             (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_UINT,
             (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_UINT,
             (sizeof(uint32_t) * 1), // DXGI_FORMAT_R10G10B10A2_UINT,
-            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_UINT,
+            (sizeof(uint8_t) * 4),  // DXGI_FORMAT_R8G8B8A8_UINT,
             (sizeof(uint32_t) * 3), // DXGI_FORMAT_R32G32B32_UINT,
             (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32G32_UINT,
             (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_UINT,
-            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_UINT,
+            (sizeof(uint8_t) * 2),  // DXGI_FORMAT_R8G8_UINT,
             (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_UINT,
             (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UINT,
-            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_UINT,
+            (sizeof(uint8_t) * 1),  // DXGI_FORMAT_R8_UINT,
 
             (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_SINT,
             (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_SINT,
-            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_SINT,
+            (sizeof(uint8_t) * 4),  // DXGI_FORMAT_R8G8B8A8_SINT,
             (sizeof(uint32_t) * 3), // DXGI_FORMAT_R32G32B32_SINT,
             (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32G32_SINT,
             (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_SINT,
-            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_SINT,
+            (sizeof(uint8_t) * 2),  // DXGI_FORMAT_R8G8_SINT,
             (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_SINT,
             (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_SINT,
-            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_SINT,
+            (sizeof(uint8_t) * 1),  // DXGI_FORMAT_R8_SINT,
 
             (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_UNORM,
             (sizeof(uint32_t) * 1), // DXGI_FORMAT_R10G10B10A2_UNORM,
-            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_UNORM,
-            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            (sizeof(uint8_t) * 4),  // DXGI_FORMAT_R8G8B8A8_UNORM,
+            (sizeof(uint8_t) * 4),  // DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
             (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_UNORM,
-            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_UNORM,
+            (sizeof(uint8_t) * 2),  // DXGI_FORMAT_R8G8_UNORM,
             (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UNORM,
-            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_UNORM,
+            (sizeof(uint8_t) * 1),  // DXGI_FORMAT_R8_UNORM,
 
             (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_SNORM,
-            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_SNORM,
+            (sizeof(uint8_t) * 4),  // DXGI_FORMAT_R8G8B8A8_SNORM,
             (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_SNORM,
-            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_SNORM,
+            (sizeof(uint8_t) * 2),  // DXGI_FORMAT_R8G8_SNORM,
             (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_SNORM,
-            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_SNORM,
+            (sizeof(uint8_t) * 1),  // DXGI_FORMAT_R8_SNORM,
 
             (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
             (sizeof(uint32_t) * 1), // DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
@@ -345,8 +340,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Render::Format::Count), "New format added without adding to all FormatStrideList.");
 
-        static constexpr D3D11_QUERY QueryList[] =
-        {
+        static constexpr D3D11_QUERY QueryList[] = {
             D3D11_QUERY_EVENT,
             D3D11_QUERY_TIMESTAMP,
             D3D11_QUERY_TIMESTAMP_DISJOINT,
@@ -354,14 +348,12 @@ namespace Gek
 
         static_assert(ARRAYSIZE(QueryList) == static_cast<uint8_t>(Render::Query::Type::Count), "New query type added without adding to QueryList.");
 
-        static constexpr D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
-        {
+        static constexpr D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] = {
             D3D11_DEPTH_WRITE_MASK_ZERO,
             D3D11_DEPTH_WRITE_MASK_ALL,
         };
 
-        static constexpr D3D11_TEXTURE_ADDRESS_MODE AddressModeList[] =
-        {
+        static constexpr D3D11_TEXTURE_ADDRESS_MODE AddressModeList[] = {
             D3D11_TEXTURE_ADDRESS_CLAMP,
             D3D11_TEXTURE_ADDRESS_WRAP,
             D3D11_TEXTURE_ADDRESS_MIRROR,
@@ -369,8 +361,7 @@ namespace Gek
             D3D11_TEXTURE_ADDRESS_BORDER,
         };
 
-        static constexpr D3D11_COMPARISON_FUNC ComparisonFunctionList[] =
-        {
+        static constexpr D3D11_COMPARISON_FUNC ComparisonFunctionList[] = {
             D3D11_COMPARISON_ALWAYS,
             D3D11_COMPARISON_NEVER,
             D3D11_COMPARISON_EQUAL,
@@ -381,8 +372,7 @@ namespace Gek
             D3D11_COMPARISON_GREATER_EQUAL,
         };
 
-        static constexpr D3D11_STENCIL_OP StencilOperationList[] =
-        {
+        static constexpr D3D11_STENCIL_OP StencilOperationList[] = {
             D3D11_STENCIL_OP_ZERO,
             D3D11_STENCIL_OP_KEEP,
             D3D11_STENCIL_OP_REPLACE,
@@ -393,8 +383,7 @@ namespace Gek
             D3D11_STENCIL_OP_DECR_SAT,
         };
 
-        static constexpr D3D11_BLEND BlendSourceList[] =
-        {
+        static constexpr D3D11_BLEND BlendSourceList[] = {
             D3D11_BLEND_ZERO,
             D3D11_BLEND_ONE,
             D3D11_BLEND_BLEND_FACTOR,
@@ -414,8 +403,7 @@ namespace Gek
             D3D11_BLEND_INV_SRC1_ALPHA,
         };
 
-        static constexpr D3D11_BLEND_OP BlendOperationList[] =
-        {
+        static constexpr D3D11_BLEND_OP BlendOperationList[] = {
             D3D11_BLEND_OP_ADD,
             D3D11_BLEND_OP_SUBTRACT,
             D3D11_BLEND_OP_REV_SUBTRACT,
@@ -423,21 +411,18 @@ namespace Gek
             D3D11_BLEND_OP_MAX,
         };
 
-        static constexpr D3D11_FILL_MODE FillModeList[] =
-        {
+        static constexpr D3D11_FILL_MODE FillModeList[] = {
             D3D11_FILL_WIREFRAME,
             D3D11_FILL_SOLID,
         };
 
-        static constexpr D3D11_CULL_MODE CullModeList[] =
-        {
+        static constexpr D3D11_CULL_MODE CullModeList[] = {
             D3D11_CULL_NONE,
             D3D11_CULL_FRONT,
             D3D11_CULL_BACK,
         };
 
-        static constexpr D3D11_FILTER FilterList[] =
-        {
+        static constexpr D3D11_FILTER FilterList[] = {
             D3D11_FILTER_MIN_MAG_MIP_POINT,
             D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
             D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT,
@@ -476,8 +461,7 @@ namespace Gek
             D3D11_FILTER_MAXIMUM_ANISOTROPIC,
         };
 
-        static constexpr D3D11_PRIMITIVE_TOPOLOGY TopologList[] =
-        {
+        static constexpr D3D11_PRIMITIVE_TOPOLOGY TopologList[] = {
             D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
             D3D11_PRIMITIVE_TOPOLOGY_LINELIST,
             D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP,
@@ -485,8 +469,7 @@ namespace Gek
             D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
         };
 
-        static constexpr D3D11_MAP MapList[] =
-        {
+        static constexpr D3D11_MAP MapList[] = {
             D3D11_MAP_READ,
             D3D11_MAP_WRITE,
             D3D11_MAP_READ_WRITE,
@@ -494,8 +477,7 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static constexpr std::string_view SemanticNameList[] =
-        {
+        static constexpr std::string_view SemanticNameList[] = {
             "POSITION",
             "TEXCOORD",
             "TANGENT",
@@ -536,13 +518,19 @@ namespace Gek
         {
             if (!d3dDevice)
             {
-                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: device is null"); }
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: device is null");
+                }
                 return false;
             }
 
             if (format == DXGI_FORMAT_UNKNOWN || width == 0 || height == 0)
             {
-                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: invalid format or dimensions"); }
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: invalid format or dimensions");
+                }
                 return false;
             }
 
@@ -556,13 +544,19 @@ namespace Gek
 
             if (width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
             {
-                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: dimensions exceed D3D11 limit"); }
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: dimensions exceed D3D11 limit");
+                }
                 return false;
             }
 
             if ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D) == 0 || (formatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE) == 0)
             {
-                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: format {} lacks texture2D/sample support", static_cast<int>(format)); }
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: format {} lacks texture2D/sample support", static_cast<int>(format));
+                }
                 return false;
             }
 
@@ -573,25 +567,44 @@ namespace Gek
         {
             switch (vkFormat)
             {
-            case 37:  return DXGI_FORMAT_R8G8B8A8_UNORM;       // VK_FORMAT_R8G8B8A8_UNORM
-            case 43:  return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;  // VK_FORMAT_R8G8B8A8_SRGB
-            case 131: return DXGI_FORMAT_BC1_UNORM;             // VK_FORMAT_BC1_RGB_UNORM_BLOCK
-            case 132: return DXGI_FORMAT_BC1_UNORM_SRGB;        // VK_FORMAT_BC1_RGB_SRGB_BLOCK
-            case 133: return DXGI_FORMAT_BC1_UNORM;             // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
-            case 134: return DXGI_FORMAT_BC1_UNORM_SRGB;        // VK_FORMAT_BC1_RGBA_SRGB_BLOCK
-            case 135: return DXGI_FORMAT_BC2_UNORM;             // VK_FORMAT_BC2_UNORM_BLOCK
-            case 136: return DXGI_FORMAT_BC2_UNORM_SRGB;        // VK_FORMAT_BC2_SRGB_BLOCK
-            case 137: return DXGI_FORMAT_BC3_UNORM;             // VK_FORMAT_BC3_UNORM_BLOCK
-            case 138: return DXGI_FORMAT_BC3_UNORM_SRGB;        // VK_FORMAT_BC3_SRGB_BLOCK
-            case 139: return DXGI_FORMAT_BC4_UNORM;             // VK_FORMAT_BC4_UNORM_BLOCK
-            case 140: return DXGI_FORMAT_BC4_SNORM;             // VK_FORMAT_BC4_SNORM_BLOCK
-            case 141: return DXGI_FORMAT_BC5_UNORM;             // VK_FORMAT_BC5_UNORM_BLOCK
-            case 142: return DXGI_FORMAT_BC5_SNORM;             // VK_FORMAT_BC5_SNORM_BLOCK
-            case 143: return DXGI_FORMAT_BC6H_UF16;             // VK_FORMAT_BC6H_UFLOAT_BLOCK
-            case 144: return DXGI_FORMAT_BC6H_SF16;             // VK_FORMAT_BC6H_SFLOAT_BLOCK
-            case 145: return DXGI_FORMAT_BC7_UNORM;             // VK_FORMAT_BC7_UNORM_BLOCK
-            case 146: return DXGI_FORMAT_BC7_UNORM_SRGB;        // VK_FORMAT_BC7_SRGB_BLOCK
-            default:  return DXGI_FORMAT_UNKNOWN;
+            case 37:
+                return DXGI_FORMAT_R8G8B8A8_UNORM; // VK_FORMAT_R8G8B8A8_UNORM
+            case 43:
+                return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // VK_FORMAT_R8G8B8A8_SRGB
+            case 131:
+                return DXGI_FORMAT_BC1_UNORM; // VK_FORMAT_BC1_RGB_UNORM_BLOCK
+            case 132:
+                return DXGI_FORMAT_BC1_UNORM_SRGB; // VK_FORMAT_BC1_RGB_SRGB_BLOCK
+            case 133:
+                return DXGI_FORMAT_BC1_UNORM; // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
+            case 134:
+                return DXGI_FORMAT_BC1_UNORM_SRGB; // VK_FORMAT_BC1_RGBA_SRGB_BLOCK
+            case 135:
+                return DXGI_FORMAT_BC2_UNORM; // VK_FORMAT_BC2_UNORM_BLOCK
+            case 136:
+                return DXGI_FORMAT_BC2_UNORM_SRGB; // VK_FORMAT_BC2_SRGB_BLOCK
+            case 137:
+                return DXGI_FORMAT_BC3_UNORM; // VK_FORMAT_BC3_UNORM_BLOCK
+            case 138:
+                return DXGI_FORMAT_BC3_UNORM_SRGB; // VK_FORMAT_BC3_SRGB_BLOCK
+            case 139:
+                return DXGI_FORMAT_BC4_UNORM; // VK_FORMAT_BC4_UNORM_BLOCK
+            case 140:
+                return DXGI_FORMAT_BC4_SNORM; // VK_FORMAT_BC4_SNORM_BLOCK
+            case 141:
+                return DXGI_FORMAT_BC5_UNORM; // VK_FORMAT_BC5_UNORM_BLOCK
+            case 142:
+                return DXGI_FORMAT_BC5_SNORM; // VK_FORMAT_BC5_SNORM_BLOCK
+            case 143:
+                return DXGI_FORMAT_BC6H_UF16; // VK_FORMAT_BC6H_UFLOAT_BLOCK
+            case 144:
+                return DXGI_FORMAT_BC6H_SF16; // VK_FORMAT_BC6H_SFLOAT_BLOCK
+            case 145:
+                return DXGI_FORMAT_BC7_UNORM; // VK_FORMAT_BC7_UNORM_BLOCK
+            case 146:
+                return DXGI_FORMAT_BC7_UNORM_SRGB; // VK_FORMAT_BC7_SRGB_BLOCK
+            default:
+                return DXGI_FORMAT_UNKNOWN;
             }
         }
 
@@ -599,53 +612,96 @@ namespace Gek
         {
             switch (format)
             {
-            case DXGI_FORMAT_R32G32B32A32_FLOAT: return Render::Format::R32G32B32A32_FLOAT;
-            case DXGI_FORMAT_R16G16B16A16_FLOAT: return Render::Format::R16G16B16A16_FLOAT;
-            case DXGI_FORMAT_R32G32B32_FLOAT: return Render::Format::R32G32B32_FLOAT;
-            case DXGI_FORMAT_R11G11B10_FLOAT: return Render::Format::R11G11B10_FLOAT;
-            case DXGI_FORMAT_R32G32_FLOAT: return Render::Format::R32G32_FLOAT;
-            case DXGI_FORMAT_R16G16_FLOAT: return Render::Format::R16G16_FLOAT;
-            case DXGI_FORMAT_R32_FLOAT: return Render::Format::R32_FLOAT;
-            case DXGI_FORMAT_R16_FLOAT: return Render::Format::R16_FLOAT;
+            case DXGI_FORMAT_R32G32B32A32_FLOAT:
+                return Render::Format::R32G32B32A32_FLOAT;
+            case DXGI_FORMAT_R16G16B16A16_FLOAT:
+                return Render::Format::R16G16B16A16_FLOAT;
+            case DXGI_FORMAT_R32G32B32_FLOAT:
+                return Render::Format::R32G32B32_FLOAT;
+            case DXGI_FORMAT_R11G11B10_FLOAT:
+                return Render::Format::R11G11B10_FLOAT;
+            case DXGI_FORMAT_R32G32_FLOAT:
+                return Render::Format::R32G32_FLOAT;
+            case DXGI_FORMAT_R16G16_FLOAT:
+                return Render::Format::R16G16_FLOAT;
+            case DXGI_FORMAT_R32_FLOAT:
+                return Render::Format::R32_FLOAT;
+            case DXGI_FORMAT_R16_FLOAT:
+                return Render::Format::R16_FLOAT;
 
-            case DXGI_FORMAT_R32G32B32A32_UINT: return Render::Format::R32G32B32A32_UINT;
-            case DXGI_FORMAT_R16G16B16A16_UINT: return Render::Format::R16G16B16A16_UINT;
-            case DXGI_FORMAT_R10G10B10A2_UINT: return Render::Format::R10G10B10A2_UINT;
-            case DXGI_FORMAT_R8G8B8A8_UINT: return Render::Format::R8G8B8A8_UINT;
-            case DXGI_FORMAT_R32G32B32_UINT: return Render::Format::R32G32B32_UINT;
-            case DXGI_FORMAT_R32G32_UINT: return Render::Format::R32G32_UINT;
-            case DXGI_FORMAT_R16G16_UINT: return Render::Format::R16G16_UINT;
-            case DXGI_FORMAT_R8G8_UINT: return Render::Format::R8G8_UINT;
-            case DXGI_FORMAT_R32_UINT: return Render::Format::R32_UINT;
-            case DXGI_FORMAT_R16_UINT: return Render::Format::R16_UINT;
-            case DXGI_FORMAT_R8_UINT: return Render::Format::R8_UINT;
+            case DXGI_FORMAT_R32G32B32A32_UINT:
+                return Render::Format::R32G32B32A32_UINT;
+            case DXGI_FORMAT_R16G16B16A16_UINT:
+                return Render::Format::R16G16B16A16_UINT;
+            case DXGI_FORMAT_R10G10B10A2_UINT:
+                return Render::Format::R10G10B10A2_UINT;
+            case DXGI_FORMAT_R8G8B8A8_UINT:
+                return Render::Format::R8G8B8A8_UINT;
+            case DXGI_FORMAT_R32G32B32_UINT:
+                return Render::Format::R32G32B32_UINT;
+            case DXGI_FORMAT_R32G32_UINT:
+                return Render::Format::R32G32_UINT;
+            case DXGI_FORMAT_R16G16_UINT:
+                return Render::Format::R16G16_UINT;
+            case DXGI_FORMAT_R8G8_UINT:
+                return Render::Format::R8G8_UINT;
+            case DXGI_FORMAT_R32_UINT:
+                return Render::Format::R32_UINT;
+            case DXGI_FORMAT_R16_UINT:
+                return Render::Format::R16_UINT;
+            case DXGI_FORMAT_R8_UINT:
+                return Render::Format::R8_UINT;
 
-            case DXGI_FORMAT_R32G32B32A32_SINT: return Render::Format::R32G32B32A32_INT;
-            case DXGI_FORMAT_R16G16B16A16_SINT: return Render::Format::R16G16B16A16_INT;
-            case DXGI_FORMAT_R8G8B8A8_SINT: return Render::Format::R8G8B8A8_INT;
-            case DXGI_FORMAT_R32G32B32_SINT: return Render::Format::R32G32B32_INT;
-            case DXGI_FORMAT_R32G32_SINT: return Render::Format::R32G32_INT;
-            case DXGI_FORMAT_R16G16_SINT: return Render::Format::R16G16_INT;
-            case DXGI_FORMAT_R8G8_SINT: return Render::Format::R8G8_INT;
-            case DXGI_FORMAT_R32_SINT: return Render::Format::R32_INT;
-            case DXGI_FORMAT_R16_SINT: return Render::Format::R16_INT;
-            case DXGI_FORMAT_R8_SINT: return Render::Format::R8_INT;
+            case DXGI_FORMAT_R32G32B32A32_SINT:
+                return Render::Format::R32G32B32A32_INT;
+            case DXGI_FORMAT_R16G16B16A16_SINT:
+                return Render::Format::R16G16B16A16_INT;
+            case DXGI_FORMAT_R8G8B8A8_SINT:
+                return Render::Format::R8G8B8A8_INT;
+            case DXGI_FORMAT_R32G32B32_SINT:
+                return Render::Format::R32G32B32_INT;
+            case DXGI_FORMAT_R32G32_SINT:
+                return Render::Format::R32G32_INT;
+            case DXGI_FORMAT_R16G16_SINT:
+                return Render::Format::R16G16_INT;
+            case DXGI_FORMAT_R8G8_SINT:
+                return Render::Format::R8G8_INT;
+            case DXGI_FORMAT_R32_SINT:
+                return Render::Format::R32_INT;
+            case DXGI_FORMAT_R16_SINT:
+                return Render::Format::R16_INT;
+            case DXGI_FORMAT_R8_SINT:
+                return Render::Format::R8_INT;
 
-            case DXGI_FORMAT_R16G16B16A16_UNORM: return Render::Format::R16G16B16A16_UNORM;
-            case DXGI_FORMAT_R10G10B10A2_UNORM: return Render::Format::R10G10B10A2_UNORM;
-            case DXGI_FORMAT_R8G8B8A8_UNORM: return Render::Format::R8G8B8A8_UNORM;
-            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return Render::Format::R8G8B8A8_UNORM_SRGB;
-            case DXGI_FORMAT_R16G16_UNORM: return Render::Format::R16G16_UNORM;
-            case DXGI_FORMAT_R8G8_UNORM: return Render::Format::R8G8_UNORM;
-            case DXGI_FORMAT_R16_UNORM: return Render::Format::R16_UNORM;
-            case DXGI_FORMAT_R8_UNORM: return Render::Format::R8_UNORM;
+            case DXGI_FORMAT_R16G16B16A16_UNORM:
+                return Render::Format::R16G16B16A16_UNORM;
+            case DXGI_FORMAT_R10G10B10A2_UNORM:
+                return Render::Format::R10G10B10A2_UNORM;
+            case DXGI_FORMAT_R8G8B8A8_UNORM:
+                return Render::Format::R8G8B8A8_UNORM;
+            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+                return Render::Format::R8G8B8A8_UNORM_SRGB;
+            case DXGI_FORMAT_R16G16_UNORM:
+                return Render::Format::R16G16_UNORM;
+            case DXGI_FORMAT_R8G8_UNORM:
+                return Render::Format::R8G8_UNORM;
+            case DXGI_FORMAT_R16_UNORM:
+                return Render::Format::R16_UNORM;
+            case DXGI_FORMAT_R8_UNORM:
+                return Render::Format::R8_UNORM;
 
-            case DXGI_FORMAT_R16G16B16A16_SNORM: return Render::Format::R16G16B16A16_NORM;
-            case DXGI_FORMAT_R8G8B8A8_SNORM: return Render::Format::R8G8B8A8_NORM;
-            case DXGI_FORMAT_R16G16_SNORM: return Render::Format::R16G16_NORM;
-            case DXGI_FORMAT_R8G8_SNORM: return Render::Format::R8G8_NORM;
-            case DXGI_FORMAT_R16_SNORM: return Render::Format::R16_NORM;
-            case DXGI_FORMAT_R8_SNORM: return Render::Format::R8_NORM;
+            case DXGI_FORMAT_R16G16B16A16_SNORM:
+                return Render::Format::R16G16B16A16_NORM;
+            case DXGI_FORMAT_R8G8B8A8_SNORM:
+                return Render::Format::R8G8B8A8_NORM;
+            case DXGI_FORMAT_R16G16_SNORM:
+                return Render::Format::R16G16_NORM;
+            case DXGI_FORMAT_R8G8_SNORM:
+                return Render::Format::R8G8_NORM;
+            case DXGI_FORMAT_R16_SNORM:
+                return Render::Format::R16_NORM;
+            case DXGI_FORMAT_R8_SNORM:
+                return Render::Format::R8_NORM;
             };
 
             return Render::Format::Unknown;
@@ -686,7 +742,7 @@ namespace Gek
                 }
             }
 
-            TYPE * const * const get(void) const
+            TYPE *const *const get(void) const
             {
                 return objectList.data();
             }
@@ -695,10 +751,10 @@ namespace Gek
         template <typename TYPE>
         class BaseObject
         {
-        public:
-            TYPE * d3dObject = nullptr;
+          public:
+            TYPE *d3dObject = nullptr;
 
-        public:
+          public:
             template <typename TYPE>
             BaseObject(CComPtr<TYPE> &d3dSource)
             {
@@ -728,10 +784,10 @@ namespace Gek
         class BaseVideoObject
             : public BASE
         {
-        public:
-            TYPE * d3dObject = nullptr;
+          public:
+            TYPE *d3dObject = nullptr;
 
-        public:
+          public:
             template <typename SOURCE>
             BaseVideoObject(CComPtr<SOURCE> &d3dSource)
             {
@@ -758,11 +814,11 @@ namespace Gek
         class DescribedVideoObject
             : public BASE
         {
-        public:
-            TYPE * d3dObject = nullptr;
+          public:
+            TYPE *d3dObject = nullptr;
             typename BASE::Description description;
 
-        public:
+          public:
             template <typename SOURCE>
             DescribedVideoObject(CComPtr<SOURCE> &d3dSource, typename BASE::Description const &description)
                 : description(description)
@@ -806,10 +862,10 @@ namespace Gek
         class Query
             : public Render::Query
         {
-        public:
-            ID3D11Query * d3dObject = nullptr;
+          public:
+            ID3D11Query *d3dObject = nullptr;
 
-        public:
+          public:
             Query(CComPtr<ID3D11Query> &d3dSource)
             {
                 InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dSource.p);
@@ -832,24 +888,21 @@ namespace Gek
         };
 
         class Buffer
-            : public Render::Buffer
-            , public Resource
-            , public ShaderResourceView
-            , public UnorderedAccessView
+            : public Render::Buffer,
+              public Resource,
+              public ShaderResourceView,
+              public UnorderedAccessView
         {
-        public:
-            ID3D11Buffer * d3dObject = nullptr;
+          public:
+            ID3D11Buffer *d3dObject = nullptr;
             Render::Buffer::Description description;
 
-        public:
+          public:
             Buffer(CComPtr<ID3D11Buffer> &d3dBuffer,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
-                const Render::Buffer::Description &description)
-                : Resource(d3dBuffer)
-                , ShaderResourceView(d3dShaderResourceView)
-                , UnorderedAccessView(d3dUnorderedAccessView)
-                , description(description)
+                   CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                   CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                   const Render::Buffer::Description &description)
+                : Resource(d3dBuffer), ShaderResourceView(d3dShaderResourceView), UnorderedAccessView(d3dUnorderedAccessView), description(description)
             {
                 InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dBuffer);
                 d3dObject->AddRef();
@@ -878,10 +931,10 @@ namespace Gek
 
         class BaseTexture
         {
-        public:
+          public:
             Render::Texture::Description description;
 
-        public:
+          public:
             BaseTexture(const Render::Texture::Description &description)
                 : description(description)
             {
@@ -889,10 +942,10 @@ namespace Gek
         };
 
         class Texture
-            : virtual public Render::Texture
-            , public BaseTexture
+            : virtual public Render::Texture,
+              public BaseTexture
         {
-        public:
+          public:
             Texture(const Render::Texture::Description &description)
                 : BaseTexture(description)
             {
@@ -914,51 +967,45 @@ namespace Gek
         };
 
         class ViewTexture
-            : public Texture
-            , public Resource
-            , public ShaderResourceView
+            : public Texture,
+              public Resource,
+              public ShaderResourceView
         {
-        public:
+          public:
             ViewTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                const Render::Texture::Description &description)
-                : Texture(description)
-                , Resource(d3dResource)
-                , ShaderResourceView(d3dShaderResourceView)
+                        CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                        const Render::Texture::Description &description)
+                : Texture(description), Resource(d3dResource), ShaderResourceView(d3dShaderResourceView)
             {
             }
         };
 
         class UnorderedViewTexture
-            : public Texture
-            , public Resource
-            , public ShaderResourceView
-            , public UnorderedAccessView
+            : public Texture,
+              public Resource,
+              public ShaderResourceView,
+              public UnorderedAccessView
         {
-        public:
+          public:
             UnorderedViewTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
-                const Render::Texture::Description &description)
-                : Texture(description)
-                , Resource(d3dResource)
-                , ShaderResourceView(d3dShaderResourceView)
-                , UnorderedAccessView(d3dUnorderedAccessView)
+                                 CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                                 CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                                 const Render::Texture::Description &description)
+                : Texture(description), Resource(d3dResource), ShaderResourceView(d3dShaderResourceView), UnorderedAccessView(d3dUnorderedAccessView)
             {
             }
         };
 
         class Target
-            : virtual public Render::Target
-            , public BaseTexture
+            : virtual public Render::Target,
+              public BaseTexture
         {
-        public:
+          public:
             Render::ViewPort viewPort;
 
-        public:
+          public:
             Target(const Render::Texture::Description &description)
-                : BaseTexture(description)
-                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
+                : BaseTexture(description), viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
             {
             }
 
@@ -984,17 +1031,15 @@ namespace Gek
         };
 
         class TargetTexture
-            : public Target
-            , public Resource
-            , public RenderTargetView
+            : public Target,
+              public Resource,
+              public RenderTargetView
         {
-        public:
+          public:
             TargetTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
-                const Render::Texture::Description &description)
-                : Target(description)
-                , Resource(d3dResource)
-                , RenderTargetView(d3dRenderTargetView)
+                          CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                          const Render::Texture::Description &description)
+                : Target(description), Resource(d3dResource), RenderTargetView(d3dRenderTargetView)
             {
             }
 
@@ -1002,16 +1047,15 @@ namespace Gek
         };
 
         class TargetViewTexture
-            : virtual public TargetTexture
-            , public ShaderResourceView
+            : virtual public TargetTexture,
+              public ShaderResourceView
         {
-        public:
+          public:
             TargetViewTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                const Render::Texture::Description &description)
-                : TargetTexture(d3dResource, d3dRenderTargetView, description)
-                , ShaderResourceView(d3dShaderResourceView)
+                              CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                              CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                              const Render::Texture::Description &description)
+                : TargetTexture(d3dResource, d3dRenderTargetView, description), ShaderResourceView(d3dShaderResourceView)
             {
             }
 
@@ -1019,19 +1063,17 @@ namespace Gek
         };
 
         class UnorderedTargetViewTexture
-            : virtual public TargetTexture
-            , public ShaderResourceView
-            , public UnorderedAccessView
+            : virtual public TargetTexture,
+              public ShaderResourceView,
+              public UnorderedAccessView
         {
-        public:
+          public:
             UnorderedTargetViewTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
-                const Render::Texture::Description &description)
-                : TargetTexture(d3dResource, d3dRenderTargetView, description)
-                , ShaderResourceView(d3dShaderResourceView)
-                , UnorderedAccessView(d3dUnorderedAccessView)
+                                       CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                                       CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                                       CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                                       const Render::Texture::Description &description)
+                : TargetTexture(d3dResource, d3dRenderTargetView, description), ShaderResourceView(d3dShaderResourceView), UnorderedAccessView(d3dUnorderedAccessView)
             {
             }
 
@@ -1039,24 +1081,21 @@ namespace Gek
         };
 
         class DepthTexture
-            : public Texture
-            , public Resource
-            , public ShaderResourceView
-            , public UnorderedAccessView
+            : public Texture,
+              public Resource,
+              public ShaderResourceView,
+              public UnorderedAccessView
         {
-        public:
-            ID3D11DepthStencilView * d3dObject = nullptr;
+          public:
+            ID3D11DepthStencilView *d3dObject = nullptr;
 
-        public:
+          public:
             DepthTexture(CComPtr<ID3D11Resource> &d3dResource,
-                CComPtr<ID3D11DepthStencilView> &d3dDepthStencilView,
-                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
-                const Render::Texture::Description &description)
-                : Texture(description)
-                , Resource(d3dResource)
-                , ShaderResourceView(d3dShaderResourceView)
-                , UnorderedAccessView(d3dUnorderedAccessView)
+                         CComPtr<ID3D11DepthStencilView> &d3dDepthStencilView,
+                         CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                         CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                         const Render::Texture::Description &description)
+                : Texture(description), Resource(d3dResource), ShaderResourceView(d3dShaderResourceView), UnorderedAccessView(d3dUnorderedAccessView)
             {
                 InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dDepthStencilView.p);
                 d3dObject->AddRef();
@@ -1075,11 +1114,11 @@ namespace Gek
         class Program
             : public Render::Program
         {
-        public:
+          public:
             Render::Program::Information information;
-            D3DTYPE * d3dObject = nullptr;
+            D3DTYPE *d3dObject = nullptr;
 
-        public:
+          public:
             template <typename SOURCE>
             Program(CComPtr<SOURCE> &d3dSource, Render::Program::Information information)
                 : information(information)
@@ -1115,7 +1154,7 @@ namespace Gek
         using PixelProgram = Program<ID3D11PixelShader>;
 
         GEK_CONTEXT_USER(Device, Window::Device *, Render::Device::Description)
-            , public Render::Debug::Device
+        , public Render::Debug::Device
         {
             class Context
                 : public Render::Device::Context
@@ -1123,10 +1162,10 @@ namespace Gek
                 class ComputePipeline
                     : public Render::Device::Context::Pipeline
                 {
-                private:
-                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+                  private:
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
-                public:
+                  public:
                     ComputePipeline(ID3D11DeviceContext *d3dDeviceContext)
                         : d3dDeviceContext(d3dDeviceContext)
                     {
@@ -1218,14 +1257,13 @@ namespace Gek
                 class VertexPipeline
                     : public Render::Device::Context::Pipeline
                 {
-                private:
+                  private:
                     Context *context = nullptr;
-                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
-                public:
+                  public:
                     VertexPipeline(Context *context)
-                        : context(context)
-                        , d3dDeviceContext(context->d3dDeviceContext)
+                        : context(context), d3dDeviceContext(context->d3dDeviceContext)
                     {
                         assert(d3dDeviceContext);
                     }
@@ -1317,10 +1355,10 @@ namespace Gek
                 class GeometryPipeline
                     : public Render::Device::Context::Pipeline
                 {
-                private:
-                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+                  private:
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
-                public:
+                  public:
                     GeometryPipeline(ID3D11DeviceContext *d3dDeviceContext)
                         : d3dDeviceContext(d3dDeviceContext)
                     {
@@ -1405,14 +1443,13 @@ namespace Gek
                 class PixelPipeline
                     : public Render::Device::Context::Pipeline
                 {
-                private:
+                  private:
                     Context *context = nullptr;
-                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
-                public:
+                  public:
                     PixelPipeline(Context *context)
-                        : context(context)
-                        , d3dDeviceContext(context->d3dDeviceContext)
+                        : context(context), d3dDeviceContext(context->d3dDeviceContext)
                     {
                         assert(d3dDeviceContext);
                     }
@@ -1508,7 +1545,7 @@ namespace Gek
                     }
                 };
 
-            public:
+              public:
                 Device *pipelineDevice = nullptr;
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 PipelinePtr computeSystemHandler;
@@ -1525,14 +1562,9 @@ namespace Gek
                 Render::ComparisonFunction currentDepthCompare = Render::ComparisonFunction::Always;
                 bool hasCurrentDepthState = false;
 
-            public:
+              public:
                 Context(Device *pipelineDevice, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
-                    : pipelineDevice(pipelineDevice)
-                    , d3dDeviceContext(d3dDeviceContext)
-                    , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
-                    , vertexSystemHandler(new VertexPipeline(this))
-                    , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
-                    , pixelSystemHandler(new PixelPipeline(this))
+                    : pipelineDevice(pipelineDevice), d3dDeviceContext(d3dDeviceContext), computeSystemHandler(new ComputePipeline(d3dDeviceContext)), vertexSystemHandler(new VertexPipeline(this)), geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext)), pixelSystemHandler(new PixelPipeline(this))
                 {
                     assert(d3dDeviceContext);
                     assert(computeSystemHandler);
@@ -1542,28 +1574,28 @@ namespace Gek
                 }
 
                 // Render::Context
-                Pipeline * const computePipeline(void)
+                Pipeline *const computePipeline(void)
                 {
                     assert(computeSystemHandler);
 
                     return computeSystemHandler.get();
                 }
 
-                Pipeline * const vertexPipeline(void)
+                Pipeline *const vertexPipeline(void)
                 {
                     assert(vertexSystemHandler);
 
                     return vertexSystemHandler.get();
                 }
 
-                Pipeline * const geometryPipeline(void)
+                Pipeline *const geometryPipeline(void)
                 {
                     assert(geomtrySystemHandler);
 
                     return geomtrySystemHandler.get();
                 }
 
-                Pipeline * const pixelPipeline(void)
+                Pipeline *const pixelPipeline(void)
                 {
                     assert(pixelSystemHandler);
 
@@ -1713,9 +1745,9 @@ namespace Gek
                     assert(depthBuffer);
 
                     d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer),
-                        ((flags & Render::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
-                        (flags & Render::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
-                        clearDepth, clearStencil);
+                                                            ((flags & Render::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
+                                                             (flags & Render::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
+                                                            clearDepth, clearStencil);
                 }
 
                 void clearIndexBuffer(void)
@@ -1945,8 +1977,8 @@ namespace Gek
                 }
             };
 
-        public:
-            Window::Device * window = nullptr;
+          public:
+            Window::Device *window = nullptr;
             bool isChildWindow = false;
 
             CComPtr<ID3D11Device> d3dDevice;
@@ -1958,11 +1990,9 @@ namespace Gek
             uint64_t sampleFrameIndex = 0;
             bool loggedFirstIndexedStateThisFrame = false;
 
-        public:
-            Device(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
-                : ContextRegistration(context)
-                , window(window)
-                , isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0))) != nullptr)
+          public:
+            Device(Gek::Context * context, Window::Device * window, Render::Device::Description deviceDescription)
+                : ContextRegistration(context), window(window), isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0))) != nullptr)
             {
                 assert(window);
 
@@ -1980,8 +2010,7 @@ namespace Gek
                 flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-                D3D_FEATURE_LEVEL featureLevelList[] =
-                {
+                D3D_FEATURE_LEVEL featureLevelList[] = {
                     D3D_FEATURE_LEVEL_11_0,
                 };
 
@@ -2028,13 +2057,12 @@ namespace Gek
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
                 CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
-                //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-                //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-                //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+                // d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+                // d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+                // d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
                 defaultContext = std::make_unique<Context>(this, d3dDeviceContext);
-
             }
 
             ~Device(void)
@@ -2051,7 +2079,7 @@ namespace Gek
             }
 
             // Render::Debug::Device
-            void * getDevice(void)
+            void *getDevice(void)
             {
                 return d3dDevice.p;
             }
@@ -2076,24 +2104,24 @@ namespace Gek
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
                         if (![&](void) -> bool
-                        {
-                            for (auto &checkMode : displayModeList)
                             {
-                                if (memcmp(&checkMode, &displayMode, sizeof(Render::DisplayMode)) == 0)
+                                for (auto &checkMode : displayModeList)
                                 {
-                                    return true;
+                                    if (memcmp(&checkMode, &displayMode, sizeof(Render::DisplayMode)) == 0)
+                                    {
+                                        return true;
+                                    }
                                 }
-                            }
 
-                            return false;
-                        }())
+                                return false;
+                            }())
                         {
                             displayModeList.push_back(displayMode);
                         }
                     }
 
                     std::sort(std::execution::par, std::begin(displayModeList), std::end(displayModeList), [](const Render::DisplayMode &left, const Render::DisplayMode &right) -> bool
-                    {
+                              {
                         if (left.width < right.width)
                         {
                             return true;
@@ -2114,8 +2142,7 @@ namespace Gek
                             return false;
                         }
 
-                        return false;
-                    });
+                        return false; });
                 }
 
                 return displayModeList;
@@ -2180,7 +2207,7 @@ namespace Gek
             }
 
             std::mutex backBufferMutex;
-            Render::Target * const getBackBuffer(void)
+            Render::Target *const getBackBuffer(void)
             {
                 if (!backBuffer)
                 {
@@ -2223,7 +2250,7 @@ namespace Gek
                 return backBuffer.get();
             }
 
-            Render::Device::Context * const getDefaultContext(void)
+            Render::Device::Context *const getDefaultContext(void)
             {
                 assert(defaultContext);
 
@@ -2552,7 +2579,7 @@ namespace Gek
                 return std::make_unique<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, description);
             }
 
-            bool mapBuffer(Render::Buffer *buffer, void *&data, Render::Map mapping)
+            bool mapBuffer(Render::Buffer * buffer, void *&data, Render::Map mapping)
             {
                 assert(d3dDeviceContext);
 
@@ -2572,7 +2599,7 @@ namespace Gek
                 return false;
             }
 
-            void unmapBuffer(Render::Buffer *buffer)
+            void unmapBuffer(Render::Buffer * buffer)
             {
                 assert(d3dDeviceContext);
                 assert(buffer);
@@ -2580,7 +2607,7 @@ namespace Gek
                 d3dDeviceContext->Unmap(getObject<Buffer>(buffer), 0);
             }
 
-            void updateResource(Render::Object *object, const void *data)
+            void updateResource(Render::Object * object, const void *data)
             {
                 assert(d3dDeviceContext);
                 assert(object);
@@ -2589,7 +2616,7 @@ namespace Gek
                 d3dDeviceContext->UpdateSubresource(getObject<Resource>(object), 0, nullptr, data, 0, 0);
             }
 
-            void copyResource(Render::Object *destination, Render::Object *source)
+            void copyResource(Render::Object * destination, Render::Object * source)
             {
                 assert(d3dDeviceContext);
                 assert(destination);
@@ -2821,17 +2848,17 @@ namespace Gek
             class Include
                 : public ID3DInclude
             {
-            private:
+              private:
                 using IncludeFunction = std::function<bool(Render::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size)>;
                 IncludeFunction function;
 
-            public:
+              public:
                 Include(IncludeFunction &&function)
                     : function(std::move(function))
                 {
                 }
 
-                // ID3DInclude 
+                // ID3DInclude
                 ULONG AddRef(void)
                 {
                     return 1;
@@ -2858,7 +2885,7 @@ namespace Gek
                 }
             };
 
-			bool compileProgram(Render::Program::Information &information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr)
+            bool compileProgram(Render::Program::Information & information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr)
             {
                 assert(d3dDevice);
 
@@ -2868,12 +2895,23 @@ namespace Gek
                 }
 
                 // Map program type to Slang SM5.0 shader model profiles for DXBC output.
-                static const std::unordered_map<Render::Program::Type, std::string_view> D3DTypeMap =
-                {
-                    { Render::Program::Type::Compute, "cs_5_0", },
-                    { Render::Program::Type::Geometry, "gs_5_0", },
-                    { Render::Program::Type::Vertex, "vs_5_0", },
-                    { Render::Program::Type::Pixel, "ps_5_0", },
+                static const std::unordered_map<Render::Program::Type, std::string_view> D3DTypeMap = {
+                    {
+                        Render::Program::Type::Compute,
+                        "cs_5_0",
+                    },
+                    {
+                        Render::Program::Type::Geometry,
+                        "gs_5_0",
+                    },
+                    {
+                        Render::Program::Type::Vertex,
+                        "vs_5_0",
+                    },
+                    {
+                        Render::Program::Type::Pixel,
+                        "ps_5_0",
+                    },
                 };
 
                 static const std::vector<uint8_t> EmptyBuffer;
@@ -3065,8 +3103,8 @@ namespace Gek
                         {
                             getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", information.name, information.entryFunction);
 
-                            slang::IBlob* outDiagnosticsRaw = nullptr;
-                            slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.data(), information.shaderPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
+                            slang::IBlob *outDiagnosticsRaw = nullptr;
+                            slang::IModule *slangModule = session->loadModuleFromSourceString(information.name.data(), information.shaderPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                             Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
 
                             if (outDiagnostics)
@@ -3085,12 +3123,12 @@ namespace Gek
                                 {
                                     getContext()->log(Gek::Context::Debug, "Entry point found; composing program.");
 
-                                    std::vector<slang::IComponentType*> componentTypes;
+                                    std::vector<slang::IComponentType *> componentTypes;
                                     componentTypes.push_back(slangModule);
                                     componentTypes.push_back(entryPoint);
 
                                     Slang::ComPtr<slang::IComponentType> composedProgram;
-                                    slang::IBlob* compositeDiagnosticsRaw = nullptr;
+                                    slang::IBlob *compositeDiagnosticsRaw = nullptr;
                                     session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef(), &compositeDiagnosticsRaw);
                                     Slang::ComPtr<slang::IBlob> compositeDiagnostics(compositeDiagnosticsRaw);
                                     if (composedProgram)
@@ -3138,7 +3176,7 @@ namespace Gek
             }
 
             template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
-            Render::ProgramPtr createProgram(Render::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
+            Render::ProgramPtr createProgram(Render::Program::Information const &information, RETURN (__stdcall CLASS::*function)(PARAMETERS...))
             {
                 assert(function);
 
@@ -3682,7 +3720,7 @@ namespace Gek
                 return description;
             }
 
-            void executeCommandList(Render::Object *commandList)
+            void executeCommandList(Render::Object * commandList)
             {
                 assert(d3dDeviceContext);
                 assert(commandList);
@@ -3711,5 +3749,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Device);
-    }; // Render::Implementation
+    }; // namespace Render::Implementation
 }; // namespace Gek

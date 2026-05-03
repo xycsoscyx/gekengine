@@ -1,5 +1,5 @@
-#include "API/Engine/Visualizer.hpp"
 #include "Passes.hpp"
+#include "API/Engine/Visualizer.hpp"
 
 namespace Gek
 {
@@ -10,9 +10,9 @@ namespace Gek
         {
         case ClearType::Float:
         case ClearType::Target:
-			floats.set(String::Convert(data, 0.0f));
+            floats.set(String::Convert(data, 0.0f));
             break;
-            
+
         case ClearType::UInt:
             integers.set(String::Convert(data, 0U));
             break;
@@ -95,7 +95,7 @@ namespace Gek
             return "int"s;
         };
 
-		return String::Empty;
+        return String::Empty;
     }
 
     std::string getFormatSemantic(Render::Format format, uint32_t count)
@@ -111,22 +111,21 @@ namespace Gek
 
     ClearType getClearType(std::string const &string)
     {
-		static const std::unordered_map<std::string, ClearType> data =
-		{
-			{ "target"s, ClearType::Target },
-			{ "float"s, ClearType::Float },
-			{ "uint"s, ClearType::UInt },
-		};
+        static const std::unordered_map<std::string, ClearType> data = {
+            { "target"s, ClearType::Target },
+            { "float"s, ClearType::Float },
+            { "uint"s, ClearType::UInt },
+        };
 
-		auto result = data.find(String::GetLower(string));
-		return (result == std::end(data) ? ClearType::Unknown : result->second);
+        auto result = data.find(String::GetLower(string));
+        return (result == std::end(data) ? ClearType::Unknown : result->second);
     }
 
     uint32_t getTextureLoadFlags(std::string const &loadFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-		std::vector<std::string> flagList(String::Split(String::GetLower(loadFlags), ','));
+        std::vector<std::string> flagList(String::Split(String::GetLower(loadFlags), ','));
         for (auto const &flag : flagList)
         {
             if (flag == "srgb"s)

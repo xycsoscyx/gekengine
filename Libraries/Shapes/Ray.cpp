@@ -1,6 +1,6 @@
 #include "GEK/Shapes/Ray.hpp"
-#include "GEK/Shapes/OrientedBox.hpp"
 #include "GEK/Math/Common.hpp"
+#include "GEK/Shapes/OrientedBox.hpp"
 #include <algorithm>
 
 namespace Gek
@@ -12,18 +12,16 @@ namespace Gek
         }
 
         Ray::Ray(Math::Float3 const &origin, Math::Float3 const &normal) noexcept
-            : origin(origin)
-            , normal(normal)
+            : origin(origin), normal(normal)
         {
         }
 
         Ray::Ray(Ray const &ray) noexcept
-            : origin(ray.origin)
-            , normal(ray.normal)
+            : origin(ray.origin), normal(ray.normal)
         {
         }
 
-        Ray &Ray::operator = (Ray const &ray) noexcept
+        Ray &Ray::operator=(Ray const &ray) noexcept
         {
             origin = ray.origin;
             normal = ray.normal;

@@ -1,22 +1,22 @@
-﻿#include "GEK/Math/Common.hpp"
-#include "GEK/Math/Quaternion.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/GUI/Utilities.hpp"
-#include "GEK/Engine/Core.hpp"
+﻿#include "API/Engine/Editor.hpp"
 #include "API/Engine/Component.hpp"
 #include "API/Engine/ComponentMixin.hpp"
 #include "API/Engine/Entity.hpp"
 #include "API/Engine/Processor.hpp"
-#include "API/Engine/Editor.hpp"
 #include "API/Engine/Visualizer.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Name.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/Population.hpp"
+#include "GEK/Engine/Resources.hpp"
+#include "GEK/GUI/Utilities.hpp"
+#include "GEK/Math/Common.hpp"
+#include "GEK/Math/Quaternion.hpp"
 #include "GEK/Model/Base.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
 #include <set>
 #include <vector>
 
@@ -25,8 +25,7 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
-            , virtual public Plugin::Processor
-            , virtual public Edit::Events
+        , virtual public Plugin::Processor, virtual public Edit::Events
         {
             enum AxisSelection
             {
@@ -36,7 +35,7 @@ namespace Gek
                 Z,
             };
 
-        private:
+          private:
             Plugin::Core *core = nullptr;
             Edit::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
@@ -75,13 +74,9 @@ namespace Gek
 
             bool sceneModified = false;
 
-        public:
-            Editor(Context *context, Plugin::Core *core)
-                : ContextRegistration(context)
-                , core(core)
-                , population(dynamic_cast<Engine::Core *>(core)->getFullPopulation())
-                , resources(dynamic_cast<Engine::Core *>(core)->getFullResources())
-                , renderer(core->getVisualizer())
+          public:
+            Editor(Context * context, Plugin::Core * core)
+                : ContextRegistration(context), core(core), population(dynamic_cast<Engine::Core *>(core)->getFullPopulation()), resources(dynamic_cast<Engine::Core *>(core)->getFullResources()), renderer(core->getVisualizer())
             {
                 assert(population);
                 assert(core);
@@ -91,13 +86,13 @@ namespace Gek
                 core->onInitialized.connect(this, &Editor::onInitialized);
                 core->canShutdown.connect(this, &Editor::canShutdown);
                 core->onShutdown.connect(this, &Editor::onShutdown);
-				population->onReset.connect(this, &Editor::onReset);
-				population->onAction.connect(this, &Editor::onAction);
+                population->onReset.connect(this, &Editor::onReset);
+                population->onAction.connect(this, &Editor::onAction);
                 population->onUpdate[90].connect(this, &Editor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface);
             }
 
-            void modify(Plugin::Entity* entity, Hash type)
+            void modify(Plugin::Entity * entity, Hash type)
             {
                 onModified(entity, type);
                 sceneModified = true;
@@ -113,13 +108,12 @@ namespace Gek
             void onInitialized(void)
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
-                {
+                                     {
                     auto check = dynamic_cast<Gek::Processor::Model *>(processor);
                     if (check)
                     {
                         modelProcessor = check;
-                    }
-                });
+                    } });
             }
 
             void canShutdown(bool &shutdown)
@@ -136,7 +130,7 @@ namespace Gek
             }
 
             // Renderer
-            bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
+            bool isObjectInFrustum(Shapes::Frustum & frustum, Shapes::OrientedBox & orientedBox)
             {
                 for (auto &plane : frustum.planeList)
                 {
@@ -158,7 +152,7 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-				if (ImGui::Begin("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+                if (ImGui::Begin("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
@@ -207,17 +201,17 @@ namespace Gek
                         auto gizmoDrawList = ImGui::GetWindowDrawList();
                         ImGui::End();
 
-                        //gizmoDrawList->AddCallback()
+                        // gizmoDrawList->AddCallback()
                         ImGuizmo::Enable(true);
                         ImGuizmo::BeginFrame();
 
                         auto size = ImGui::GetItemRectSize();
                         auto origin = ImGui::GetItemRectMin();
-                        
+
                         ImGuizmo::SetDrawlist();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
 
-                        //ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
+                        // ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
 
                         auto &registry = population->getRegistry();
                         std::vector<Plugin::Entity *> registrySnapshot;
@@ -231,12 +225,12 @@ namespace Gek
                         {
                             if (entity->hasComponent<Components::Transform>())
                             {
-                                auto& transformComponent = entity->getComponent<Components::Transform>();
+                                auto &transformComponent = entity->getComponent<Components::Transform>();
 
                                 bool showCube = true;
                                 if (entity->hasComponent<Components::Model>())
                                 {
-                                    auto& modelComponent = entity->getComponent<Components::Model>();
+                                    auto &modelComponent = entity->getComponent<Components::Model>();
                                     showCube = modelComponent.name.empty();
                                 }
 
@@ -291,32 +285,11 @@ namespace Gek
                                 auto orientedBox = Shapes::OrientedBox(matrix, boundingBox);
                                 if (isObjectInFrustum(projectedMatrix, orientedBox))
                                 {
-                                    static std::map<ImGuizmo::OPERATION, std::map<AxisSelection, ImGuizmo::OPERATION>> lockedOperations =
-                                    {
-                                        { ImGuizmo::OPERATION::TRANSLATE, {
-                                            { AxisSelection::ALL, ImGuizmo::OPERATION::TRANSLATE },
-                                            { AxisSelection::X, ImGuizmo::OPERATION::TRANSLATE_X },
-                                            { AxisSelection::Y, ImGuizmo::OPERATION::TRANSLATE_Y },
-                                            { AxisSelection::Z, ImGuizmo::OPERATION::TRANSLATE_Z }
-                                        } },
-                                        { ImGuizmo::OPERATION::ROTATE, {
-                                            { AxisSelection::ALL, ImGuizmo::OPERATION::ROTATE },
-                                            { AxisSelection::X, ImGuizmo::OPERATION::ROTATE_X },
-                                            { AxisSelection::Y, ImGuizmo::OPERATION::ROTATE_Y },
-                                            { AxisSelection::Z, ImGuizmo::OPERATION::ROTATE_Z }
-                                        } },
-                                        { ImGuizmo::OPERATION::SCALE, {
-                                            { AxisSelection::ALL, ImGuizmo::OPERATION::SCALE },
-                                            { AxisSelection::X, ImGuizmo::OPERATION::SCALE_X },
-                                            { AxisSelection::Y, ImGuizmo::OPERATION::SCALE_Y },
-                                            { AxisSelection::Z, ImGuizmo::OPERATION::SCALE_Z }
-                                        } },
-                                        { ImGuizmo::OPERATION::BOUNDS, {
-                                            { AxisSelection::ALL, ImGuizmo::OPERATION::BOUNDS },
-                                            { AxisSelection::X, ImGuizmo::OPERATION::BOUNDS },
-                                            { AxisSelection::Y, ImGuizmo::OPERATION::BOUNDS },
-                                            { AxisSelection::Z, ImGuizmo::OPERATION::BOUNDS }
-                                        } },
+                                    static std::map<ImGuizmo::OPERATION, std::map<AxisSelection, ImGuizmo::OPERATION>> lockedOperations = {
+                                        { ImGuizmo::OPERATION::TRANSLATE, { { AxisSelection::ALL, ImGuizmo::OPERATION::TRANSLATE }, { AxisSelection::X, ImGuizmo::OPERATION::TRANSLATE_X }, { AxisSelection::Y, ImGuizmo::OPERATION::TRANSLATE_Y }, { AxisSelection::Z, ImGuizmo::OPERATION::TRANSLATE_Z } } },
+                                        { ImGuizmo::OPERATION::ROTATE, { { AxisSelection::ALL, ImGuizmo::OPERATION::ROTATE }, { AxisSelection::X, ImGuizmo::OPERATION::ROTATE_X }, { AxisSelection::Y, ImGuizmo::OPERATION::ROTATE_Y }, { AxisSelection::Z, ImGuizmo::OPERATION::ROTATE_Z } } },
+                                        { ImGuizmo::OPERATION::SCALE, { { AxisSelection::ALL, ImGuizmo::OPERATION::SCALE }, { AxisSelection::X, ImGuizmo::OPERATION::SCALE_X }, { AxisSelection::Y, ImGuizmo::OPERATION::SCALE_Y }, { AxisSelection::Z, ImGuizmo::OPERATION::SCALE_Z } } },
+                                        { ImGuizmo::OPERATION::BOUNDS, { { AxisSelection::ALL, ImGuizmo::OPERATION::BOUNDS }, { AxisSelection::X, ImGuizmo::OPERATION::BOUNDS }, { AxisSelection::Y, ImGuizmo::OPERATION::BOUNDS }, { AxisSelection::Z, ImGuizmo::OPERATION::BOUNDS } } },
                                     };
 
                                     ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, lockedOperations[currentGizmoOperation][currentAxis], currentGizmoAlignment, matrix.data, nullptr, snapData, boundingBox.minimum.data);
@@ -342,7 +315,7 @@ namespace Gek
                                             break;
                                         };
 
-										modify(selectedEntity, Components::Transform::GetIdentifier());
+                                        modify(selectedEntity, Components::Transform::GetIdentifier());
                                     }
                                 }
                             }
@@ -359,7 +332,7 @@ namespace Gek
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                if (ImGui::Begin("Population", &showPopulationDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                if (ImGui::Begin("Population", &showPopulationDock)) //, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
@@ -426,7 +399,6 @@ namespace Gek
                                 definition["Transform"]["position"] = { 0.0f, 0.0f, 0.0f };
                                 definition["Transform"]["rotation"] = { 0.0f, 0.0f, 0.0f, 1.0f };
                                 definition["Transform"]["scale"] = { 1.0f, 1.0f, 1.0f };
-
                             }
 
                             selectedEntity = population->createEntity(definition);
@@ -445,7 +417,7 @@ namespace Gek
 
                     ImGui::PopStyleVar();
 
-                    std::set<Plugin::Entity*> deleteEntitySet;
+                    std::set<Plugin::Entity *> deleteEntitySet;
                     auto &registry = population->getRegistry();
                     std::vector<Plugin::Entity *> registrySnapshot;
                     registrySnapshot.reserve(registry.size());
@@ -459,7 +431,7 @@ namespace Gek
                     {
                         for (auto *entity : registrySnapshot)
                         {
-                            Edit::Entity* editEntity = reinterpret_cast<Edit::Entity*>(entity);
+                            Edit::Entity *editEntity = reinterpret_cast<Edit::Entity *>(entity);
 
                             std::string name;
                             if (entity->hasComponent<Components::Name>())
@@ -477,7 +449,7 @@ namespace Gek
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                            if (ImGui::Button((const char*)ICON_FA_USER_TIMES))
+                            if (ImGui::Button((const char *)ICON_FA_USER_TIMES))
                             {
                                 ImGui::OpenPopup("ConfirmEntityDelete");
                             }
@@ -534,34 +506,34 @@ namespace Gek
 
             void showEntity(void)
             {
-                auto& imGuiIo = ImGui::GetIO();
-                auto& style = ImGui::GetStyle();
-                if (ImGui::Begin("Entity", &showEntityDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                auto &imGuiIo = ImGui::GetIO();
+                auto &style = ImGui::GetStyle();
+                if (ImGui::Begin("Entity", &showEntityDock)) //, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     if (selectedEntity)
                     {
                         ImGui::BulletText("Alignment ");
                         ImGui::SameLine();
                         auto width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
-                        UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, ImGuizmo::MODE::LOCAL, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Entity", (const char *)ICON_FA_USER_O), &currentGizmoAlignment, ImGuizmo::MODE::LOCAL, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, ImGuizmo::MODE::WORLD, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} World", (const char *)ICON_FA_GLOBE), &currentGizmoAlignment, ImGuizmo::MODE::WORLD, ImVec2(width, 0.0f));
 
                         ImGui::BulletText("Operation ");
                         ImGui::SameLine();
                         width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                        UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, ImGuizmo::OPERATION::TRANSLATE, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Move", (const char *)ICON_FA_ARROWS), &currentGizmoOperation, ImGuizmo::OPERATION::TRANSLATE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, ImGuizmo::OPERATION::ROTATE, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Rotate", (const char *)ICON_FA_REPEAT), &currentGizmoOperation, ImGuizmo::OPERATION::ROTATE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::SCALE, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Scale", (const char *)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::SCALE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::BOUNDS, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Bounds", (const char *)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::BOUNDS, ImVec2(width, 0.0f));
 
                         ImGui::BulletText("Axis ");
                         ImGui::SameLine();
                         width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                        UI::RadioButton(std::format("{} All", (const char*)ICON_FA_SEARCH), &currentAxis, AxisSelection::ALL, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} All", (const char *)ICON_FA_SEARCH), &currentAxis, AxisSelection::ALL, ImVec2(width, 0.0f));
                         ImGui::SameLine();
                         UI::RadioButton(" X ", &currentAxis, AxisSelection::X, ImVec2(width, 0.0f));
                         ImGui::SameLine();
@@ -569,7 +541,7 @@ namespace Gek
                         ImGui::SameLine();
                         UI::RadioButton(" Z ", &currentAxis, AxisSelection::Z, ImVec2(width, 0.0f));
 
-                        UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
+                        UI::CheckButton(std::format("{} Snap", (const char *)ICON_FA_MAGNET), &useGizmoSnap);
                         ImGui::SameLine();
                         ImGui::PushItemWidth(-1.0f);
                         switch (currentGizmoOperation)
@@ -598,7 +570,7 @@ namespace Gek
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                            if (ImGui::Button((const char*)ICON_FA_PLUS_CIRCLE))
+                            if (ImGui::Button((const char *)ICON_FA_PLUS_CIRCLE))
                             {
                                 selectedComponent = 0;
                                 ImGui::OpenPopup("AddComponent");
@@ -613,7 +585,7 @@ namespace Gek
                                 ImGui::Spacing();
                                 ImGui::Spacing();
 
-                                auto const& availableComponents = population->getAvailableComponents();
+                                auto const &availableComponents = population->getAvailableComponents();
                                 auto componentCount = availableComponents.size();
                                 if (ImGui::BeginListBox("##Components"))
                                 {
@@ -645,23 +617,23 @@ namespace Gek
                             ImGui::SetNextItemOpen(selectedEntity == entity);
                             if (ImGui::TreeNodeEx("##selected", ImGuiTreeNodeFlags_Framed))
                             {
-                                selectedEntity = dynamic_cast<Edit::Entity*>(entity);
-                                auto editEntity = dynamic_cast<Edit::Entity*>(selectedEntity);
+                                selectedEntity = dynamic_cast<Edit::Entity *>(entity);
+                                auto editEntity = dynamic_cast<Edit::Entity *>(selectedEntity);
                                 if (editEntity)
                                 {
                                     std::set<Hash> deleteComponentSet;
-                                    auto const& entityComponents = editEntity->getComponents();
-                                    for (auto& componentSearch : entityComponents)
+                                    auto const &entityComponents = editEntity->getComponents();
+                                    for (auto &componentSearch : entityComponents)
                                     {
-                                        Edit::Component* component = population->getComponent(componentSearch.first);
-                                        Plugin::Component::Data* componentDefintion = componentSearch.second.get();
+                                        Edit::Component *component = population->getComponent(componentSearch.first);
+                                        Plugin::Component::Data *componentDefintion = componentSearch.second.get();
                                         if (component && componentDefintion)
                                         {
                                             ImGui::PushID(component->getIdentifier());
                                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                            if (ImGui::Button((const char*)ICON_FA_MINUS_CIRCLE))
+                                            if (ImGui::Button((const char *)ICON_FA_MINUS_CIRCLE))
                                             {
                                                 ImGui::OpenPopup("ConfirmComponentDelete");
                                             }
@@ -702,7 +674,7 @@ namespace Gek
                                         }
                                     }
 
-                                    for (auto& component : deleteComponentSet)
+                                    for (auto &component : deleteComponentSet)
                                     {
                                         population->removeComponent(entity, component);
                                     }
@@ -768,10 +740,10 @@ namespace Gek
 
             // Plugin::Population Slots
             void onReset(void)
-			{
+            {
                 sceneModified = false;
-				selectedEntity = nullptr;
-			}
+                selectedEntity = nullptr;
+            }
 
             void onAction(Plugin::Population::Action const &action)
             {

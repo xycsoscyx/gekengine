@@ -8,10 +8,10 @@
 #pragma once
 
 #include "GEK/Math/Matrix4x4.hpp"
-#include "GEK/Shapes/Plane.hpp"
-#include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Shapes/OrientedBox.hpp"
+#include "GEK/Shapes/Plane.hpp"
+#include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include <vector>
 
@@ -34,10 +34,10 @@ namespace Gek
                 };
             }; // struct Planes
 
-        public:
+          public:
             Plane planeList[6];
 
-        public:
+          public:
             Frustum(void) noexcept;
             Frustum(Frustum const &frustum) noexcept;
             Frustum(Math::Float4x4 const &perspectiveTransform) noexcept;

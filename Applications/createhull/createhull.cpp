@@ -1,6 +1,6 @@
 #include "GEK/Math/Common.hpp"
-#include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Math/Vector3.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/String.hpp"
@@ -9,10 +9,10 @@
 #include <vector>
 
 #include <argparse/argparse.hpp>
-#include <assimp/config.h>
 #include <assimp/cimport.h>
-#include <assimp/scene.h>
+#include <assimp/config.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -34,7 +34,7 @@ struct Parameters
     float feetPerUnit;
 };
 
-bool GetModels(Context *context, Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
+bool GetModels(Context *context, Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
 {
     if (inputNode == nullptr)
     {
@@ -62,7 +62,7 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
                 continue;
             }
 
-            const aiMesh* inputMesh = inputScene->mMeshes[nodeMeshIndex];
+            const aiMesh *inputMesh = inputScene->mMeshes[nodeMeshIndex];
             if (inputMesh->mNumFaces > 0)
             {
                 if (inputMesh->mFaces == nullptr)
@@ -110,13 +110,13 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
     return true;
 }
 
-void serializeCollision(void* const serializeHandle, const void* const buffer, int size)
+void serializeCollision(void *const serializeHandle, const void *const buffer, int size)
 {
     FILE *file = (FILE *)serializeHandle;
     fwrite(buffer, 1, size, file);
 }
 
-int main(int argumentCount, char const * const argumentList[])
+int main(int argumentCount, char const *const argumentList[])
 {
     ContextPtr context(Context::Create(nullptr));
 
@@ -148,7 +148,7 @@ int main(int argumentCount, char const * const argumentList[])
 
         program.parse_args(arguments);
     }
-    catch (const std::runtime_error& err)
+    catch (const std::runtime_error &err)
     {
         if (context)
         {
@@ -188,13 +188,13 @@ int main(int argumentCount, char const * const argumentList[])
         context->addDataPath(rootPath.getString());
 
         aiLogStream logStream;
-        logStream.callback = [](char const* message, char* user) -> void
+        logStream.callback = [](char const *message, char *user) -> void
         {
-            Context* context = reinterpret_cast<Context*>(user);
+            Context *context = reinterpret_cast<Context *>(user);
             context->log(Context::Info, message);
         };
 
-        logStream.user = reinterpret_cast<char*>(context.get());
+        logStream.user = reinterpret_cast<char *>(context.get());
         aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
@@ -217,15 +217,15 @@ int main(int argumentCount, char const * const argumentList[])
             aiProcess_FindInvalidData |
             aiProcess_ImproveCacheLocality |
             aiProcess_OptimizeMeshes |
-            //aiProcess_OptimizeGraph,
+            // aiProcess_OptimizeGraph,
             0;
 
-        aiPropertyStore* propertyStore = aiCreatePropertyStore();
+        aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
-        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
+        // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+        // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
         context->log(Context::Info, "Loading: {}", filePath.getString());

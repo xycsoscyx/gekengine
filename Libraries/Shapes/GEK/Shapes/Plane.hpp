@@ -16,22 +16,28 @@ namespace Gek
     {
         struct Plane
         {
-        public:
+          public:
             union
             {
-                struct { float a, b, c, d; };
-                struct { float data[4]; };
+                struct
+                {
+                    float a, b, c, d;
+                };
+                struct
+                {
+                    float data[4];
+                };
                 Math::Float4 vector;
             };
 
-        public:
+          public:
             Plane(void) noexcept;
             Plane(float a, float b, float c, float d) noexcept;
             Plane(Math::Float3 const &normal, float distance) noexcept;
             Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC) noexcept;
             Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane) noexcept;
 
-            Plane &operator = (Plane const &plane) noexcept;
+            Plane &operator=(Plane const &plane) noexcept;
 
             void normalize(void) noexcept;
 

@@ -8,13 +8,13 @@
 #pragma once
 
 #include "API/Engine/Component.hpp"
-#include "API/Engine/Processor.hpp"
 #include "API/Engine/Population.hpp"
-#include <tbb/concurrent_unordered_map.h>
+#include "API/Engine/Processor.hpp"
 #include <execution>
 #include <mutex>
 #include <new>
 #include <shared_mutex>
+#include <tbb/concurrent_unordered_map.h>
 
 #include <imgui.h>
 
@@ -28,10 +28,10 @@ namespace Gek
         class ComponentMixin
             : public BASE
         {
-        protected:
+          protected:
             Population *population = nullptr;
 
-        public:
+          public:
             ComponentMixin(Population *population)
                 : population(population)
             {
@@ -40,14 +40,14 @@ namespace Gek
             virtual ~ComponentMixin(void) = default;
 
             // Plugin::Component
-			std::string_view getName(void) const
+            std::string_view getName(void) const
             {
-				return COMPONENT::GetName();
+                return COMPONENT::GetName();
             }
 
-			Hash getIdentifier(void) const
+            Hash getIdentifier(void) const
             {
-				return COMPONENT::GetIdentifier();
+                return COMPONENT::GetIdentifier();
             }
 
             std::unique_ptr<Plugin::Component::Data> create(void)
@@ -56,28 +56,28 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE evaluate(JSON::Object const& object, TYPE defaultValue)
+            TYPE evaluate(JSON::Object const &object, TYPE defaultValue)
             {
                 return JSON::Evaluate(object, population->getShuntingYard(), defaultValue);
             }
 
             template <typename TYPE>
-            TYPE evaluate(JSON::Object const& object, std::string_view key, TYPE defaultValue)
+            TYPE evaluate(JSON::Object const &object, std::string_view key, TYPE defaultValue)
             {
                 return JSON::Evaluate(object, key, population->getShuntingYard(), defaultValue);
             }
 
-            virtual void save(COMPONENT const * const component, JSON::Object&exportData) const { };
-            virtual void load(COMPONENT * const component, JSON::Object const &importData) { };
+            virtual void save(COMPONENT const *const component, JSON::Object &exportData) const {};
+            virtual void load(COMPONENT *const component, JSON::Object const &importData) {};
 
-            void save(Plugin::Component::Data const * const component, JSON::Object&exportData) const
+            void save(Plugin::Component::Data const *const component, JSON::Object &exportData) const
             {
-                save(static_cast<COMPONENT const * const>(component), exportData);
+                save(static_cast<COMPONENT const *const>(component), exportData);
             }
 
-            void load(Plugin::Component::Data * const component, JSON::Object const &importData)
+            void load(Plugin::Component::Data *const component, JSON::Object const &importData)
             {
-                load(static_cast<COMPONENT * const>(component), importData);
+                load(static_cast<COMPONENT *const>(component), importData);
             }
 
             bool editorElement(std::string_view const &text, std::function<bool(void)> &&element)
@@ -93,20 +93,20 @@ namespace Gek
         };
 
         template <class CLASS, typename... REQUIRED>
-		class EntityProcessor
-			: public Plugin::Processor
+        class EntityProcessor
+            : public Plugin::Processor
         {
-        private:
+          private:
             struct Data : public CLASS::Data
             {
             };
 
-        protected:
+          protected:
             using EntityDataMap = tbb::concurrent_unordered_map<Plugin::Entity *, Data>;
             EntityDataMap entityDataMap;
             mutable std::shared_mutex entityDataMapMutex;
 
-        public:
+          public:
             virtual ~EntityProcessor(void) = default;
 
             // ProcessorMixin
@@ -116,7 +116,7 @@ namespace Gek
                 entityDataMap.clear();
             }
 
-            void addEntity(Plugin::Entity * const entity, std::function<void(bool isNewInsert, Data &data, REQUIRED&... components)> onAdded = nullptr)
+            void addEntity(Plugin::Entity *const entity, std::function<void(bool isNewInsert, Data &data, REQUIRED &...components)> onAdded = nullptr)
             {
                 assert(entity);
 
@@ -132,7 +132,7 @@ namespace Gek
                 }
             }
 
-            void removeEntity(Plugin::Entity * const entity)
+            void removeEntity(Plugin::Entity *const entity)
             {
                 assert(entity);
 
@@ -150,26 +150,22 @@ namespace Gek
                 return entityDataMap.size();
             }
 
-            void listEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> &&onEntity)
+            void listEntities(std::function<void(Plugin::Entity *const entity, Data &data, REQUIRED &...components)> &&onEntity)
             {
                 assert(onEntity);
 
                 std::shared_lock<std::shared_mutex> lock(entityDataMapMutex);
                 std::for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
-                {
-                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);
-                });
+                              { onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...); });
             }
 
-            void parallelListEntities(std::function<void(Plugin::Entity* const entity, Data& data, REQUIRED&... components)>&& onEntity)
+            void parallelListEntities(std::function<void(Plugin::Entity *const entity, Data &data, REQUIRED &...components)> &&onEntity)
             {
                 assert(onEntity);
 
                 std::shared_lock<std::shared_mutex> lock(entityDataMapMutex);
-                std::for_each(std::execution::par, std::begin(entityDataMap), std::end(entityDataMap), [&](auto& entitySearch) -> void
-                {
-                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);
-                });
+                std::for_each(std::execution::par, std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
+                              { onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...); });
             }
         };
     }; // namespace Plugin

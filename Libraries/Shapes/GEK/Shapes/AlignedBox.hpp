@@ -15,17 +15,17 @@ namespace Gek
     {
         struct AlignedBox
         {
-        public:
+          public:
             Math::Float3 minimum;
             Math::Float3 maximum;
 
-        public:
+          public:
             AlignedBox(void) noexcept;
             AlignedBox(AlignedBox const &box) noexcept;
             AlignedBox(float size) noexcept;
             AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum) noexcept;
 
-            AlignedBox &operator = (AlignedBox const &box) noexcept;
+            AlignedBox &operator=(AlignedBox const &box) noexcept;
 
             void extend(const Math::Float3 &point) noexcept;
 

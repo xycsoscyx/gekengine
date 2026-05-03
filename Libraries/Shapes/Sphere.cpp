@@ -11,18 +11,16 @@ namespace Gek
         }
 
         Sphere::Sphere(Sphere const &sphere) noexcept
-            : position(sphere.position)
-            , radius(sphere.radius)
+            : position(sphere.position), radius(sphere.radius)
         {
         }
 
         Sphere::Sphere(Math::Float3 const &position, float radius) noexcept
-            : position(position)
-            , radius(radius)
+            : position(position), radius(radius)
         {
         }
 
-        Sphere &Sphere::operator = (Sphere const &sphere) noexcept
+        Sphere &Sphere::operator=(Sphere const &sphere) noexcept
         {
             position = sphere.position;
             radius = sphere.radius;

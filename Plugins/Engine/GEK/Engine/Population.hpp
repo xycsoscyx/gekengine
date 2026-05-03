@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
 #include "API/Engine/Editor.hpp"
+#include "GEK/Utility/Context.hpp"
 
 namespace Gek
 {
@@ -21,5 +21,5 @@ namespace Gek
 
             virtual void update(float frameTime) = 0;
         };
-    }; // namespace Plugin
+    }; // namespace Engine
 }; // namespace Gek

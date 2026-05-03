@@ -1,6 +1,6 @@
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Shapes/Plane.hpp"
 #include "GEK/Math/Common.hpp"
+#include "GEK/Shapes/Plane.hpp"
 #include <algorithm>
 
 namespace Gek
@@ -8,30 +8,26 @@ namespace Gek
     namespace Shapes
     {
         AlignedBox::AlignedBox(void) noexcept
-            : minimum(Math::Infinity)
-            , maximum(Math::NegativeInfinity)
+            : minimum(Math::Infinity), maximum(Math::NegativeInfinity)
         {
         }
 
         AlignedBox::AlignedBox(AlignedBox const &box) noexcept
-            : minimum(box.minimum)
-            , maximum(box.maximum)
+            : minimum(box.minimum), maximum(box.maximum)
         {
         }
 
         AlignedBox::AlignedBox(float size) noexcept
-            : minimum(-(size * 0.5f))
-            , maximum((size * 0.5f))
+            : minimum(-(size * 0.5f)), maximum((size * 0.5f))
         {
         }
 
         AlignedBox::AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum) noexcept
-            : minimum(minimum)
-            , maximum(maximum)
+            : minimum(minimum), maximum(maximum)
         {
         }
 
-        AlignedBox &AlignedBox::operator = (AlignedBox const &box) noexcept
+        AlignedBox &AlignedBox::operator=(AlignedBox const &box) noexcept
         {
             minimum = box.minimum;
             maximum = box.maximum;

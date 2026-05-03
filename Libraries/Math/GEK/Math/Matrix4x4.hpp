@@ -8,11 +8,11 @@
 #pragma once
 
 #include "GEK/Math/Common.hpp"
+#include "GEK/Math/Quaternion.hpp"
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Vector4.hpp"
-#include "GEK/Math/Quaternion.hpp"
-#include <xmmintrin.h>
 #include <tuple>
+#include <xmmintrin.h>
 
 namespace Gek
 {
@@ -20,10 +20,10 @@ namespace Gek
     {
         struct Float4x4
         {
-        public:
+          public:
             static const Float4x4 Identity;
 
-        public:
+          public:
             union
             {
                 float data[16];
@@ -43,7 +43,7 @@ namespace Gek
                 } r;
             };
 
-        public:
+          public:
             inline static Float4x4 MakeScaling(Float3 const &scale, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 return Float4x4(
@@ -70,9 +70,9 @@ namespace Gek
 
                 // build the rotation matrix
                 return Float4x4(
-                    theta*axis.x*axis.x + cosAngle, theta*axis.x*axis.y + sinAngle*axis.z, theta*axis.x*axis.z - sinAngle*axis.y, 0.0f,
-                    theta*axis.x*axis.y - sinAngle*axis.z, theta*axis.y*axis.y + cosAngle, theta*axis.y*axis.z + sinAngle*axis.x, 0.0f,
-                    theta*axis.x*axis.z + sinAngle*axis.y, theta*axis.y*axis.z - sinAngle*axis.x, theta*axis.z*axis.z + cosAngle, 0.0f,
+                    theta * axis.x * axis.x + cosAngle, theta * axis.x * axis.y + sinAngle * axis.z, theta * axis.x * axis.z - sinAngle * axis.y, 0.0f,
+                    theta * axis.x * axis.y - sinAngle * axis.z, theta * axis.y * axis.y + cosAngle, theta * axis.y * axis.z + sinAngle * axis.x, 0.0f,
+                    theta * axis.x * axis.z + sinAngle * axis.y, theta * axis.y * axis.z - sinAngle * axis.x, theta * axis.z * axis.z + cosAngle, 0.0f,
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
@@ -161,17 +161,18 @@ namespace Gek
                     0.0f, 0.0f, ((-nearClip * farClip) / denominator), 0.0f);
             }
 
-        public:
+          public:
             inline Float4x4(void) noexcept
             {
             }
 
             inline Float4x4(Float4x4 const &matrix) noexcept
-                : rows {
-                    matrix.rows[0],
-                    matrix.rows[1],
-                    matrix.rows[2],
-                    matrix.rows[3] }
+                : rows{
+                      matrix.rows[0],
+                      matrix.rows[1],
+                      matrix.rows[2],
+                      matrix.rows[3]
+                  }
             {
             }
 
@@ -180,19 +181,17 @@ namespace Gek
                 float _21, float _22, float _23, float _24,
                 float _31, float _32, float _33, float _34,
                 float _41, float _42, float _43, float _44) noexcept
-                : _11(_11), _12(_12), _13(_13), _14(_14)
-                , _21(_21), _22(_22), _23(_23), _24(_24)
-                , _31(_31), _32(_32), _33(_33), _34(_34)
-                , _41(_41), _42(_42), _43(_43), _44(_44)
+                : _11(_11), _12(_12), _13(_13), _14(_14), _21(_21), _22(_22), _23(_23), _24(_24), _31(_31), _32(_32), _33(_33), _34(_34), _41(_41), _42(_42), _43(_43), _44(_44)
             {
             }
 
             explicit inline Float4x4(float const *data) noexcept
-                : rows {
-                    Float4(data + 0),
-                    Float4(data + 4),
-                    Float4(data + 8),
-                    Float4(data + 12) }
+                : rows{
+                      Float4(data + 0),
+                      Float4(data + 4),
+                      Float4(data + 8),
+                      Float4(data + 12)
+                  }
             {
             }
 
@@ -224,12 +223,12 @@ namespace Gek
                 }
             }
 
-            Float3& translation(void)
+            Float3 &translation(void)
             {
                 return r.w.xyz();
             }
 
-            const Float3& translation(void) const
+            const Float3 &translation(void) const
             {
                 return r.w.xyz();
             }
@@ -238,17 +237,17 @@ namespace Gek
             {
                 return (
                     (table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
-                    (table[2][2] * table[3][3] - table[3][2] * table[2][3]) -
+                        (table[2][2] * table[3][3] - table[3][2] * table[2][3]) -
                     (table[0][0] * table[2][1] - table[2][0] * table[0][1]) *
-                    (table[1][2] * table[3][3] - table[3][2] * table[1][3]) +
+                        (table[1][2] * table[3][3] - table[3][2] * table[1][3]) +
                     (table[0][0] * table[3][1] - table[3][0] * table[0][1]) *
-                    (table[1][2] * table[2][3] - table[2][2] * table[1][3]) +
+                        (table[1][2] * table[2][3] - table[2][2] * table[1][3]) +
                     (table[1][0] * table[2][1] - table[2][0] * table[1][1]) *
-                    (table[0][2] * table[3][3] - table[3][2] * table[0][3]) -
+                        (table[0][2] * table[3][3] - table[3][2] * table[0][3]) -
                     (table[1][0] * table[3][1] - table[3][0] * table[1][1]) *
-                    (table[0][2] * table[2][3] - table[2][2] * table[0][3]) +
+                        (table[0][2] * table[2][3] - table[2][2] * table[0][3]) +
                     (table[2][0] * table[3][1] - table[3][0] * table[2][1]) *
-                    (table[0][2] * table[1][3] - table[1][2] * table[0][3]));
+                        (table[0][2] * table[1][3] - table[1][2] * table[0][3]));
             }
 
             inline Float4x4 getTranspose(void) const noexcept
@@ -293,8 +292,7 @@ namespace Gek
 
             inline Quaternion getRotation(void) const noexcept
             {
-                Math::Float3 normalized[3] =
-                {
+                Math::Float3 normalized[3] = {
                     r.x.xyz().getNormal(),
                     r.y.xyz().getNormal(),
                     r.z.xyz().getNormal(),
@@ -320,8 +318,7 @@ namespace Gek
                         Z_INDEX = 2
                     };
 
-                    static QuaternionAxis NextAxisList[] =
-                    {
+                    static QuaternionAxis NextAxisList[] = {
                         Y_INDEX,
                         Z_INDEX,
                         X_INDEX
@@ -332,7 +329,7 @@ namespace Gek
                     {
                         localXAxis = Y_INDEX;
                     }
-                    
+
                     if (normalized[Z_INDEX].data[Z_INDEX] > normalized[localXAxis].data[localXAxis])
                     {
                         localXAxis = Z_INDEX;
@@ -386,10 +383,9 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator *= (Float4x4 const &matrix) noexcept
+            inline void operator*=(Float4x4 const &matrix) noexcept
             {
-                __m128 simd[2][4] =
-                {
+                __m128 simd[2][4] = {
                     {
                         _mm_loadu_ps(r.x.data),
                         _mm_loadu_ps(r.y.data),
@@ -410,10 +406,9 @@ namespace Gek
                 _mm_storeu_ps(r.w.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
             }
 
-            inline Float4x4 operator * (Float4x4 const &matrix) const noexcept
+            inline Float4x4 operator*(Float4x4 const &matrix) const noexcept
             {
-                __m128 simd[2][4] =
-                {
+                __m128 simd[2][4] = {
                     {
                         _mm_loadu_ps(r.x.data),
                         _mm_loadu_ps(r.y.data),
@@ -466,27 +461,27 @@ namespace Gek
                 return std::make_tuple(r.x, r.y, r.z, r.w);
             }
 
-            bool operator == (Float4x4 const &matrix) const noexcept
+            bool operator==(Float4x4 const &matrix) const noexcept
             {
                 return (getTuple() == matrix.getTuple());
             }
 
-            bool operator != (Float4x4 const &matrix) const noexcept
+            bool operator!=(Float4x4 const &matrix) const noexcept
             {
                 return (getTuple() != matrix.getTuple());
             }
 
-            Float4 &operator [] (size_t index) noexcept
+            Float4 &operator[](size_t index) noexcept
             {
                 return rows[index];
             }
 
-            Float4 const &operator [] (size_t index) const noexcept
+            Float4 const &operator[](size_t index) const noexcept
             {
                 return rows[index];
             }
 
-            inline Float4x4 &operator = (Float4x4 const &matrix) noexcept
+            inline Float4x4 &operator=(Float4x4 const &matrix) noexcept
             {
                 std::tie(r.x, r.y, r.z, r.w) = matrix.getTuple();
                 return (*this);

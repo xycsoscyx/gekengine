@@ -14,7 +14,7 @@ namespace Gek
     template <typename TYPE, std::size_t ALIGNMENT = sizeof(TYPE)>
     class AlignedAllocator
     {
-    public:
+      public:
         using pointer = TYPE *;
         using const_pointer = const TYPE *;
         using reference = TYPE &;
@@ -31,7 +31,8 @@ namespace Gek
         {
         }
 
-        template <typename NEWTYPE> AlignedAllocator(AlignedAllocator<NEWTYPE, ALIGNMENT> const &)
+        template <typename NEWTYPE>
+        AlignedAllocator(AlignedAllocator<NEWTYPE, ALIGNMENT> const &)
         {
         }
 
@@ -60,14 +61,14 @@ namespace Gek
             using other = AlignedAllocator<NEWTYPE, ALIGNMENT>;
         };
 
-        bool operator != (AlignedAllocator const &other) const
+        bool operator!=(AlignedAllocator const &other) const
         {
             return !((*this) == other);
         }
 
-        void construct(TYPE * const value, TYPE const &data) const
+        void construct(TYPE *const value, TYPE const &data) const
         {
-            void * const nebulous = static_cast<void *>(value);
+            void *const nebulous = static_cast<void *>(value);
             new (nebulous) TYPE(data);
         }
 
@@ -76,7 +77,7 @@ namespace Gek
             value->~TYPE();
         }
 
-        bool operator == (AlignedAllocator const &other) const
+        bool operator==(AlignedAllocator const &other) const
         {
             return true;
         }
@@ -113,7 +114,7 @@ namespace Gek
             return allocate(size);
         }
 
-    private:
+      private:
         AlignedAllocator &operator=(AlignedAllocator const &);
     };
 }; // namespace Gek

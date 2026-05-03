@@ -1,30 +1,29 @@
-#include "GEK/Math/Common.hpp"
-#include "GEK/Math/Matrix4x4.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/ContextUser.hpp"
 #include "API/Engine/ComponentMixin.hpp"
 #include "GEK/Components/Transform.hpp"
+#include "GEK/Math/Common.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Physics/Base.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/String.hpp"
 
 namespace Gek
 {
     namespace Physics
     {
         class RigidBody
-            : public Body
-            , public ndBodyDynamic
+            : public Body,
+              public ndBodyDynamic
         {
-        private:
-			class NotifyCallback
-				: public ndBodyNotify
-			{
-            private:
+          private:
+            class NotifyCallback
+                : public ndBodyNotify
+            {
+              private:
                 RigidBody *rigidBody = nullptr;
-            
-            public:
-                NotifyCallback(World* world, RigidBody* rigidBody)
-                    : ndBodyNotify(world->getGravity().data)
-                    , rigidBody(rigidBody)
+
+              public:
+                NotifyCallback(World *world, RigidBody *rigidBody)
+                    : ndBodyNotify(world->getGravity().data), rigidBody(rigidBody)
                 {
                 }
 
@@ -33,17 +32,17 @@ namespace Gek
                 }
 
                 // ndBodyNotify
-				void* GetUserData() const
-				{
-					return rigidBody;
-				}
+                void *GetUserData() const
+                {
+                    return rigidBody;
+                }
 
                 void OnObjectPick() const
                 {
                     rigidBody->OnObjectPick(this);
                 }
 
-                void OnTransform(ndFloat32 timestep, const ndMatrix& matrix)
+                void OnTransform(ndFloat32 timestep, const ndMatrix &matrix)
                 {
                     rigidBody->OnTransform(this, timestep, matrix);
                 }
@@ -52,22 +51,21 @@ namespace Gek
                 {
                     rigidBody->OnApplyExternalForce(this, threadIndex, timeStep);
                 }
-			};
+            };
 
-			World *world = nullptr;
-            Plugin::Entity * const entity = nullptr;
+            World *world = nullptr;
+            Plugin::Entity *const entity = nullptr;
 
-        public:
-            RigidBody(World* world, Plugin::Entity* const entity)
-                : world(world)
-                , entity(entity)
+          public:
+            RigidBody(World *world, Plugin::Entity *const entity)
+                : world(world), entity(entity)
             {
                 assert(entity);
 
                 printf("[RigidBody::Ctor] Entity %p created\n", entity);
                 SetNotifyCallback(new NotifyCallback(world, this));
 
-                auto& transformComponent = entity->getComponent<Components::Transform>();
+                auto &transformComponent = entity->getComponent<Components::Transform>();
                 auto matrix(transformComponent.getMatrix());
                 SetMatrix(matrix.data);
                 SetAutoSleep(false);
@@ -78,7 +76,7 @@ namespace Gek
             }
 
             // Body
-            ndBody* getAsNewtonBody(void)
+            ndBody *getAsNewtonBody(void)
             {
                 return GetAsBody();
             }
@@ -88,18 +86,18 @@ namespace Gek
             {
             }
 
-            void OnTransform(ndBodyNotify* bodyNotify, ndFloat32 timestep, const ndMatrix& matrixData)
+            void OnTransform(ndBodyNotify *bodyNotify, ndFloat32 timestep, const ndMatrix &matrixData)
             {
-                auto matrix = reinterpret_cast<const Math::Float4x4*>(&matrixData);
-                auto& transformComponent = entity->getComponent<Components::Transform>();
+                auto matrix = reinterpret_cast<const Math::Float4x4 *>(&matrixData);
+                auto &transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.rotation = matrix->getRotation();
                 transformComponent.position = matrix->translation();
             }
 
             void OnApplyExternalForce(ndBodyNotify *bodyNotify, ndInt32 threadIndex, ndFloat32 timeStep)
             {
-                auto const& physicalComponent = entity->getComponent<Components::Physical>();
-                auto const& transformComponent = entity->getComponent<Components::Transform>();
+                auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                auto const &transformComponent = entity->getComponent<Components::Transform>();
 
                 auto kinematicBody = GetAsBodyKinematic();
                 if (kinematicBody->GetInvMass() > 0.0f)
@@ -112,7 +110,7 @@ namespace Gek
             }
         };
 
-        BodyPtr createRigidBody(World *world, Plugin::Entity * const entity)
+        BodyPtr createRigidBody(World *world, Plugin::Entity *const entity)
         {
             return std::make_unique<RigidBody>(world, entity);
         }

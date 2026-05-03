@@ -1,17 +1,17 @@
 #include "API/System/WindowDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "resource.h"
 #include <atlbase.h>
 #include <chrono>
 #include <system_error>
 #include <thread>
-#include "resource.h"
 
 #ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
+#define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
 #endif
 
 #ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
+#define HID_USAGE_GENERIC_MOUSE ((USHORT)0x02)
 #endif
 
 namespace Gek
@@ -23,122 +23,222 @@ namespace Gek
         {
             switch (key)
             {
-            case 'A':      return Window::Key::A;
-            case 'B':      return Window::Key::B;
-            case 'C':      return Window::Key::C;
-            case 'D':      return Window::Key::D;
-            case 'E':      return Window::Key::E;
-            case 'F':      return Window::Key::F;
-            case 'G':      return Window::Key::G;
-            case 'H':      return Window::Key::H;
-            case 'I':      return Window::Key::I;
-            case 'J':      return Window::Key::J;
-            case 'K':      return Window::Key::K;
-            case 'L':      return Window::Key::L;
-            case 'M':      return Window::Key::M;
-            case 'N':      return Window::Key::N;
-            case 'O':      return Window::Key::O;
-            case 'P':      return Window::Key::P;
-            case 'Q':      return Window::Key::Q;
-            case 'R':      return Window::Key::R;
-            case 'S':      return Window::Key::S;
-            case 'T':      return Window::Key::T;
-            case 'U':      return Window::Key::U;
-            case 'V':      return Window::Key::V;
-            case 'W':      return Window::Key::W;
-            case 'X':      return Window::Key::X;
-            case 'Y':      return Window::Key::Y;
-            case 'Z':      return Window::Key::Z;
-            case '1':      return Window::Key::Key1;
-            case '2':      return Window::Key::Key2;
-            case '3':      return Window::Key::Key3;
-            case '4':      return Window::Key::Key4;
-            case '5':      return Window::Key::Key5;
-            case '6':      return Window::Key::Key6;
-            case '7':      return Window::Key::Key7;
-            case '8':      return Window::Key::Key8;
-            case '9':      return Window::Key::Key9;
-            case '0':      return Window::Key::Key0;
-            case VK_RETURN:      return Window::Key::Return;
-            case VK_ESCAPE:      return Window::Key::Escape;
-            case VK_BACK:      return Window::Key::Backspace;
-            case VK_TAB:      return Window::Key::Tab;
-            case VK_SPACE:      return Window::Key::Space;
-            case VK_OEM_MINUS:      return Window::Key::Minus;
-            case VK_OEM_PLUS:      return Window::Key::Equals;
-            case VK_OEM_4:      return Window::Key::LeftBracket;
-            case VK_OEM_6:      return Window::Key::RightBracket;
-            case VK_OEM_5:      return Window::Key::Backslash;
-            case VK_OEM_1:      return Window::Key::Semicolon;
-            case VK_OEM_7:      return Window::Key::Quote;
-            case VK_OEM_3:      return Window::Key::Grave;
-            case VK_OEM_COMMA:      return Window::Key::Comma;
-            case VK_OEM_PERIOD:      return Window::Key::Period;
-            case VK_OEM_2:      return Window::Key::Slash;
-            case VK_CAPITAL:      return Window::Key::CapsLock;
-            case VK_F1:      return Window::Key::F1;
-            case VK_F2:      return Window::Key::F2;
-            case VK_F3:      return Window::Key::F3;
-            case VK_F4:      return Window::Key::F4;
-            case VK_F5:      return Window::Key::F5;
-            case VK_F6:      return Window::Key::F6;
-            case VK_F7:      return Window::Key::F7;
-            case VK_F8:      return Window::Key::F8;
-            case VK_F9:      return Window::Key::F9;
-            case VK_F10:      return Window::Key::F10;
-            case VK_F11:      return Window::Key::F11;
-            case VK_F12:      return Window::Key::F12;
-            case VK_PRINT:      return Window::Key::PrintScreen;
-            case VK_SCROLL:      return Window::Key::ScrollLock;
-            case VK_PAUSE:      return Window::Key::Pause;
-            case VK_INSERT:      return Window::Key::Insert;
-            case VK_HOME:      return Window::Key::Home;
-            case VK_PRIOR:      return Window::Key::PageUp;
-            case VK_DELETE:      return Window::Key::Delete;
-            case VK_END:      return Window::Key::End;
-            case VK_NEXT:      return Window::Key::PageDown;
-            case VK_RIGHT:      return Window::Key::Right;
-            case VK_LEFT:      return Window::Key::Left;
-            case VK_DOWN:      return Window::Key::Down;
-            case VK_UP:      return Window::Key::Up;
-            case VK_NUMLOCK:      return Window::Key::KeyPadNumLock;
-            case VK_DIVIDE:      return Window::Key::KeyPadDivide;
-            case VK_MULTIPLY:      return Window::Key::KeyPadMultiply;
-            case VK_SUBTRACT:      return Window::Key::KeyPadSubtract;
-            case VK_ADD:      return Window::Key::KeyPadAdd;
-            case VK_NUMPAD1:      return Window::Key::KeyPad1;
-            case VK_NUMPAD2:      return Window::Key::KeyPad2;
-            case VK_NUMPAD3:      return Window::Key::KeyPad3;
-            case VK_NUMPAD4:      return Window::Key::KeyPad4;
-            case VK_NUMPAD5:      return Window::Key::KeyPad5;
-            case VK_NUMPAD6:      return Window::Key::KeyPad6;
-            case VK_NUMPAD7:      return Window::Key::KeyPad7;
-            case VK_NUMPAD8:      return Window::Key::KeyPad8;
-            case VK_NUMPAD9:      return Window::Key::KeyPad9;
-            case VK_NUMPAD0:      return Window::Key::KeyPad0;
-            case VK_DECIMAL:      return Window::Key::KeyPadPoint;
-            case VK_LCONTROL:      return Window::Key::LeftControl;
-            case VK_LSHIFT:      return Window::Key::LeftShift;
-            case VK_LMENU:      return Window::Key::LeftAlt;
-            case VK_RCONTROL:      return Window::Key::RightControl;
-            case VK_RSHIFT:      return Window::Key::RightShift;
-            case VK_MENU:      return Window::Key::RightAlt;
+            case 'A':
+                return Window::Key::A;
+            case 'B':
+                return Window::Key::B;
+            case 'C':
+                return Window::Key::C;
+            case 'D':
+                return Window::Key::D;
+            case 'E':
+                return Window::Key::E;
+            case 'F':
+                return Window::Key::F;
+            case 'G':
+                return Window::Key::G;
+            case 'H':
+                return Window::Key::H;
+            case 'I':
+                return Window::Key::I;
+            case 'J':
+                return Window::Key::J;
+            case 'K':
+                return Window::Key::K;
+            case 'L':
+                return Window::Key::L;
+            case 'M':
+                return Window::Key::M;
+            case 'N':
+                return Window::Key::N;
+            case 'O':
+                return Window::Key::O;
+            case 'P':
+                return Window::Key::P;
+            case 'Q':
+                return Window::Key::Q;
+            case 'R':
+                return Window::Key::R;
+            case 'S':
+                return Window::Key::S;
+            case 'T':
+                return Window::Key::T;
+            case 'U':
+                return Window::Key::U;
+            case 'V':
+                return Window::Key::V;
+            case 'W':
+                return Window::Key::W;
+            case 'X':
+                return Window::Key::X;
+            case 'Y':
+                return Window::Key::Y;
+            case 'Z':
+                return Window::Key::Z;
+            case '1':
+                return Window::Key::Key1;
+            case '2':
+                return Window::Key::Key2;
+            case '3':
+                return Window::Key::Key3;
+            case '4':
+                return Window::Key::Key4;
+            case '5':
+                return Window::Key::Key5;
+            case '6':
+                return Window::Key::Key6;
+            case '7':
+                return Window::Key::Key7;
+            case '8':
+                return Window::Key::Key8;
+            case '9':
+                return Window::Key::Key9;
+            case '0':
+                return Window::Key::Key0;
+            case VK_RETURN:
+                return Window::Key::Return;
+            case VK_ESCAPE:
+                return Window::Key::Escape;
+            case VK_BACK:
+                return Window::Key::Backspace;
+            case VK_TAB:
+                return Window::Key::Tab;
+            case VK_SPACE:
+                return Window::Key::Space;
+            case VK_OEM_MINUS:
+                return Window::Key::Minus;
+            case VK_OEM_PLUS:
+                return Window::Key::Equals;
+            case VK_OEM_4:
+                return Window::Key::LeftBracket;
+            case VK_OEM_6:
+                return Window::Key::RightBracket;
+            case VK_OEM_5:
+                return Window::Key::Backslash;
+            case VK_OEM_1:
+                return Window::Key::Semicolon;
+            case VK_OEM_7:
+                return Window::Key::Quote;
+            case VK_OEM_3:
+                return Window::Key::Grave;
+            case VK_OEM_COMMA:
+                return Window::Key::Comma;
+            case VK_OEM_PERIOD:
+                return Window::Key::Period;
+            case VK_OEM_2:
+                return Window::Key::Slash;
+            case VK_CAPITAL:
+                return Window::Key::CapsLock;
+            case VK_F1:
+                return Window::Key::F1;
+            case VK_F2:
+                return Window::Key::F2;
+            case VK_F3:
+                return Window::Key::F3;
+            case VK_F4:
+                return Window::Key::F4;
+            case VK_F5:
+                return Window::Key::F5;
+            case VK_F6:
+                return Window::Key::F6;
+            case VK_F7:
+                return Window::Key::F7;
+            case VK_F8:
+                return Window::Key::F8;
+            case VK_F9:
+                return Window::Key::F9;
+            case VK_F10:
+                return Window::Key::F10;
+            case VK_F11:
+                return Window::Key::F11;
+            case VK_F12:
+                return Window::Key::F12;
+            case VK_PRINT:
+                return Window::Key::PrintScreen;
+            case VK_SCROLL:
+                return Window::Key::ScrollLock;
+            case VK_PAUSE:
+                return Window::Key::Pause;
+            case VK_INSERT:
+                return Window::Key::Insert;
+            case VK_HOME:
+                return Window::Key::Home;
+            case VK_PRIOR:
+                return Window::Key::PageUp;
+            case VK_DELETE:
+                return Window::Key::Delete;
+            case VK_END:
+                return Window::Key::End;
+            case VK_NEXT:
+                return Window::Key::PageDown;
+            case VK_RIGHT:
+                return Window::Key::Right;
+            case VK_LEFT:
+                return Window::Key::Left;
+            case VK_DOWN:
+                return Window::Key::Down;
+            case VK_UP:
+                return Window::Key::Up;
+            case VK_NUMLOCK:
+                return Window::Key::KeyPadNumLock;
+            case VK_DIVIDE:
+                return Window::Key::KeyPadDivide;
+            case VK_MULTIPLY:
+                return Window::Key::KeyPadMultiply;
+            case VK_SUBTRACT:
+                return Window::Key::KeyPadSubtract;
+            case VK_ADD:
+                return Window::Key::KeyPadAdd;
+            case VK_NUMPAD1:
+                return Window::Key::KeyPad1;
+            case VK_NUMPAD2:
+                return Window::Key::KeyPad2;
+            case VK_NUMPAD3:
+                return Window::Key::KeyPad3;
+            case VK_NUMPAD4:
+                return Window::Key::KeyPad4;
+            case VK_NUMPAD5:
+                return Window::Key::KeyPad5;
+            case VK_NUMPAD6:
+                return Window::Key::KeyPad6;
+            case VK_NUMPAD7:
+                return Window::Key::KeyPad7;
+            case VK_NUMPAD8:
+                return Window::Key::KeyPad8;
+            case VK_NUMPAD9:
+                return Window::Key::KeyPad9;
+            case VK_NUMPAD0:
+                return Window::Key::KeyPad0;
+            case VK_DECIMAL:
+                return Window::Key::KeyPadPoint;
+            case VK_LCONTROL:
+                return Window::Key::LeftControl;
+            case VK_LSHIFT:
+                return Window::Key::LeftShift;
+            case VK_LMENU:
+                return Window::Key::LeftAlt;
+            case VK_RCONTROL:
+                return Window::Key::RightControl;
+            case VK_RSHIFT:
+                return Window::Key::RightShift;
+            case VK_MENU:
+                return Window::Key::RightAlt;
             };
 
             return Window::Key::Unknown;
         };
 
         GEK_CONTEXT_USER_BASE(Device)
-            , public Gek::Window::Device
+        , public Gek::Window::Device
         {
-        private:
+          private:
             uint32_t windowFlags;
             HWND window = nullptr;
             uint16_t highSurrogate = 0;
             std::atomic_bool stop = false;
 
-        public:
-            Device(Context *context)
+          public:
+            Device(Context * context)
                 : ContextRegistration(context)
             {
             }
@@ -153,14 +253,14 @@ namespace Gek
             }
 
             // Window
-            void create(Window::Description const& description)
+            void create(Window::Description const &description)
             {
                 WNDCLASSEX windowClass;
                 windowClass.cbSize = sizeof(windowClass);
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Device *implementation = reinterpret_cast<Device*>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    Device *implementation = reinterpret_cast<Device *>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (implementation)
                     {
                         switch (message)
@@ -261,7 +361,7 @@ namespace Gek
                                     std::vector<uint8_t> rawInputBuffer(inputSize);
                                     GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawInputBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER));
 
-                                    RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(rawInputBuffer.data());
+                                    RAWINPUT *rawInput = reinterpret_cast<RAWINPUT *>(rawInputBuffer.data());
                                     if (rawInput->header.dwType == RIM_TYPEMOUSE)
                                     {
                                         implementation->onMouseMovement(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
@@ -494,7 +594,7 @@ namespace Gek
                     Math::Int4 clientRectangle;
                     GetWindowRect(window, (RECT *)&clientRectangle);
                     Math::Int2 centeredPosition = getCenteredRect(clientRectangle);
-                    x = x < 0 ? centeredPosition.x : x;                    
+                    x = x < 0 ? centeredPosition.x : x;
                     y = y < 0 ? centeredPosition.y : y;
                 }
 
@@ -513,5 +613,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Device);
-    }; // namespace WindowImplementation
+    }; // namespace Window::Implementation
 }; // namespace Gek

@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
 #include "API/System/RenderDevice.hpp"
+#include "GEK/Utility/Context.hpp"
 
 namespace Gek
 {
@@ -18,9 +18,9 @@ namespace Gek
         {
             virtual ~Visual(void) = default;
 
-			virtual std::string_view getName(void) const = 0;
+            virtual std::string_view getName(void) const = 0;
 
-            virtual void enable(Render::Device::Context *context) = 0;
+            virtual void enable(Render::Device::Context * context) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

@@ -1,0 +1,19 @@
+BasedOnStyle: LLVM
+# Braces on new lines
+BreakBeforeBraces: Allman
+
+# Indentation (4 spaces, no tabs)
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+NamespaceIndentation: All
+
+# No line width limit (control your own lines)
+ColumnLimit: 0
+
+# Spacing and empty lines
+Cpp11BracedListStyle: false
+SpacesInContainerLiterals: true
+MaxEmptyLinesToKeep: 2
+
+AllowShortBlocksOnASingleLine: Always

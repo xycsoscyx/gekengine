@@ -4,7 +4,7 @@ namespace Gek
 {
     namespace JSON
     {
-        Object Load(FileSystem::Path const& filePath)
+        Object Load(FileSystem::Path const &filePath)
         {
             std::ifstream file(filePath.getString());
             if (file.is_open())
@@ -17,12 +17,12 @@ namespace Gek
             }
         }
 
-        void Save(const Object& object, FileSystem::Path const& filePath)
+        void Save(const Object &object, FileSystem::Path const &filePath)
         {
             FileSystem::Save(filePath, object.dump(4));
         }
 
-        const Object& Find(const Object& object, std::string_view key)
+        const Object &Find(const Object &object, std::string_view key)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -34,37 +34,37 @@ namespace Gek
             return Empty;
         }
 
-        Object& Find(Object& object, std::string_view key)
+        Object &Find(Object &object, std::string_view key)
         {
             return object[key];
         }
 
-        bool Value(const Object& object, bool defaultValue)
+        bool Value(const Object &object, bool defaultValue)
         {
             return object.is_boolean() ? object.get<bool>() : defaultValue;
         }
 
-        float Value(const Object& object, float defaultValue)
+        float Value(const Object &object, float defaultValue)
         {
             return object.is_number() ? object.get<float>() : defaultValue;
         }
 
-        int32_t Value(const Object& object, int32_t defaultValue)
+        int32_t Value(const Object &object, int32_t defaultValue)
         {
             return object.is_number() ? object.get<int32_t>() : defaultValue;
         }
 
-        uint32_t Value(const Object& object, uint32_t defaultValue)
+        uint32_t Value(const Object &object, uint32_t defaultValue)
         {
             return object.is_number() ? object.get<uint32_t>() : defaultValue;
         }
 
-        std::string Value(const Object& object, std::string_view defaultValue)
+        std::string Value(const Object &object, std::string_view defaultValue)
         {
             return object.is_string() ? object.get<std::string>() : defaultValue.data();
         }
 
-        bool Value(const Object& object, std::string_view key, bool defaultValue)
+        bool Value(const Object &object, std::string_view key, bool defaultValue)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -75,7 +75,7 @@ namespace Gek
             return defaultValue;
         }
 
-        float Value(const Object& object, std::string_view key, float defaultValue)
+        float Value(const Object &object, std::string_view key, float defaultValue)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -86,7 +86,7 @@ namespace Gek
             return defaultValue;
         }
 
-        int32_t Value(const Object& object, std::string_view key, int32_t defaultValue)
+        int32_t Value(const Object &object, std::string_view key, int32_t defaultValue)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -97,7 +97,7 @@ namespace Gek
             return defaultValue;
         }
 
-        uint32_t Value(const Object& object, std::string_view key, uint32_t defaultValue)
+        uint32_t Value(const Object &object, std::string_view key, uint32_t defaultValue)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -108,7 +108,7 @@ namespace Gek
             return defaultValue;
         }
 
-        std::string Value(const Object& object, std::string_view key, std::string_view defaultValue)
+        std::string Value(const Object &object, std::string_view key, std::string_view defaultValue)
         {
             auto search = object.find(key);
             if (search != std::end(object))
@@ -119,7 +119,7 @@ namespace Gek
             return defaultValue.data();
         }
 
-        bool Evaluate(const Object& object, ShuntingYard& shuntingYard, bool defaultValue)
+        bool Evaluate(const Object &object, ShuntingYard &shuntingYard, bool defaultValue)
         {
             if (object.is_string())
             {
@@ -129,7 +129,7 @@ namespace Gek
             return object.is_boolean() ? object.get<bool>() : defaultValue;
         }
 
-        float Evaluate(const Object& object, ShuntingYard& shuntingYard, float defaultValue)
+        float Evaluate(const Object &object, ShuntingYard &shuntingYard, float defaultValue)
         {
             if (object.is_string())
             {
@@ -139,7 +139,7 @@ namespace Gek
             return object.is_number() ? object.get<float>() : defaultValue;
         }
 
-        int32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, int32_t defaultValue)
+        int32_t Evaluate(const Object &object, ShuntingYard &shuntingYard, int32_t defaultValue)
         {
             if (object.is_string())
             {
@@ -149,7 +149,7 @@ namespace Gek
             return object.is_number() ? object.get<int32_t>() : defaultValue;
         }
 
-        uint32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, uint32_t defaultValue)
+        uint32_t Evaluate(const Object &object, ShuntingYard &shuntingYard, uint32_t defaultValue)
         {
             if (object.is_string())
             {
@@ -159,7 +159,7 @@ namespace Gek
             return object.is_number() ? object.get<uint32_t>() : defaultValue;
         }
 
-        Math::Float2 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float2 const& defaultValue)
+        Math::Float2 Evaluate(const Object &object, ShuntingYard &shuntingYard, Math::Float2 const &defaultValue)
         {
             if (object.is_array())
             {
@@ -178,7 +178,7 @@ namespace Gek
             return defaultValue;
         }
 
-        Math::Float3 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float3 const& defaultValue)
+        Math::Float3 Evaluate(const Object &object, ShuntingYard &shuntingYard, Math::Float3 const &defaultValue)
         {
             if (object.is_array())
             {
@@ -198,11 +198,11 @@ namespace Gek
             return defaultValue;
         }
 
-        Math::Float4 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float4 const& defaultValue)
+        Math::Float4 Evaluate(const Object &object, ShuntingYard &shuntingYard, Math::Float4 const &defaultValue)
         {
             if (object.is_object())
             {
-                const auto& method = object.begin();
+                const auto &method = object.begin();
                 if (String::GetLower(method.key()) == "normalize")
                 {
                     return Evaluate(method.value(), shuntingYard, defaultValue).getNormal();
@@ -234,7 +234,7 @@ namespace Gek
             return defaultValue;
         }
 
-        Math::Quaternion Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Quaternion const& defaultValue)
+        Math::Quaternion Evaluate(const Object &object, ShuntingYard &shuntingYard, Math::Quaternion const &defaultValue)
         {
             if (object.is_array())
             {
@@ -258,7 +258,7 @@ namespace Gek
             return defaultValue;
         }
 
-        std::string Evaluate(const Object& object, ShuntingYard& shuntingYard, std::string const& defaultValue)
+        std::string Evaluate(const Object &object, ShuntingYard &shuntingYard, std::string const &defaultValue)
         {
             return Value(object, defaultValue);
         }

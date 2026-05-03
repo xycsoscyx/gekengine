@@ -13,18 +13,18 @@ namespace Gek
         GEK_DECLARE_CONTEXT_USER(Filter);
         GEK_DECLARE_CONTEXT_USER(Editor);
         GEK_DECLARE_CONTEXT_USER(Core);
-    };
+    }; // namespace Implementation
 
     GEK_CONTEXT_BEGIN(Engine);
-        GEK_CONTEXT_ADD_CLASS(Engine::Population, Implementation::Population);
-        GEK_CONTEXT_ADD_CLASS(Engine::Visualizer, Implementation::Visualizer);
-        GEK_CONTEXT_ADD_CLASS(Engine::Resources, Implementation::Resources);
-        GEK_CONTEXT_ADD_CLASS(Engine::Visual, Implementation::Visual);
-        GEK_CONTEXT_ADD_CLASS(Engine::Material, Implementation::Material);
-        GEK_CONTEXT_ADD_CLASS(Engine::Shader, Implementation::Shader);
-        GEK_CONTEXT_ADD_CLASS(Engine::Filter, Implementation::Filter);
-        GEK_CONTEXT_ADD_CLASS(Engine::Editor, Implementation::Editor);
-            GEK_CONTEXT_ADD_TYPE(ProcessorType);
-        GEK_CONTEXT_ADD_CLASS(Engine::Core, Implementation::Core);
+    GEK_CONTEXT_ADD_CLASS(Engine::Population, Implementation::Population);
+    GEK_CONTEXT_ADD_CLASS(Engine::Visualizer, Implementation::Visualizer);
+    GEK_CONTEXT_ADD_CLASS(Engine::Resources, Implementation::Resources);
+    GEK_CONTEXT_ADD_CLASS(Engine::Visual, Implementation::Visual);
+    GEK_CONTEXT_ADD_CLASS(Engine::Material, Implementation::Material);
+    GEK_CONTEXT_ADD_CLASS(Engine::Shader, Implementation::Shader);
+    GEK_CONTEXT_ADD_CLASS(Engine::Filter, Implementation::Filter);
+    GEK_CONTEXT_ADD_CLASS(Engine::Editor, Implementation::Editor);
+    GEK_CONTEXT_ADD_TYPE(ProcessorType);
+    GEK_CONTEXT_ADD_CLASS(Engine::Core, Implementation::Core);
     GEK_CONTEXT_END()
 }; // namespace Gek

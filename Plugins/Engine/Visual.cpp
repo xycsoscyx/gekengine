@@ -1,10 +1,10 @@
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/Visual.hpp"
 #include "API/System/RenderDevice.hpp"
 #include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Visual.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
 #include "Passes.hpp"
 
 namespace Gek
@@ -12,28 +12,26 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Visual, Render::Device *, Engine::Resources *, std::string)
-            , public Engine::Visual
+        , public Engine::Visual
         {
-        private:
-			std::string visualName;
+          private:
+            std::string visualName;
             Render::Device *videoDevice = nullptr;
-			Render::ObjectPtr inputLayout;
-			Render::Program *vertexProgram = nullptr;
-			Render::Program *geometryProgram = nullptr;
+            Render::ObjectPtr inputLayout;
+            Render::Program *vertexProgram = nullptr;
+            Render::Program *geometryProgram = nullptr;
 
-        public:
-            Visual(Context *context, Render::Device *videoDevice, Engine::Resources *resources, std::string visualName)
-                : ContextRegistration(context)
-                , videoDevice(videoDevice)
-				, visualName(visualName)
+          public:
+            Visual(Context * context, Render::Device * videoDevice, Engine::Resources * resources, std::string visualName)
+                : ContextRegistration(context), videoDevice(videoDevice), visualName(visualName)
             {
                 assert(videoDevice);
                 assert(resources);
 
                 JSON::Object visualNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("visuals", visualName).withExtension(".json")));
 
-				std::vector<std::string> inputVertexData;
-				std::vector<Render::InputElement> elementList;
+                std::vector<std::string> inputVertexData;
+                std::vector<Render::InputElement> elementList;
 
                 uint32_t inputIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : visualNode["input"])
@@ -72,21 +70,21 @@ namespace Gek
                     }
                 }
 
-				std::vector<std::string> outputVertexData;
-				uint32_t outputIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
-				for (auto &elementNode : visualNode["output"])
-				{
+                std::vector<std::string> outputVertexData;
+                uint32_t outputIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
+                for (auto &elementNode : visualNode["output"])
+                {
                     std::string elementName(JSON::Value(elementNode, "name", String::Empty));
                     Render::Format format = Render::GetFormat(JSON::Value(elementNode, "format", String::Empty));
-					auto semantic = Render::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
+                    auto semantic = Render::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
                     uint32_t count = JSON::Value(elementNode, "count", 1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
                     outputVertexData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex));
-				}
+                }
 
                 static constexpr std::string_view engineDataTemplate =
-R"(struct InputVertex
+                    R"(struct InputVertex
 {{
 {}
 }};
@@ -132,20 +130,20 @@ OutputVertex getProjection(OutputVertex outputVertex)
                         this->geometryProgram = resources->getProgram(Render::Program::Type::Geometry, geometryFileName, geometryEntry);
                     }
                 }
-			}
+            }
 
             // Plugin
-			std::string_view getName(void) const
-			{
-				return visualName;
-			}
-
-            void enable(Render::Device::Context *videoContext)
+            std::string_view getName(void) const
             {
-				videoContext->setInputLayout(inputLayout.get());
-				videoContext->vertexPipeline()->setProgram(vertexProgram);
-				videoContext->geometryPipeline()->setProgram(geometryProgram);
-			}
+                return visualName;
+            }
+
+            void enable(Render::Device::Context * videoContext)
+            {
+                videoContext->setInputLayout(inputLayout.get());
+                videoContext->vertexPipeline()->setProgram(vertexProgram);
+                videoContext->geometryPipeline()->setProgram(geometryProgram);
+            }
         };
 
         GEK_REGISTER_CONTEXT_USER(Visual);

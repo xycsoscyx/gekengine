@@ -1,42 +1,42 @@
+#include "API/Engine/ComponentMixin.hpp"
+#include "API/Engine/Core.hpp"
+#include "API/Engine/Editor.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
+#include "API/Engine/Processor.hpp"
+#include "API/Engine/Resources.hpp"
+#include "API/Engine/Visualizer.hpp"
+#include "API/System/RenderDevice.hpp"
+#include "GEK/Components/Color.hpp"
+#include "GEK/Components/Transform.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/SIMD.hpp"
+#include "GEK/Model/Base.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/ThreadPool.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "API/System/RenderDevice.hpp"
-#include "API/Engine/Core.hpp"
-#include "API/Engine/Processor.hpp"
-#include "API/Engine/ComponentMixin.hpp"
-#include "API/Engine/Population.hpp"
-#include "API/Engine/Entity.hpp"
-#include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Resources.hpp"
-#include "API/Engine/Editor.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Color.hpp"
-#include "GEK/Model/Base.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
+#include <algorithm>
+#include <cstring>
+#include <execution>
+#include <future>
+#include <memory>
+#include <mutex>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-#include <xmmintrin.h>
-#include <algorithm>
-#include <execution>
-#include <memory>
-#include <future>
-#include <mutex>
-#include <cstring>
 #include <unordered_set>
+#include <xmmintrin.h>
 
 namespace Gek
 {
-    #include "Cube.h"
-    #include "Sphere.h"
+#include "Cube.h"
+#include "Sphere.h"
 
-    template<typename TYPE>
-    void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
+    template <typename TYPE>
+    void updateMaximumValue(std::atomic<TYPE> &maximum_value, TYPE const &value) noexcept
     {
         TYPE prev_value = maximum_value;
         while (prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value))
@@ -46,10 +46,10 @@ namespace Gek
 
     class Unpacker
     {
-    private:
+      private:
         uint8_t *buffer;
 
-    public:
+      public:
         Unpacker(uint8_t *buffer)
             : buffer(buffer)
         {
@@ -65,39 +65,38 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(Model, Plugin::Population *)
-        , public Plugin::ComponentMixin<Components::Model, Edit::Component>
+    , public Plugin::ComponentMixin<Components::Model, Edit::Component>
     {
-    private:
+      private:
         int selectedModel = 0;
         std::vector<std::string> modelList;
 
-    public:
-        Model(Context *context, Plugin::Population *population)
-            : ContextRegistration(context)
-            , ComponentMixin(population)
+      public:
+        Model(Context * context, Plugin::Population * population)
+            : ContextRegistration(context), ComponentMixin(population)
         {
         }
 
         // Plugin::Component
-        void save(Components::Model const * const data, JSON::Object &exportData) const
+        void save(Components::Model const *const data, JSON::Object &exportData) const
         {
             exportData = data->name;
         }
 
-        void load(Components::Model * const data, JSON::Object const &importData)
+        void load(Components::Model *const data, JSON::Object const &importData)
         {
             data->name = evaluate(importData, String::Empty);
         }
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext *const guiContext, Plugin::Entity *const entity, Plugin::Component::Data *data)
         {
             bool changed = false;
             ImGui::SetCurrentContext(guiContext);
 
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
 
-            std::function<FileSystem::Path(const char*, FileSystem::Path const&)> removeRoot = [](const char* location, FileSystem::Path const& path) -> FileSystem::Path
+            std::function<FileSystem::Path(const char *, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const &path) -> FileSystem::Path
             {
                 auto parentPath = path.getParentPath();
                 while (parentPath.isDirectory() && parentPath != path.getRootPath())
@@ -116,7 +115,7 @@ namespace Gek
             };
 
             changed |= editorElement("Model", [&](void) -> bool
-            {
+                                     {
                 if (modelList.empty())
                 {
                     std::function<bool(FileSystem::Path const &)> searchDirectory;
@@ -228,8 +227,7 @@ namespace Gek
                     ImGui::EndCombo();
                 }
 
-                return selectionChanged;
-            });
+                return selectionChanged; });
 
             if (changed)
             {
@@ -259,10 +257,9 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
-        , public Plugin::EntityProcessor<ModelProcessor, Components::Model, Components::Transform>
-        , public Gek::Processor::Model
+    , public Plugin::EntityProcessor<ModelProcessor, Components::Model, Components::Transform>, public Gek::Processor::Model
     {
-    public:
+      public:
         enum class NormalEncoding : uint8_t
         {
             RG = 0,
@@ -314,7 +311,7 @@ namespace Gek
         struct Face
         {
             uint16_t data[3];
-            uint16_t &operator [] (size_t index)
+            uint16_t &operator[](size_t index)
             {
                 return data[index];
             }
@@ -354,14 +351,12 @@ namespace Gek
             const Group::Model::Mesh *data = nullptr;
 
             DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, Group::Model::Mesh const *data = nullptr)
-                : instanceStart(instanceStart)
-                , instanceCount(instanceCount)
-                , data(data)
+                : instanceStart(instanceStart), instanceCount(instanceCount), data(data)
             {
             }
         };
 
-    private:
+      private:
         Plugin::Core *core = nullptr;
         Render::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
@@ -386,8 +381,8 @@ namespace Gek
         std::vector<float, AlignedAllocator<float, 16>> transformList[16];
         std::vector<bool> visibilityList;
 
-        using EntityDataList = tbb::concurrent_vector<std::tuple<Plugin::Entity * const, Data const *, uint32_t>>;
-        using EntityModelList = tbb::concurrent_vector<std::tuple<Plugin::Entity * const, Group::Model const *, uint32_t>>;
+        using EntityDataList = tbb::concurrent_vector<std::tuple<Plugin::Entity *const, Data const *, uint32_t>>;
+        using EntityModelList = tbb::concurrent_vector<std::tuple<Plugin::Entity *const, Group::Model const *, uint32_t>>;
         EntityDataList entityDataList;
         EntityModelList entityModelList;
 
@@ -397,23 +392,17 @@ namespace Gek
         MaterialMeshMap renderList;
 
         bool shuttingDown = false;
-  
+
         std::mutex missingMaterialMutex;
         std::unordered_set<std::string> warnedMissingMaterials;
 
-    public:  
-        ModelProcessor(Context *context, Plugin::Core *core)
-            : ContextRegistration(context)
-            , core(core)
-            , videoDevice(core->getVisualizer()->getRenderDevice())
-            , population(core->getPopulation())  
-            , resources(core->getResources())
-            , renderer(core->getVisualizer())  
-            , loadPool(5)
+      public:
+        ModelProcessor(Context * context, Plugin::Core * core)
+            : ContextRegistration(context), core(core), videoDevice(core->getVisualizer()->getRenderDevice()), population(core->getPopulation()), resources(core->getResources()), renderer(core->getVisualizer()), loadPool(5)
         {
             assert(core);
             assert(videoDevice);
-			assert(population);
+            assert(population);
             assert(resources);
             assert(renderer);
 
@@ -429,10 +418,8 @@ namespace Gek
             renderer->onQueueDrawCalls.connect(this, &ModelProcessor::onQueueDrawCalls);
 
             // Catch entities that may already exist before this processor is fully wired.
-            population->listEntities([this](Plugin::Entity * const entity) -> void
-            {
-                addEntity(entity);
-            });
+            population->listEntities([this](Plugin::Entity *const entity) -> void
+                                     { addEntity(entity); });
 
             visual = resources->loadVisual("model");
 
@@ -445,7 +432,7 @@ namespace Gek
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
-        void scheduleLoadMesh(Header::Mesh& meshHeader, Group::Model::Mesh& mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t* meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
+        void scheduleLoadMesh(Header::Mesh & meshHeader, Group::Model::Mesh & mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t *meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
         {
             if (shuttingDown)
             {
@@ -481,10 +468,10 @@ namespace Gek
                 if (shouldLog)
                 {
                     getContext()->log(Context::Warning,
-                        "Unable to resolve material '{}' while loading model '{}' in group '{}'; using debug fallback material",
-                        missingMaterialName,
-                        fileName,
-                        name);
+                                      "Unable to resolve material '{}' while loading model '{}' in group '{}'; using debug fallback material",
+                                      missingMaterialName,
+                                      fileName,
+                                      name);
                 }
 
                 mesh.material = resources->loadMaterial("debug");
@@ -503,11 +490,11 @@ namespace Gek
                 return;
             }
 
-            //Render::Buffer::Description indexBufferDescription;
-            //indexBufferDescription.format = Render::Format::R16_UINT;
-            //indexBufferDescription.count = (meshHeader.faceCount * 3);
-            //indexBufferDescription.type = Render::Buffer::Type::Index;
-            //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
+            // Render::Buffer::Description indexBufferDescription;
+            // indexBufferDescription.format = Render::Format::R16_UINT;
+            // indexBufferDescription.count = (meshHeader.faceCount * 3);
+            // indexBufferDescription.type = Render::Buffer::Type::Index;
+            // mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
             Render::Buffer::Description vertexBufferDescription;
             vertexBufferDescription.name = std::format("model:{}.{}.{}:positions", meshIndex, fileName, name);
@@ -529,7 +516,7 @@ namespace Gek
             mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount), Plugin::Resources::Flags::Immediate);
         }
 
-        void scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
+        void scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group & group, ModelProcessor::Group::Model & model)
         {
             if (shuttingDown)
             {
@@ -546,7 +533,7 @@ namespace Gek
                 return;
             }
 
-            FileHeader* header = reinterpret_cast<FileHeader*>(buffer->data());
+            FileHeader *header = reinterpret_cast<FileHeader *>(buffer->data());
             if ((header->version != LegacyModelVersion) && (header->version != CurrentModelVersion))
             {
                 getContext()->log(
@@ -573,20 +560,20 @@ namespace Gek
             group.boundingBox.extend(model.boundingBox.minimum);
             group.boundingBox.extend(model.boundingBox.maximum);
             model.meshList.resize(header->meshCount);
-            uint8_t* meshHeaderBuffer = buffer->data() + sizeof(FileHeader);
-            uint8_t* meshBuffer = meshHeaderBuffer + (meshHeaderSize * header->meshCount);
+            uint8_t *meshHeaderBuffer = buffer->data() + sizeof(FileHeader);
+            uint8_t *meshBuffer = meshHeaderBuffer + (meshHeaderSize * header->meshCount);
             for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
             {
-                Group::Model::Mesh& mesh = model.meshList[meshIndex];
+                Group::Model::Mesh &mesh = model.meshList[meshIndex];
 
                 Header::Mesh meshHeader;
                 if (header->version >= CurrentModelVersion)
                 {
-                    meshHeader = *reinterpret_cast<Header::Mesh*>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
+                    meshHeader = *reinterpret_cast<Header::Mesh *>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
                 }
                 else
                 {
-                    auto const& legacyMeshHeader = *reinterpret_cast<LegacyMeshHeader*>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
+                    auto const &legacyMeshHeader = *reinterpret_cast<LegacyMeshHeader *>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
                     std::memcpy(meshHeader.material, legacyMeshHeader.material, sizeof(meshHeader.material));
                     meshHeader.vertexCount = legacyMeshHeader.vertexCount;
                     meshHeader.faceCount = legacyMeshHeader.faceCount;
@@ -615,10 +602,10 @@ namespace Gek
             if (name == "#cube")
             {
                 loadedGroup.modelList.resize(1);
-                auto& model = loadedGroup.modelList[0];
-                for (auto& staticModel : cube_models)
+                auto &model = loadedGroup.modelList[0];
+                for (auto &staticModel : cube_models)
                 {
-                    auto& mesh = model.meshList.emplace_back();
+                    auto &mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = static_cast<uint32_t>(staticModel.positions.size());
 
@@ -628,7 +615,7 @@ namespace Gek
                     vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data(), Plugin::Resources::Flags::Immediate);
-                    for (auto& position : staticModel.positions)
+                    for (auto &position : staticModel.positions)
                     {
                         loadedGroup.boundingBox.extend(position);
                         model.boundingBox.extend(position);
@@ -652,10 +639,10 @@ namespace Gek
             else if (name == "#sphere")
             {
                 loadedGroup.modelList.resize(1);
-                auto& model = loadedGroup.modelList[0];
-                for (auto& staticModel : sphere_models)
+                auto &model = loadedGroup.modelList[0];
+                for (auto &staticModel : sphere_models)
                 {
-                    auto& mesh = model.meshList.emplace_back();
+                    auto &mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = static_cast<uint32_t>(staticModel.positions.size());
 
@@ -665,7 +652,7 @@ namespace Gek
                     vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data(), Plugin::Resources::Flags::Immediate);
-                    for (auto& position : staticModel.positions)
+                    for (auto &position : staticModel.positions)
                     {
                         loadedGroup.boundingBox.extend(position);
                         model.boundingBox.extend(position);
@@ -690,8 +677,8 @@ namespace Gek
             {
                 std::vector<FileSystem::Path> modelPathList;
                 auto groupPath(getContext()->findDataPath(FileSystem::CreatePath("models", name)));
-                groupPath.findFiles([&](FileSystem::Path const& filePath) -> bool
-                {
+                groupPath.findFiles([&](FileSystem::Path const &filePath) -> bool
+                                    {
                     std::string fileName(filePath.getString());
                     if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
                     {
@@ -730,8 +717,7 @@ namespace Gek
                         modelPathList.push_back(filePath);
                     }
 
-                    return true;
-                });
+                    return true; });
 
                 if (modelPathList.empty())
                 {
@@ -741,8 +727,8 @@ namespace Gek
                 loadedGroup.modelList.resize(modelPathList.size());
                 for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)
                 {
-                    auto& model = loadedGroup.modelList[modelIndex];
-                    auto& filePath = modelPathList[modelIndex];
+                    auto &model = loadedGroup.modelList[modelIndex];
+                    auto &filePath = modelPathList[modelIndex];
                     scheduleLoadData(name, filePath, loadedGroup, model);
                 }
             }
@@ -754,10 +740,10 @@ namespace Gek
             getContext()->log(Context::Info, "Group {} successfully queued", name);
         }
 
-        void addEntity(Plugin::Entity * const entity)
+        void addEntity(Plugin::Entity *const entity)
         {
             EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
-            {
+                                       {
                 if (modelComponent.name.empty())
                 {
                     data.group = nullptr;
@@ -772,21 +758,19 @@ namespace Gek
                     }
 
                     data.group = pair.first->second;
-                }
-            });
+                } });
         }
 
         // Plugin::Processor
         void onInitialized(void)
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
-            {
+                                 {
                 auto castCheck = dynamic_cast<Edit::Events *>(processor);
                 if (castCheck)
                 {
                     (events = castCheck)->onModified.connect(this, &ModelProcessor::onModified);
-                }
-            });
+                } });
         }
 
         void onShutdown(void)
@@ -820,7 +804,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, Hash type)
+        void onModified(Plugin::Entity *const entity, Hash type)
         {
             if (type == Components::Model::GetIdentifier())
             {
@@ -834,22 +818,22 @@ namespace Gek
             clear();
         }
 
-        void onEntityCreated(Plugin::Entity * const entity)
+        void onEntityCreated(Plugin::Entity *const entity)
         {
             addEntity(entity);
         }
 
-        void onEntityDestroyed(Plugin::Entity * const entity)
+        void onEntityDestroyed(Plugin::Entity *const entity)
         {
             removeEntity(entity);
         }
 
-        void onComponentAdded(Plugin::Entity * const entity)
+        void onComponentAdded(Plugin::Entity *const entity)
         {
             addEntity(entity);
         }
 
-        void onComponentRemoved(Plugin::Entity * const entity)
+        void onComponentRemoved(Plugin::Entity *const entity)
         {
             if (!entity->hasComponents<Components::Model, Components::Transform>())
             {
@@ -870,23 +854,23 @@ namespace Gek
             instanceBufferRetireIndex = (instanceBufferRetireIndex + 1) % kInstanceBufferFrameSlots;
             instanceBufferRetireSlots[instanceBufferRetireIndex].clear();
 
-			// Cull by entity/group
-			const auto entityCount = getEntityCount();
-			auto buffer = (entityCount % 4);
-			buffer = (buffer ? (4 - buffer) : buffer);
-			const auto bufferedEntityCount = (entityCount + buffer);
-			halfSizeXList.resize(bufferedEntityCount);
-			halfSizeYList.resize(bufferedEntityCount);
-			halfSizeZList.resize(bufferedEntityCount);
-			for (auto &elementList : transformList)
-			{
-				elementList.resize(bufferedEntityCount);
-			}
+            // Cull by entity/group
+            const auto entityCount = getEntityCount();
+            auto buffer = (entityCount % 4);
+            buffer = (buffer ? (4 - buffer) : buffer);
+            const auto bufferedEntityCount = (entityCount + buffer);
+            halfSizeXList.resize(bufferedEntityCount);
+            halfSizeYList.resize(bufferedEntityCount);
+            halfSizeZList.resize(bufferedEntityCount);
+            for (auto &elementList : transformList)
+            {
+                elementList.resize(bufferedEntityCount);
+            }
 
-			entityDataList.clear();
-			entityDataList.reserve(static_cast<EntityDataList::size_type>(entityCount));
-			parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
-			{
+            entityDataList.clear();
+            entityDataList.reserve(static_cast<EntityDataList::size_type>(entityCount));
+            parallelListEntities([&](Plugin::Entity *const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+                                 {
                 if (data.group && data.group->ready.load(std::memory_order_acquire))
                 {
                     auto group = data.group;
@@ -904,16 +888,13 @@ namespace Gek
                     {
                         transformList[element][entityIndex] = matrix.data[element];
                     }
-                }
-			});
+                } });
 
-			visibilityList.resize(bufferedEntityCount);
+            visibilityList.resize(bufferedEntityCount);
             Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, static_cast<uint32_t>(bufferedEntityCount), halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
             const auto visibleEntityCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
-            {
-                return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0));
-            });
+                                                            { return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0)); });
 
             if (!entityDataList.empty() && visibleEntityCount == 0)
             {
@@ -925,33 +906,32 @@ namespace Gek
                 entityCullingFallbackCount = 1;
             }
 
-			// Cull by model inside group
+            // Cull by model inside group
             const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), size_t(0), [this](size_t count, auto const &entitySearch) -> size_t
-			{
+                                                    {
 				if (visibilityList[std::get<2>(entitySearch)])
 				{
 					auto data = std::get<1>(entitySearch);
 					count += data->group->modelList.size();
 				}
 
-				return count;
-			});
+				return count; });
 
-			buffer = (modelCount % 4);
-			buffer = (buffer ? (4 - buffer) : buffer);
-			const auto bufferedModelCount = (modelCount + buffer);
-			halfSizeXList.resize(bufferedModelCount);
-			halfSizeYList.resize(bufferedModelCount);
-			halfSizeZList.resize(bufferedModelCount);
-			for (auto &elementList : transformList)
-			{
-				elementList.resize(bufferedModelCount);
-			}
+            buffer = (modelCount % 4);
+            buffer = (buffer ? (4 - buffer) : buffer);
+            const auto bufferedModelCount = (modelCount + buffer);
+            halfSizeXList.resize(bufferedModelCount);
+            halfSizeYList.resize(bufferedModelCount);
+            halfSizeZList.resize(bufferedModelCount);
+            for (auto &elementList : transformList)
+            {
+                elementList.resize(bufferedModelCount);
+            }
 
-			entityModelList.clear();
+            entityModelList.clear();
             entityModelList.reserve(static_cast<EntityModelList::size_type>(bufferedModelCount));
-			std::for_each(std::execution::par, std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
-			{
+            std::for_each(std::execution::par, std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
+                          {
 				auto entityDataIndex = std::get<2>(entitySearch);
 				if (visibilityList[entityDataIndex])
 				{
@@ -980,16 +960,13 @@ namespace Gek
                             transformList[element][entityModelIndex] = centerTransform.data[element];
 						}
 					});
-				}
-			});
+				} });
 
-			visibilityList.resize(bufferedModelCount);
+            visibilityList.resize(bufferedModelCount);
             Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, static_cast<uint32_t>(bufferedModelCount), halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
             const auto visibleModelCount = std::accumulate(std::begin(entityModelList), std::end(entityModelList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
-            {
-                return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0));
-            });
+                                                           { return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0)); });
 
             if (!entityModelList.empty() && visibleModelCount == 0)
             {
@@ -1002,7 +979,7 @@ namespace Gek
             }
 
             std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
-			{
+                          {
 				if (visibilityList[std::get<2>(entitySearch)])
 				{
 					Plugin::Entity * const entity = std::get<0>(entitySearch);
@@ -1017,12 +994,11 @@ namespace Gek
 						auto &instanceList = meshMap[&mesh];
 						instanceList.push_back(modelViewMatrix);
 					});
-				}
-			});
+				} });
 
             std::atomic_size_t queuedBatchCount = 0;
             std::for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
-			{
+                          {
 				const auto material = materialPair.first;
 				auto &materialMap = materialPair.second;
 
@@ -1134,8 +1110,7 @@ namespace Gek
 							}
 						}
 					}
-				});
-			});
+				}); });
 
             getContext()->setRuntimeMetric("model.frame", static_cast<double>(modelQueueFrameCounter));
             getContext()->setRuntimeMetric("model.entities", static_cast<double>(entityDataList.size()));
@@ -1145,8 +1120,8 @@ namespace Gek
             getContext()->setRuntimeMetric("model.queuedBatches", static_cast<double>(queuedBatchCount.load()));
             getContext()->setRuntimeMetric("model.entityCullingFallback", static_cast<double>(entityCullingFallbackCount));
             getContext()->setRuntimeMetric("model.modelCullingFallback", static_cast<double>(modelCullingFallbackCount));
-		}
-	};
+        }
+    };
 
     GEK_REGISTER_CONTEXT_USER(Model)
     GEK_REGISTER_CONTEXT_USER(ModelProcessor)

@@ -1,24 +1,24 @@
 #include "GEK/Math/Common.hpp"
-#include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Math/Vector3.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <argparse/argparse.hpp>
-#include <assimp/config.h>
-#include <assimp/cimport.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <mikktspace.h>
-#include <unordered_map>
+#include "GEK/Utility/String.hpp"
 #include <algorithm>
-#include <string.h>
-#include <vector>
+#include <argparse/argparse.hpp>
+#include <assimp/cimport.h>
+#include <assimp/config.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <format>
 #include <map>
+#include <mikktspace.h>
 #include <sstream>
+#include <string.h>
+#include <unordered_map>
+#include <vector>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -32,7 +32,7 @@ enum class NormalEncoding : uint8_t
     RGB = 1,
 };
 
-constexpr const char* ToString(NormalEncoding encoding)
+constexpr const char *ToString(NormalEncoding encoding)
 {
     switch (encoding)
     {
@@ -91,12 +91,12 @@ struct IndexedMesh
     struct Face
     {
         uint16_t data[3];
-        uint16_t& operator [] (size_t index)
+        uint16_t &operator[](size_t index)
         {
             return data[index];
         }
 
-        const uint16_t& operator [] (size_t index) const
+        const uint16_t &operator[](size_t index) const
         {
             return data[index];
         }
@@ -147,12 +147,12 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
 
         Model model;
         model.name = inputNode->mName.C_Str();
-		if (model.name.empty())
-		{
-			model.name = std::format("model_{}", modelList.size());
-		}
+        if (model.name.empty())
+        {
+            model.name = std::format("model_{}", modelList.size());
+        }
 
-		context->log(Context::Info, "Found Assimp Model: {}", model.name);
+        context->log(Context::Info, "Found Assimp Model: {}", model.name);
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
@@ -209,7 +209,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 indexedMesh.faceList.reserve(inputMesh->mNumFaces);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace& face = inputMesh->mFaces[faceIndex];
+                    const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
                         context->log(Context::Error, "Skipping non-triangular face, face: {}, {} indices", faceIndex, face.mNumIndices);
@@ -256,7 +256,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                     indexedMesh.normalList[vertexIndex] = localTransform.rotate(normal);
                 }
 
-                for (const auto& point : indexedMesh.pointList)
+                for (const auto &point : indexedMesh.pointList)
                 {
                     model.boundingBox.extend(point);
                 }
@@ -269,7 +269,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 mesh.normalList.reserve(inputMesh->mNumFaces * 3);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace& face = inputMesh->mFaces[faceIndex];
+                    const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
                         context->log(Context::Error, "Skipping non-triangular face, face: {}, {} indices", faceIndex, face.mNumIndices);
@@ -305,50 +305,50 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                     }
                 }
 
-                for (const auto& point : mesh.pointList)
+                for (const auto &point : mesh.pointList)
                 {
                     model.boundingBox.extend(point);
                 }
 
                 SMikkTSpaceInterface mikkInterface;
-                mikkInterface.m_getNumFaces = [](const SMikkTSpaceContext* mikkContext) -> int
+                mikkInterface.m_getNumFaces = [](const SMikkTSpaceContext *mikkContext) -> int
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     return mesh.pointList.size() / 3;
                 };
 
-                mikkInterface.m_getNumVerticesOfFace = [](const SMikkTSpaceContext* mikkContext, const int faceIndex) -> int
+                mikkInterface.m_getNumVerticesOfFace = [](const SMikkTSpaceContext *mikkContext, const int faceIndex) -> int
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     return 3;
                 };
 
-                mikkInterface.m_getPosition = [](const SMikkTSpaceContext* mikkContext, float position[], const int faceIndex, const int vertexIndex) -> void
+                mikkInterface.m_getPosition = [](const SMikkTSpaceContext *mikkContext, float position[], const int faceIndex, const int vertexIndex) -> void
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     position[0] = mesh.pointList[(faceIndex * 3) + vertexIndex].x;
                     position[1] = mesh.pointList[(faceIndex * 3) + vertexIndex].y;
                     position[2] = mesh.pointList[(faceIndex * 3) + vertexIndex].z;
                 };
 
-                mikkInterface.m_getNormal = [](const SMikkTSpaceContext* mikkContext, float normal[], const int faceIndex, const int vertexIndex) -> void
+                mikkInterface.m_getNormal = [](const SMikkTSpaceContext *mikkContext, float normal[], const int faceIndex, const int vertexIndex) -> void
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     normal[0] = mesh.normalList[(faceIndex * 3) + vertexIndex].x;
                     normal[1] = mesh.normalList[(faceIndex * 3) + vertexIndex].y;
                     normal[2] = mesh.normalList[(faceIndex * 3) + vertexIndex].z;
                 };
 
-                mikkInterface.m_getTexCoord = [](const SMikkTSpaceContext* mikkContext, float texCoord[], const int faceIndex, const int vertexIndex) -> void
+                mikkInterface.m_getTexCoord = [](const SMikkTSpaceContext *mikkContext, float texCoord[], const int faceIndex, const int vertexIndex) -> void
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     texCoord[0] = mesh.texCoordList[(faceIndex * 3) + vertexIndex].x;
                     texCoord[1] = mesh.texCoordList[(faceIndex * 3) + vertexIndex].y;
                 };
 
-                mikkInterface.m_setTSpaceBasic = [](const SMikkTSpaceContext* mikkContext, const float tangent[], const float sign, const int faceIndex, const int vertexIndex) -> void
+                mikkInterface.m_setTSpaceBasic = [](const SMikkTSpaceContext *mikkContext, const float tangent[], const float sign, const int faceIndex, const int vertexIndex) -> void
                 {
-                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    auto &mesh = *reinterpret_cast<Mesh *>(mikkContext->m_pUserData);
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].x = tangent[0];
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].y = tangent[1];
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].z = tangent[2];
@@ -369,7 +369,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 size_t positiveTangentSignCount = 0;
                 size_t negativeTangentSignCount = 0;
                 size_t zeroTangentSignCount = 0;
-                for (auto const& tangentValue : mesh.tangentList)
+                for (auto const &tangentValue : mesh.tangentList)
                 {
                     if (tangentValue.w > 0.0f)
                     {
@@ -391,9 +391,9 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 for (size_t faceIndex = 0; faceIndex < faceCount; ++faceIndex)
                 {
                     const size_t vertexOffset = (faceIndex * 3);
-                    auto const& uv0 = mesh.texCoordList[vertexOffset + 0];
-                    auto const& uv1 = mesh.texCoordList[vertexOffset + 1];
-                    auto const& uv2 = mesh.texCoordList[vertexOffset + 2];
+                    auto const &uv0 = mesh.texCoordList[vertexOffset + 0];
+                    auto const &uv1 = mesh.texCoordList[vertexOffset + 1];
+                    auto const &uv2 = mesh.texCoordList[vertexOffset + 2];
 
                     Math::Float2 duv1 = (uv1 - uv0);
                     Math::Float2 duv2 = (uv2 - uv0);
@@ -447,7 +447,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
     return true;
 }
 
-int main(int argumentCount, char const * const argumentList[])
+int main(int argumentCount, char const *const argumentList[])
 {
     ContextPtr context(Context::Create(nullptr));
 
@@ -489,7 +489,7 @@ int main(int argumentCount, char const * const argumentList[])
 
         program.parse_args(arguments);
     }
-    catch (const std::runtime_error& err)
+    catch (const std::runtime_error &err)
     {
         if (context)
         {
@@ -532,18 +532,18 @@ int main(int argumentCount, char const * const argumentList[])
         context->addDataPath(rootPath.getString());
 
         aiLogStream logStream;
-        logStream.callback = [](char const* message, char* user) -> void
+        logStream.callback = [](char const *message, char *user) -> void
         {
-            Context* context = reinterpret_cast<Context*>(user);
+            Context *context = reinterpret_cast<Context *>(user);
             context->log(Context::Info, message);
         };
 
-        logStream.user = reinterpret_cast<char*>(context.get());
+        logStream.user = reinterpret_cast<char *>(context.get());
         aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
-            //aiComponent_NORMALS |
-            //aiComponent_TANGENTS_AND_BITANGENTS |
+            // aiComponent_NORMALS |
+            // aiComponent_TANGENTS_AND_BITANGENTS |
             aiComponent_COLORS |
             aiComponent_BONEWEIGHTS |
             aiComponent_ANIMATIONS |
@@ -565,17 +565,17 @@ int main(int argumentCount, char const * const argumentList[])
             aiProcess_FindInvalidData |
             aiProcess_ImproveCacheLocality |
             aiProcess_OptimizeMeshes |
-            //aiProcess_OptimizeGraph,
+            // aiProcess_OptimizeGraph,
             0;
 
-        aiPropertyStore* propertyStore = aiCreatePropertyStore();
+        aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, parameters.smoothingAngle);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
-        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
+        // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
         context->log(Context::Info, "Loading: {}", filePath.getString());
@@ -627,7 +627,7 @@ int main(int argumentCount, char const * const argumentList[])
             texturesPath = texturesPath.substr(engineIndex);
         }
 
-        std::function<FileSystem::Path (const char*, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const & path) -> FileSystem::Path
+        std::function<FileSystem::Path(const char *, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const &path) -> FileSystem::Path
         {
             auto parentPath = path.getParentPath();
             while (parentPath.isDirectory() && parentPath != path.getRootPath())
@@ -653,8 +653,8 @@ int main(int argumentCount, char const * const argumentList[])
         };
 
         std::unordered_map<std::string, std::vector<MaterialCandidate>> albedoToMaterialMap;
-        std::function<bool(FileSystem::Path const&)> findMaterials;
-        findMaterials = [&](FileSystem::Path const& filePath) -> bool
+        std::function<bool(FileSystem::Path const &)> findMaterials;
+        findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
             if (filePath.getExtension() != ".json")
             {
@@ -662,9 +662,9 @@ int main(int argumentCount, char const * const argumentList[])
             }
 
             JSON::Object materialNode = JSON::Load(filePath);
-            auto& shaderNode = materialNode["shader"];
-            auto& dataNode = shaderNode["data"];
-            auto& albedoNode = dataNode["albedo"];
+            auto &shaderNode = materialNode["shader"];
+            auto &dataNode = shaderNode["data"];
+            auto &albedoNode = dataNode["albedo"];
             FileSystem::Path albedoPath = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoFile = albedoPath.withoutExtension().getString();
 
@@ -706,8 +706,8 @@ int main(int argumentCount, char const * const argumentList[])
                 ToString(encoding),
                 hasExplicitEncoding ? "" : " (implicit/default)");
 
-            auto& list = albedoToMaterialMap[String::GetLower(albedoFile)];
-            list.push_back(MaterialCandidate {
+            auto &list = albedoToMaterialMap[String::GetLower(albedoFile)];
+            list.push_back(MaterialCandidate{
                 .name = materialPath,
                 .hasExplicitEncoding = hasExplicitEncoding,
                 .encoding = encoding,
@@ -735,7 +735,7 @@ int main(int argumentCount, char const * const argumentList[])
 
             if (albedoSearch != std::end(albedoToMaterialMap))
             {
-                for (auto const& candidate : albedoSearch->second)
+                for (auto const &candidate : albedoSearch->second)
                 {
                     if (candidate.hasExplicitEncoding && candidate.encoding == normalEncoding)
                     {
@@ -744,7 +744,7 @@ int main(int argumentCount, char const * const argumentList[])
                     }
                 }
 
-                for (auto const& candidate : albedoSearch->second)
+                for (auto const &candidate : albedoSearch->second)
                 {
                     if (!candidate.hasExplicitEncoding)
                     {
@@ -760,7 +760,7 @@ int main(int argumentCount, char const * const argumentList[])
             return String::Empty;
         };
 
-        auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
+        auto findMaterialForMesh = [&](const FileSystem::Path &sourceName, std::string diffuseName) -> std::string
         {
             context->log(Context::Info, "Searching for: {}, {}", diffuseName, (filePath / diffuseName).getString());
 
@@ -840,35 +840,35 @@ struct StaticModel
             code += std::format(modelTemplate, filePath.withoutExtension().getFileName().c_str());
             code += "\n";
 
-            for (auto& model : modelList)
+            for (auto &model : modelList)
             {
                 context->log(Context::Info, "- Model: {}", model.name);
                 context->log(Context::Info, "- Num. Meshes: {}", model.meshList.size());
                 context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
                 context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
-                for (auto& mesh : model.meshList)
+                for (auto &mesh : model.meshList)
                 {
                     String::Replace(mesh.material, "\\", "\\\\");
                     code += std::format("   StaticModel(\"{}\",\n       std::vector<Math::Float3>({{ ", mesh.material);
-                    for (auto& point : mesh.pointList)
+                    for (auto &point : mesh.pointList)
                     {
                         code += std::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", point.x, point.y, point.z);
                     }
 
                     code += std::format("}}),\n       std::vector<Math::Float2>({{ ");
-                    for (auto& texCoord : mesh.texCoordList)
+                    for (auto &texCoord : mesh.texCoordList)
                     {
                         code += std::format("Math::Float2({:.5F}f, {:.5F}f), ", texCoord.x, texCoord.y);
                     }
 
                     code += std::format("}}),\n       std::vector<Math::Float4>({{ ");
-                    for (auto& tangent : mesh.tangentList)
+                    for (auto &tangent : mesh.tangentList)
                     {
                         code += std::format("Math::Float4({:.5F}f, {:.5F}f, {:.5F}f, {:.5F}f), ", tangent.x, tangent.y, tangent.z, tangent.w);
                     }
 
                     code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
-                    for (auto& normal : mesh.normalList)
+                    for (auto &normal : mesh.normalList)
                     {
                         code += std::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", normal.x, normal.y, normal.z);
                     }
@@ -883,7 +883,7 @@ struct StaticModel
         }
         else
         {
-            for (auto& model : modelList)
+            for (auto &model : modelList)
             {
                 auto modelName(model.name);
                 for (auto replacement : { "$", "<", ">" })
@@ -909,24 +909,24 @@ struct StaticModel
                 header.boundingBox = model.boundingBox;
                 fwrite(&header, sizeof(Header), 1, file);
 
-                for (auto& mesh : model.meshList)
+                for (auto &mesh : model.meshList)
                 {
                     context->log(Context::Info, "- Mesh: {}", mesh.material);
                     context->log(Context::Info, "- Num. Vertices: {}", mesh.pointList.size());
-                    //context->log(Context::Info, "- Num. Faces: {}", mesh.faceList.size());
+                    // context->log(Context::Info, "- Num. Faces: {}", mesh.faceList.size());
 
                     Header::Mesh meshHeader;
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);
                     meshHeader.vertexCount = mesh.pointList.size();
-                    //meshHeader.faceCount = mesh.faceList.size();
-                    // Always write the normalEncoding field from parameters, regardless of material properties
+                    // meshHeader.faceCount = mesh.faceList.size();
+                    //  Always write the normalEncoding field from parameters, regardless of material properties
                     meshHeader.normalEncoding = static_cast<uint8_t>(parameters.normalEncoding);
                     fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
                 }
 
-                for (auto& mesh : model.meshList)
+                for (auto &mesh : model.meshList)
                 {
-                    //fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
+                    // fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
                     fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
                     fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
                     fwrite(mesh.tangentList.data(), sizeof(Math::Float4), mesh.tangentList.size(), file);

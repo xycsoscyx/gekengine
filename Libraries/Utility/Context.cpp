@@ -1,14 +1,14 @@
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
-#include <unordered_map>
-#include <set>
-#include <mutex>
-#include <fstream>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
+#include <mutex>
+#include <set>
+#include <unordered_map>
 
 #ifdef _DEBUG
 const char modulePostfix[] = "_debug";
@@ -17,49 +17,49 @@ const char modulePostfix[] = "";
 #endif
 
 #ifdef _WIN32
-    #include <Windows.h>
-    std::string getWindowsLastErrorMessage(DWORD errorCode)
+#include <Windows.h>
+std::string getWindowsLastErrorMessage(DWORD errorCode)
+{
+    if (errorCode == 0)
     {
-        if (errorCode == 0)
-        {
-            return std::string();
-        }
-
-        LPSTR messageBuffer = nullptr;
-        DWORD size = FormatMessageA(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr,
-            errorCode,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            (LPSTR)&messageBuffer,
-            0,
-            nullptr);
-
-        std::string message;
-        if (size && messageBuffer)
-        {
-            message.assign(messageBuffer, size);
-            LocalFree(messageBuffer);
-        }
-
-        return message;
+        return std::string();
     }
 
-    #define LIBRARY                         HMODULE
-    #define loadLibrary(PATH)               LoadLibraryA(PATH.getString().c_str())
-    #define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
-    #define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
-    const char *moduleExtension = ".dll";
+    LPSTR messageBuffer = nullptr;
+    DWORD size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&messageBuffer,
+        0,
+        nullptr);
+
+    std::string message;
+    if (size && messageBuffer)
+    {
+        message.assign(messageBuffer, size);
+        LocalFree(messageBuffer);
+    }
+
+    return message;
+}
+
+#define LIBRARY HMODULE
+#define loadLibrary(PATH) LoadLibraryA(PATH.getString().c_str())
+#define getFunction(HANDLE, FUNCTION) GetProcAddress(HANDLE, FUNCTION)
+#define freeLibrary(HANDLE) FreeLibrary(HANDLE)
+const char *moduleExtension = ".dll";
 #else
-    #include <dlfcn.h>
-    #define LIBRARY                         void *
-    #define loadLibrary(PATH)               dlopen(PATH.getString().c_str(), RTLD_LAZY)
-    #define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
-    #define freeLibrary(HANDLE)             dlclose(HANDLE)
-    const char *moduleExtension = ".so";
+#include <dlfcn.h>
+#define LIBRARY void *
+#define loadLibrary(PATH) dlopen(PATH.getString().c_str(), RTLD_LAZY)
+#define getFunction(HANDLE, FUNCTION) dlsym(HANDLE, FUNCTION)
+#define freeLibrary(HANDLE) dlclose(HANDLE)
+const char *moduleExtension = ".so";
 #endif
 
-LIBRARY loadPlugin(const Gek::FileSystem::Path& path)
+LIBRARY loadPlugin(const Gek::FileSystem::Path &path)
 {
     if (path.isFile() && path.getExtension() == moduleExtension && path.withoutExtension().getFileName().ends_with(modulePostfix))
     {
@@ -139,7 +139,7 @@ namespace Gek
     class ContextImplementation
         : public Context
     {
-    private:
+      private:
         std::vector<LIBRARY> libraryList;
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
@@ -150,7 +150,7 @@ namespace Gek
         uint8_t logSinkMask = static_cast<uint8_t>(LogSink_Console | LogSink_Debugger);
         FileSystem::Path logFilePath;
         mutable std::ofstream logFileStream;
-		FileSystem::Path cachePath;
+        FileSystem::Path cachePath;
 
         void configureLogSinkFromEnvironment(void)
         {
@@ -172,17 +172,17 @@ namespace Gek
             if (library)
             {
 #ifdef _WIN32
-                using InitializePlugin = void(*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash>&)>)>, std::function<void(std::string_view, std::string_view)>);
+                using InitializePlugin = void (*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)>, std::function<void(std::string_view, std::string_view)>);
                 InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress((HMODULE)library, "initializePlugin");
 #else
-                using InitializePlugin = void(*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash>&)>)>, std::function<void(std::string_view, std::string_view)>);
+                using InitializePlugin = void (*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)>, std::function<void(std::string_view, std::string_view)>);
                 InitializePlugin initializePlugin = (InitializePlugin)dlsym(library, "initializePlugin");
 #endif
                 if (initializePlugin)
                 {
                     log(Info, "Initializing Plugin: {}", pluginPath.getFileName());
                     initializePlugin([this, pluginPath = pluginPath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
-                    {
+                                     {
                         if (classMap.count(className) == 0)
                         {
                             classMap[className] = creator;
@@ -191,12 +191,10 @@ namespace Gek
                         else
                         {
                             log(Info, "Skipping duplicate class from plugin: {}, from: {}", className, pluginPath);
-                        }
-                    }, [this](std::string_view typeName, std::string_view className) -> void
-                    {
+                        } }, [this](std::string_view typeName, std::string_view className) -> void
+                                     {
                         typeMap.insert(std::make_pair(typeName, className));
-                        log(Info, "Adding {} to {}", typeName, className);
-                    });
+                        log(Info, "Adding {} to {}", typeName, className); });
                     libraryList.push_back(library);
                 }
                 else
@@ -220,7 +218,7 @@ namespace Gek
             }
         }
 
-	public:
+      public:
         ContextImplementation(void)
         {
             SetThreadPoolLogContext(this);
@@ -241,11 +239,10 @@ namespace Gek
             {
                 log(Info, "Looking for Plugins: {}", searchPath.getString());
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
-                {
+                                     {
                     // Load all core plugins that match the current platform and build configuration.
                     initializePlugin(filePath);
-                    return true;
-                });
+                    return true; });
             }
         }
 
@@ -265,10 +262,10 @@ namespace Gek
         }
 
         // Context
-        void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const
+        void vlog(LogLevel level, const LocationMessage &message, std::format_args args) const
         {
             std::lock_guard<std::mutex> lock(logMutex);
-            const auto& location = message.location;
+            const auto &location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
             auto formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
 
@@ -398,30 +395,30 @@ namespace Gek
         }
 
         void setCachePath(FileSystem::Path const &path)
-		{
-			cachePath = path;
-		}
+        {
+            cachePath = path;
+        }
 
-		FileSystem::Path getCachePath(FileSystem::Path const &path)
-		{
-			return cachePath / path;
-		}
+        FileSystem::Path getCachePath(FileSystem::Path const &path)
+        {
+            return cachePath / path;
+        }
 
-		void addDataPath(FileSystem::Path const &path)
+        void addDataPath(FileSystem::Path const &path)
         {
             dataPathList.insert(path.getString());
         }
 
         FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache) const
         {
-			if (includeCache)
-			{
-				auto fullPath = cachePath / path;
-				if (fullPath.isFile() || fullPath.isDirectory())
-				{
-					return fullPath;
-				}
-			}
+            if (includeCache)
+            {
+                auto fullPath = cachePath / path;
+                if (fullPath.isFile() || fullPath.isDirectory())
+                {
+                    return fullPath;
+                }
+            }
 
             for (auto &dataPath : dataPathList)
             {
@@ -435,26 +432,26 @@ namespace Gek
             return FileSystem::Path();
         }
 
-		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache, bool recursive) const
-		{
-			if (includeCache)
-			{
-				auto fullPath = cachePath / path;
-				if (fullPath.isDirectory())
-				{
+        void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache, bool recursive) const
+        {
+            if (includeCache)
+            {
+                auto fullPath = cachePath / path;
+                if (fullPath.isDirectory())
+                {
                     fullPath.findFiles(onFileFound, recursive);
-				}
-			}
+                }
+            }
 
-			for (auto &dataPath : dataPathList)
-			{
-				auto fullPath = dataPath / path;
-				if (fullPath.isDirectory())
-				{
+            for (auto &dataPath : dataPathList)
+            {
+                auto fullPath = dataPath / path;
+                if (fullPath.isDirectory())
+                {
                     fullPath.findFiles(onFileFound, recursive);
-				}
-			}
-		}
+                }
+            }
+        }
 
         ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<Hash> &argumentTypes) const
         {
@@ -491,7 +488,7 @@ namespace Gek
             };
         }
 
-        void listTypes(std::string_view typeName, std::function<void(std::string_view )> onType) const
+        void listTypes(std::string_view typeName, std::function<void(std::string_view)> onType) const
         {
             assert(onType);
 

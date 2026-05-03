@@ -1,24 +1,24 @@
-﻿#include "GEK/Math/Float4x4.hpp"
+﻿#include "API/Engine/VideoDevice.hpp"
+#include "GEK/Components/Color.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/Entity.hpp"
+#include "GEK/Engine/Population.hpp"
+#include "GEK/Engine/Processor.hpp"
+#include "GEK/Engine/Renderer.hpp"
+#include "GEK/Engine/Resources.hpp"
+#include "GEK/Math/Float4x4.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
+#include "GEK/Utility/Allocator.hpp"
+#include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/XML.hpp"
-#include "GEK/Utility/Allocator.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "API/Engine/VideoDevice.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Processor.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Color.hpp"
 #include <concurrent_unordered_map.h>
 #include <functional>
-#include <random>
 #include <ppl.h>
+#include <random>
 
 namespace Gek
 {
@@ -28,7 +28,7 @@ namespace Gek
         {
             float strength;
 
-            void save(Xml::Leaf &exportData) const
+            void save(Xml::Leaf & exportData) const
             {
                 exportData.attributes[L"strength"] = strength;
             }
@@ -43,123 +43,111 @@ namespace Gek
     namespace Sprites
     {
         GEK_CONTEXT_USER_BASE(Explosion)
-            , public Plugin::ComponentMixin<Components::Explosion, Edit::Component>
-        {
-        public:
-            Explosion(Context *context)
-                : ContextRegistration(context)
-            {
-            }
+        , public Plugin::ComponentMixin<Components::Explosion, Edit::Component>{
+            public :
+                Explosion(Context * context) : ContextRegistration(context){}
 
             // Edit::Component
-            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
-            {
-            }
+            void show(ImGuiContext * guiContext, Plugin::Component::Data *data){}
 
-            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
-            {
-            }
+            void edit(ImGuiContext * guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data){}
 
             // Plugin::Component
-            const wchar_t * const getName(void) const
-            {
+            const wchar_t *const getName(void) const {
                 return L"explosion";
-            }
-        };
+    } // namespace Sprites
+}; // namespace Gek
 
-        GEK_CONTEXT_USER(EmitterProcessor, Plugin::Core *)
-            , public Plugin::Processor
+GEK_CONTEXT_USER(EmitterProcessor, Plugin::Core *)
+, public Plugin::Processor
+{
+  public:
+    static const uint32_t SpritesBufferCount = 1000000;
+    static std::random_device randomDevice;
+    static std::mt19937 mersineTwister;
+
+    struct Sprite
+    {
+        Math::Float3 position;
+        Math::Float3 velocity;
+        float angle;
+        float torque;
+        float halfSize;
+        float age;
+        float life;
+        uint32_t frames;
+    };
+
+    struct EmitterData
+    {
+        Math::Float3 position;
+        Math::Float3 velocity;
+
+        MaterialHandle material;
+        std::vector<Sprite> spritesList;
+
+        uint32_t tail;
+        std::function<void(const Plugin::Entity *, EmitterData &, float)> update;
+
+        EmitterData(void)
+            : tail(0)
         {
-        public:
-            static const uint32_t SpritesBufferCount = 1000000;
-            static std::random_device randomDevice;
-            static std::mt19937 mersineTwister;
+        }
+    };
 
-            struct Sprite
-            {
-                Math::Float3 position;
-                Math::Float3 velocity;
-                float angle;
-                float torque;
-                float halfSize;
-                float age;
-                float life;
-                uint32_t frames;
-            };
+  private:
+    Plugin::Population *population;
+    Plugin::Resources *resources;
+    Plugin::Renderer *renderer;
 
-            struct EmitterData
-            {
-                Math::Float3 position;
-                Math::Float3 velocity;
+    VisualHandle visual;
+    Video::BufferPtr spritesBuffer;
 
-                MaterialHandle material;
-                std::vector<Sprite> spritesList;
+    using EntityEmitterMap = std::unordered_map<Plugin::Entity *, std::vector<EmitterData>>;
+    EntityEmitterMap entityEmitterMap;
 
-                uint32_t tail;
-                std::function<void(const Plugin::Entity *, EmitterData &, float)> update;
+    using VisibleMap = concurrency::concurrent_unordered_multimap<MaterialHandle, const EmitterData *>;
+    VisibleMap visibleMap;
 
-                EmitterData(void)
-                    : tail(0)
-                {
-                }
-            };
+  public:
+    EmitterProcessor(Context * context, Plugin::Core * core)
+        : ContextRegistration(context), population(core->getPopulation()), resources(core->getResources()), renderer(core->getRenderer())
+    {
+        GEK_REQUIRE(population);
+        GEK_REQUIRE(resources);
+        GEK_REQUIRE(renderer);
 
-        private:
-            Plugin::Population *population;
-            Plugin::Resources *resources;
-            Plugin::Renderer *renderer;
+        population->onLoadBegin.connect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
+        population->onLoadSucceeded.connect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
+        population->onEntityCreated.connect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
+        population->onEntityDestroyed.connect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
+        population->onUpdate[60].connect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
+        renderer->onRenderScene.connect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
 
-            VisualHandle visual;
-            Video::BufferPtr spritesBuffer;
+        visual = resources->loadVisual(L"Sprites");
+        spritesBuffer = renderer->getVideoDevice()->createBuffer(sizeof(Sprite), SpritesBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
+    }
 
-            using EntityEmitterMap = std::unordered_map<Plugin::Entity *, std::vector<EmitterData>>;
-            EntityEmitterMap entityEmitterMap;
+    ~EmitterProcessor(void)
+    {
+        renderer->onRenderScene.disconnect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
+        population->onUpdate[60].disconnect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
+        population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
+        population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
+        population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
+        population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
+    }
 
-            using VisibleMap = concurrency::concurrent_unordered_multimap<MaterialHandle, const EmitterData *>;
-            VisibleMap visibleMap;
+    // Plugin::Population Slots
+    void onLoadBegin(const String &populationName)
+    {
+        entityEmitterMap.clear();
+    }
 
-        public:
-            EmitterProcessor(Context *context, Plugin::Core *core)
-                : ContextRegistration(context)
-                , population(core->getPopulation())
-                , resources(core->getResources())
-                , renderer(core->getRenderer())
-            {
-                GEK_REQUIRE(population);
-                GEK_REQUIRE(resources);
-                GEK_REQUIRE(renderer);
-
-                population->onLoadBegin.connect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
-                population->onLoadSucceeded.connect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
-                population->onEntityCreated.connect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
-                population->onEntityDestroyed.connect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
-                population->onUpdate[60].connect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
-                renderer->onRenderScene.connect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
-
-                visual = resources->loadVisual(L"Sprites");
-                spritesBuffer = renderer->getVideoDevice()->createBuffer(sizeof(Sprite), SpritesBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
-            }
-
-            ~EmitterProcessor(void)
-            {
-                renderer->onRenderScene.disconnect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
-                population->onUpdate[60].disconnect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
-                population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
-                population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
-                population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
-                population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
-            }
-
-            // Plugin::Population Slots
-            void onLoadBegin(const String &populationName)
-            {
-                entityEmitterMap.clear();
-            }
-
-            void onLoadSucceeded(const String &populationName)
-            {
-                population->listEntities<Components::Transform, Components::Explosion>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &explosionComponent) -> void
-                {
+    void onLoadSucceeded(const String &populationName)
+    {
+        population->listEntities<Components::Transform, Components::Explosion>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &explosionComponent) -> void
+                                                                               {
                     static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
                     static const std::uniform_real_distribution<float> spawnTheta(0.0f, (Gek::Math::Pi * 2.0f));
                     static const std::uniform_real_distribution<float> spawnPhi(-1.0f, 1.0f);
@@ -291,120 +279,117 @@ namespace Gek
                         {
                             spark(entity, entityEmitterList[index]);
                         }
-                    }
-                });
-            }
+                    } });
+    }
 
-            void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
-            {
-                GEK_REQUIRE(resources);
-                GEK_REQUIRE(entity);
+    void onEntityCreated(Plugin::Entity * entity, const wchar_t *entityName)
+    {
+        GEK_REQUIRE(resources);
+        GEK_REQUIRE(entity);
 
-                if (entity->hasComponent<Components::Transform>())
-                {
-                }
-            }
+        if (entity->hasComponent<Components::Transform>())
+        {
+        }
+    }
 
-            void onEntityDestroyed(Plugin::Entity *entity)
-            {
-                GEK_REQUIRE(entity);
+    void onEntityDestroyed(Plugin::Entity * entity)
+    {
+        GEK_REQUIRE(entity);
 
-                auto entitySearch = entityEmitterMap.find(entity);
-                if (entitySearch != entityEmitterMap.end())
-                {
-                    entityEmitterMap.erase(entitySearch);
-                }
-            }
+        auto entitySearch = entityEmitterMap.find(entity);
+        if (entitySearch != entityEmitterMap.end())
+        {
+            entityEmitterMap.erase(entitySearch);
+        }
+    }
 
-            void onUpdate(void)
-            {
-                GEK_REQUIRE(population);
+    void onUpdate(void)
+    {
+        GEK_REQUIRE(population);
 
-                const float frameTime = population->getFrameTime() * 0.1f;
-                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
-                {
+        const float frameTime = population->getFrameTime() * 0.1f;
+        concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
+                                       {
                     const Plugin::Entity *entity = entityEmitterPair.first;
                     concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
                     {
                         emitter.update(entity, emitter, frameTime);
-                    });
-                });
-            }
+                    }); });
+    }
 
-            // Plugin::Renderer Slots
-            static void drawCall(Video::Device *videoDevice, Video::Device::Context *videoContext, Plugin::Resources *resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *spritesBuffer)
+    // Plugin::Renderer Slots
+    static void drawCall(Video::Device * videoDevice, Video::Device::Context * videoContext, Plugin::Resources * resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *spritesBuffer)
+    {
+        GEK_REQUIRE(videoContext);
+        GEK_REQUIRE(resources);
+
+        videoContext->vertexPipeline()->setResourceList({ spritesBuffer }, 0);
+
+        uint32_t bufferCopied = 0;
+        Sprite *bufferData = nullptr;
+        videoDevice->mapBuffer(spritesBuffer, bufferData);
+        for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
+        {
+            auto const &emitter = *emitterSearch->second;
+
+            uint32_t spritesCopied = 0;
+            uint32_t spritesCount = emitter.spritesList.size();
+            const Sprite *spriteData = emitter.spritesList.data();
+            while (spritesCopied < spritesCount)
             {
-                GEK_REQUIRE(videoContext);
-                GEK_REQUIRE(resources);
+                uint32_t bufferRemaining = (SpritesBufferCount - bufferCopied);
+                uint32_t spritesRemaining = (spritesCount - spritesCopied);
+                uint32_t copyCount = std::min(bufferRemaining, spritesRemaining);
+                std::copy(&bufferData[bufferCopied], &bufferData[bufferCopied + copyCount], &spriteData[spritesCopied]);
 
-                videoContext->vertexPipeline()->setResourceList({ spritesBuffer }, 0);
-
-                uint32_t bufferCopied = 0;
-                Sprite *bufferData = nullptr;
-                videoDevice->mapBuffer(spritesBuffer, bufferData);
-                for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
+                bufferCopied += copyCount;
+                spritesCopied += copyCount;
+                if (bufferCopied >= SpritesBufferCount)
                 {
-                    auto const &emitter = *emitterSearch->second;
-
-                    uint32_t spritesCopied = 0;
-                    uint32_t spritesCount = emitter.spritesList.size();
-                    const Sprite *spriteData = emitter.spritesList.data();
-                    while (spritesCopied < spritesCount)
-                    {
-                        uint32_t bufferRemaining = (SpritesBufferCount - bufferCopied);
-                        uint32_t spritesRemaining = (spritesCount - spritesCopied);
-                        uint32_t copyCount = std::min(bufferRemaining, spritesRemaining);
-                        std::copy(&bufferData[bufferCopied], &bufferData[bufferCopied + copyCount], &spriteData[spritesCopied]);
-
-                        bufferCopied += copyCount;
-                        spritesCopied += copyCount;
-                        if (bufferCopied >= SpritesBufferCount)
-                        {
-                            videoDevice->unmapBuffer(spritesBuffer);
-                            videoContext->drawPrimitive((SpritesBufferCount * 6), 0);
-                            videoDevice->mapBuffer(spritesBuffer, bufferData);
-                            bufferCopied = 0;
-                        }
-                    };
+                    videoDevice->unmapBuffer(spritesBuffer);
+                    videoContext->drawPrimitive((SpritesBufferCount * 6), 0);
+                    videoDevice->mapBuffer(spritesBuffer, bufferData);
+                    bufferCopied = 0;
                 }
+            };
+        }
 
-                videoDevice->unmapBuffer(spritesBuffer);
-                if (bufferCopied > 0)
-                {
-                    videoContext->drawPrimitive((bufferCopied * 6), 0);
-                }
-            }
+        videoDevice->unmapBuffer(spritesBuffer);
+        if (bufferCopied > 0)
+        {
+            videoContext->drawPrimitive((bufferCopied * 6), 0);
+        }
+    }
 
-            void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
-            {
-                GEK_REQUIRE(renderer);
-                GEK_REQUIRE(cameraEntity);
+    void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+    {
+        GEK_REQUIRE(renderer);
+        GEK_REQUIRE(cameraEntity);
 
-                visibleMap.clear();
-                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
-                {
-                    concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
-                    {
+        visibleMap.clear();
+        concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
+                                       { concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
+                                                                        {
                         //if (viewFrustum.isVisible(emitter.box))
                         {
                             visibleMap.insert(std::make_pair(emitter.material, &emitter));
-                        }
-                    });
-                });
+                        } }); });
 
-                for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
-                {
-                    const auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
-                    renderer->queueDrawCall(visual, propertiesSearch->first, std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, emittersRange.first, emittersRange.second, spritesBuffer.get()));
-                    propertiesSearch = emittersRange.second;
-                }
-            }
-        };
+        for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end();)
+        {
+            const auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
+            renderer->queueDrawCall(visual, propertiesSearch->first, std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, emittersRange.first, emittersRange.second, spritesBuffer.get()));
+            propertiesSearch = emittersRange.second;
+        }
+    }
+};
 
-        std::random_device EmitterProcessor::randomDevice;
-        std::mt19937 EmitterProcessor::mersineTwister(randomDevice());
+std::random_device EmitterProcessor::randomDevice;
+std::mt19937 EmitterProcessor::mersineTwister(randomDevice());
 
-        GEK_REGISTER_CONTEXT_USER(Explosion)
-        GEK_REGISTER_CONTEXT_USER(EmitterProcessor)
-    }; // namespace Sprites
-}; // namespace Gek
+GEK_REGISTER_CONTEXT_USER(Explosion)
+GEK_REGISTER_CONTEXT_USER(EmitterProcessor)
+}
+; // namespace Sprites
+}
+; // namespace Gek

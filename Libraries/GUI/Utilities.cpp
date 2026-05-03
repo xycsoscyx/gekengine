@@ -13,7 +13,7 @@ namespace Gek
             return (ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin());
         }
 
-        bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* userData)
+        bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void *userData)
         {
             char text[256];
             strcpy(text, string.data());
@@ -21,7 +21,7 @@ namespace Gek
             return false;
         }
 
-        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* userData)
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void *userData)
         {
             char text[256];
             strcpy(text, string.data());
@@ -119,8 +119,7 @@ namespace Gek
 
         bool SliderAngle2(std::string_view label, float radians[2], float degreesMinimum, float defgreedMaximum)
         {
-            float degrees[]
-            {
+            float degrees[]{
                 radians[0] * 360.0f / (2 * IM_PI),
                 radians[1] * 360.0f / (2 * IM_PI),
             };
@@ -133,11 +132,10 @@ namespace Gek
 
         bool SliderAngle3(std::string_view label, float radians[3], float degreesMinimum, float defgreedMaximum)
         {
-            float degrees[]
-            {
-           radians[0] * 360.0f / (2 * IM_PI),
-               radians[1] * 360.0f / (2 * IM_PI),
-               radians[2] * 360.0f / (2 * IM_PI),
+            float degrees[]{
+                radians[0] * 360.0f / (2 * IM_PI),
+                radians[1] * 360.0f / (2 * IM_PI),
+                radians[2] * 360.0f / (2 * IM_PI),
             };
 
             bool isChanged = ImGui::SliderFloat3(label.data(), degrees, degreesMinimum, defgreedMaximum, "%.0f deg", 1.0f);
@@ -149,8 +147,7 @@ namespace Gek
 
         bool SliderAngle4(std::string_view label, float radians[4], float degreesMinimum, float defgreedMaximum)
         {
-            float degrees[]
-            {
+            float degrees[]{
                 radians[0] * 360.0f / (2 * IM_PI),
                 radians[1] * 360.0f / (2 * IM_PI),
                 radians[2] * 360.0f / (2 * IM_PI),
@@ -168,7 +165,7 @@ namespace Gek
         bool ToggleButton(char const *label, bool *state)
         {
             ImVec2 cursorPosition = ImGui::GetCursorScreenPos();
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            ImDrawList *drawList = ImGui::GetWindowDrawList();
 
             float height = ImGui::GetItemRectSize().y;
             float width = height * 1.55f;
@@ -183,7 +180,7 @@ namespace Gek
 
             float t = *state ? 1.0f : 0.0f;
 
-            ImGuiContext& context = *GImGui;
+            ImGuiContext &context = *GImGui;
             float ANIM_SPEED = 0.08f;
             /*if (context.LastActiveId == context.CurrentWindow->GetID(label)) && context.LastActiveIdTimer < ANIM_SPEED)
             {

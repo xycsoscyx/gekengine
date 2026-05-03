@@ -7,17 +7,17 @@
 /// Last Changed: $Date:   Tue Oct 25 14:51:24 2016 +0000 $
 #pragma once
 
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Handles.hpp"
+#include "API/System/RenderDevice.hpp"
 #include "GEK/Shapes/Frustum.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "API/System/RenderDevice.hpp"
-#include "API/Engine/Handles.hpp"
-#include "API/Engine/Entity.hpp"
-#include <wink/signal.hpp>
 #include <imgui.h>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
-	namespace Plugin
+    namespace Plugin
     {
         GEK_INTERFACE(Visualizer)
         {
@@ -26,14 +26,14 @@ namespace Gek
 
             virtual ~Visualizer(void) = default;
 
-            virtual Render::Device * getRenderDevice(void) const = 0;
-			virtual ImGuiContext * const getGuiContext(void) const = 0;
+            virtual Render::Device *getRenderDevice(void) const = 0;
+            virtual ImGuiContext *const getGuiContext(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueViewport(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
-            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *)> &&draw) = 0;
+            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *)> && draw) = 0;
 
-            virtual void renderOverlay(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
+            virtual void renderOverlay(Render::Device::Context * videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
         };
-    }; // namespace Engine
+    }; // namespace Plugin
 }; // namespace Gek

@@ -11,9 +11,9 @@
 
 #include "GEK/Utility/String.hpp"
 
+#include <ImGuizmo.h>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <ImGuizmo.h>
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"
@@ -24,8 +24,8 @@ namespace Gek
     {
         ImVec2 GetWindowContentRegionSize();
 
-        bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
-        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
+        bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void *user_data = nullptr);
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void *user_data = nullptr);
 
         bool CheckButton(std::string_view label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
         bool CheckButton(std::string_view label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));

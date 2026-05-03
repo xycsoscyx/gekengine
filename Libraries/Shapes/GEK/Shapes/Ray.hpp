@@ -15,16 +15,16 @@ namespace Gek
     {
         struct Ray
         {
-        public:
+          public:
             Math::Float3 origin;
             Math::Float3 normal;
 
-        public:
+          public:
             Ray(void) noexcept;
             Ray(Math::Float3 const &origin, Math::Float3 const &normal) noexcept;
             Ray(Ray const &ray) noexcept;
 
-            Ray &operator = (Ray const &ray) noexcept;
+            Ray &operator=(Ray const &ray) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

@@ -7,23 +7,23 @@
 namespace Gek
 {
     namespace FileSystem
-	{
-        Path operator / (Path const& leftPath, std::string_view rightPath)
+    {
+        Path operator/(Path const &leftPath, std::string_view rightPath)
         {
             return leftPath.data / std::filesystem::path(rightPath);
         }
 
-        Path operator / (Path const& leftPath, std::string const& rightPath)
+        Path operator/(Path const &leftPath, std::string const &rightPath)
         {
             return leftPath.data / std::filesystem::path(rightPath);
         }
 
-        Path operator / (Path const& leftPath, Path const& rightPath)
+        Path operator/(Path const &leftPath, Path const &rightPath)
         {
             return leftPath.data / rightPath.data;
         }
 
-        Path operator / (Path const& leftPath, const char *rightPath)
+        Path operator/(Path const &leftPath, const char *rightPath)
         {
             return leftPath.data / std::filesystem::path(rightPath);
         }
@@ -50,7 +50,7 @@ namespace Gek
             data.make_preferred();
         }
 
-        Path::Path(Path const& path)
+        Path::Path(Path const &path)
             : data(path.data)
         {
             data.make_preferred();
@@ -62,27 +62,27 @@ namespace Gek
             data.make_preferred();
         }
 
-        void Path::operator = (std::string_view path)
+        void Path::operator=(std::string_view path)
         {
             data = path.data();
         }
 
-        void Path::operator = (std::string const &path)
+        void Path::operator=(std::string const &path)
         {
             data = path.data();
         }
 
-        void Path::operator = (Path const &path)
+        void Path::operator=(Path const &path)
         {
             data = path.data;
         }
 
-        bool Path::operator == (Path const& path)
+        bool Path::operator==(Path const &path)
         {
             return data == path.data;
         }
 
-        bool Path::operator != (Path const& path)
+        bool Path::operator!=(Path const &path)
         {
             return data != path.data;
         }
@@ -211,12 +211,12 @@ namespace Gek
             }
         }
 
-        Path Path::lexicallyRelative(Path const& root) const
+        Path Path::lexicallyRelative(Path const &root) const
         {
             return data.lexically_relative(root.data);
         }
 
-        std::string Read(Path const& filePath)
+        std::string Read(Path const &filePath)
         {
             std::string buffer;
             if (filePath.isFile())
@@ -235,7 +235,7 @@ namespace Gek
             return buffer;
         }
 
-        std::vector<uint8_t> Load(Path const& filePath, std::uintmax_t limitReadSize)
+        std::vector<uint8_t> Load(Path const &filePath, std::uintmax_t limitReadSize)
         {
             std::vector<uint8_t> buffer;
             if (filePath.isFile())
@@ -249,7 +249,7 @@ namespace Gek
                     if (file.is_open())
                     {
                         buffer.resize(size);
-                        file.read(reinterpret_cast<char*>(buffer.data()), size);
+                        file.read(reinterpret_cast<char *>(buffer.data()), size);
                         file.close();
                     }
                 }
@@ -258,7 +258,7 @@ namespace Gek
             return buffer;
         }
 
-        Path GetCanonicalPath(Path const& path)
+        Path GetCanonicalPath(Path const &path)
         {
             std::error_code errorCode;
             return std::filesystem::canonical(path.data, errorCode);

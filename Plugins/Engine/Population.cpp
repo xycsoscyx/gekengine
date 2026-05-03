@@ -1,20 +1,20 @@
-﻿#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/ThreadPool.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "API/Engine/Processor.hpp"
-#include "API/Engine/Entity.hpp"
+﻿#include "GEK/Engine/Population.hpp"
 #include "API/Engine/Component.hpp"
 #include "API/Engine/Editor.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Processor.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Population.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
+#include <execution>
+#include <map>
 #include <tbb/concurrent_queue.h>
 #include <tbb/parallel_for_each.h>
-#include <execution>
 #include <unordered_map>
 #include <vector>
-#include <map>
 
 namespace Gek
 {
@@ -23,10 +23,10 @@ namespace Gek
         class Entity
             : public Edit::Entity
         {
-        private:
+          private:
             Components components;
 
-        public:
+          public:
             void addComponent(Plugin::Component *component, std::unique_ptr<Plugin::Component::Data> &&data)
             {
                 components[component->getIdentifier()] = std::move(data);
@@ -41,7 +41,7 @@ namespace Gek
                 }
             }
 
-            void listComponents(std::function<void(Hash , Plugin::Component::Data const *)> onComponent)
+            void listComponents(std::function<void(Hash, Plugin::Component::Data const *)> onComponent)
             {
                 for (auto const &component : components)
                 {
@@ -61,33 +61,33 @@ namespace Gek
                 return (components.count(type) > 0);
             }
 
-			Plugin::Component::Data *getComponent(Hash type)
-			{
-				auto componentSearch = components.find(type);
-				if (componentSearch == std::end(components))
-				{
-                    return nullptr;
-				}
-
-				return componentSearch->second.get();
-			}
-
-			const Plugin::Component::Data *getComponent(Hash type) const
-			{
-				auto componentSearch = components.find(type);
-				if (componentSearch == std::end(components))
-				{
+            Plugin::Component::Data *getComponent(Hash type)
+            {
+                auto componentSearch = components.find(type);
+                if (componentSearch == std::end(components))
+                {
                     return nullptr;
                 }
 
-				return componentSearch->second.get();
-			}
-		};
+                return componentSearch->second.get();
+            }
+
+            const Plugin::Component::Data *getComponent(Hash type) const
+            {
+                auto componentSearch = components.find(type);
+                if (componentSearch == std::end(components))
+                {
+                    return nullptr;
+                }
+
+                return componentSearch->second.get();
+            }
+        };
 
         GEK_CONTEXT_USER(Population, Engine::Core *)
-            , public Engine::Population
+        , public Engine::Population
         {
-        private:
+          private:
             Engine::Core *core = nullptr;
 
             ShuntingYard shuntingYard;
@@ -105,18 +105,15 @@ namespace Gek
 
             bool shuttingDown = false;
 
-        public:
-            Population(Context *context, Engine::Core *core)
-                : ContextRegistration(context)
-                , core(core)
-                , sceneWorkerPool(1)
-                , entityWorkerPool(5)
+          public:
+            Population(Context * context, Engine::Core * core)
+                : ContextRegistration(context), core(core), sceneWorkerPool(1), entityWorkerPool(5)
             {
                 assert(core);
 
                 getContext()->log(Context::Info, "Loading component plugins");
                 getContext()->listTypes("ComponentType", [&](std::string_view className) -> void
-                {
+                                        {
                     getContext()->log(Context::Info, "Component found: {}", className);
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (availableComponents.count(component->getIdentifier()) > 0)
@@ -133,8 +130,7 @@ namespace Gek
 
                     componentNameTypeMap.insert(std::make_pair(component->getIdentifier(), component->getName()));
                     componentTypeNameMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
-                    availableComponents[component->getIdentifier()] = std::move(component);
-                });
+                    availableComponents[component->getIdentifier()] = std::move(component); });
 
                 core->onShutdown.connect(this, &Population::onShutdown);
             }
@@ -174,7 +170,7 @@ namespace Gek
                 {
                     return dynamic_cast<Edit::Component *>(componentsSearch->second.get());
                 }
-                
+
                 return nullptr;
             }
 
@@ -186,23 +182,23 @@ namespace Gek
 
             void update(float frameTime)
             {
-				if (frameTime == 0.0f)
-				{
-					actionQueue.clear();
-				}
-				else
-				{
-					Action action;
-					while (actionQueue.try_pop(action))
-					{
-						onAction(action);
-					};
-				}
+                if (frameTime == 0.0f)
+                {
+                    actionQueue.clear();
+                }
+                else
+                {
+                    Action action;
+                    while (actionQueue.try_pop(action))
+                    {
+                        onAction(action);
+                    };
+                }
 
-				for (auto &slot : onUpdate)
-				{
-					slot.second(frameTime);
-				}
+                for (auto &slot : onUpdate)
+                {
+                    slot.second(frameTime);
+                }
             }
 
             void action(Action const &action)
@@ -228,7 +224,7 @@ namespace Gek
                 scheduleReset();
             }
 
-            void scheduleLoad(std::string const& _populationName)
+            void scheduleLoad(std::string const &_populationName)
             {
                 std::string populationName(_populationName);
 
@@ -278,8 +274,8 @@ namespace Gek
                             }
                         }
 
-                        auto& templateNode = templatesNode[templateName];
-                        for (auto const& [key, value] : templateNode.items())
+                        auto &templateNode = templatesNode[templateName];
+                        for (auto const &[key, value] : templateNode.items())
                         {
                             entityDefinition[key] = value;
                         }
@@ -287,12 +283,12 @@ namespace Gek
                         entityNode.erase(templateSearch);
                     }
 
-                    for (auto const& [componentName, componentData] : entityNode.items())
+                    for (auto const &[componentName, componentData] : entityNode.items())
                     {
-                        auto& componentDefinition = entityDefinition[componentName];
+                        auto &componentDefinition = entityDefinition[componentName];
                         if (componentData.is_object())
                         {
-                            for (auto const& [valueName, valueData] : componentData.items())
+                            for (auto const &[valueName, valueData] : componentData.items())
                             {
                                 componentDefinition[valueName] = valueData;
                             }
@@ -311,7 +307,7 @@ namespace Gek
                         }
 
                         auto populationEntity = new Entity();
-                        for (auto const& componentDefinition : entityDefinition)
+                        for (auto const &componentDefinition : entityDefinition)
                         {
                             if (shuttingDown)
                             {
@@ -322,7 +318,7 @@ namespace Gek
                             addComponent(populationEntity, componentDefinition);
                         }
 
-                        auto entity = dynamic_cast<Plugin::Entity*>(populationEntity);
+                        auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
                         if (shuttingDown)
                         {
                             delete populationEntity;
@@ -346,7 +342,7 @@ namespace Gek
                 return;
             }
 
-            void load(std::string const& populationName)
+            void load(std::string const &populationName)
             {
                 scheduleLoad(populationName);
             }
@@ -359,7 +355,7 @@ namespace Gek
                     JSON::Object entityDefinition;
                     Entity *editorEntity = static_cast<Entity *>(entity.get());
                     editorEntity->listComponents([&](Hash type, Plugin::Component::Data const *data) -> void
-                    {
+                                                 {
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
@@ -378,8 +374,7 @@ namespace Gek
                                 component->second->save(data, componentDefinition);
                                 entityDefinition[componentName->second] = componentDefinition;
                             }
-                        }
-                    });
+                        } });
 
                     population.push_back(entityDefinition);
                 }
@@ -404,7 +399,7 @@ namespace Gek
                 return entity;
             }
 
-            void loadEntityTask(Plugin::Entity * const entity)
+            void loadEntityTask(Plugin::Entity *const entity)
             {
                 if (shuttingDown)
                 {
@@ -418,17 +413,15 @@ namespace Gek
                 return;
             }
 
-            void killEntity(Plugin::Entity * const entity)
+            void killEntity(Plugin::Entity *const entity)
             {
                 killEntityTask(entity);
             }
 
-            void killEntityTask(Plugin::Entity * const entity)
+            void killEntityTask(Plugin::Entity *const entity)
             {
                 auto entitySearch = std::find_if(std::begin(registry), std::end(registry), [entity](auto const &entitySearch) -> bool
-                {
-                    return (entitySearch.get() == entity);
-                });
+                                                 { return (entitySearch.get() == entity); });
 
                 if (entitySearch != std::end(registry))
                 {
@@ -439,14 +432,12 @@ namespace Gek
                 return;
             }
 
-            bool addComponentData(Entity *entity, ComponentDefinition const &definition)
+            bool addComponentData(Entity * entity, ComponentDefinition const &definition)
             {
                 assert(entity);
 
-				auto componentNameSearch = std::find_if(std::begin(componentTypeNameMap), std::end(componentTypeNameMap), [&definition](auto const &componentPair) -> bool
-				{
-					return (definition.first == componentPair.first);
-				});
+                auto componentNameSearch = std::find_if(std::begin(componentTypeNameMap), std::end(componentTypeNameMap), [&definition](auto const &componentPair) -> bool
+                                                        { return (definition.first == componentPair.first); });
 
                 if (componentNameSearch != std::end(componentTypeNameMap))
                 {
@@ -473,7 +464,7 @@ namespace Gek
                 return false;
             }
 
-            void addComponent(Plugin::Entity * const entity, ComponentDefinition const &definition)
+            void addComponent(Plugin::Entity *const entity, ComponentDefinition const &definition)
             {
                 if (addComponentData(static_cast<Entity *>(entity), definition))
                 {
@@ -481,7 +472,7 @@ namespace Gek
                 }
             }
 
-            void removeComponent(Plugin::Entity * const entity, Hash type)
+            void removeComponent(Plugin::Entity *const entity, Hash type)
             {
                 assert(entity);
 
@@ -492,7 +483,7 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *)> &&onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *)> && onEntity) const
             {
                 for (auto const &entity : registry)
                 {

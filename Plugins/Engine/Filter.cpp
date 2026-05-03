@@ -1,23 +1,22 @@
 #include "GEK/Engine/Filter.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Shapes/Sphere.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "API/System/RenderDevice.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
 #include "API/Engine/Resources.hpp"
 #include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Population.hpp"
-#include "API/Engine/Entity.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Light.hpp"
+#include "API/System/RenderDevice.hpp"
 #include "GEK/Components/Color.hpp"
+#include "GEK/Components/Light.hpp"
+#include "GEK/Components/Transform.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Material.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
 #include "Passes.hpp"
-#include <unordered_map>
 #include <format>
+#include <unordered_map>
 #include <vector>
 
 namespace Gek
@@ -25,9 +24,9 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Filter, Engine::Core *, std::string)
-            , public Engine::Filter
+        , public Engine::Filter
         {
-        public:
+          public:
             struct PassData
             {
                 std::string name;
@@ -49,7 +48,7 @@ namespace Gek
                 std::unordered_map<ResourceHandle, ResourceHandle> resolveSampleMap;
             };
 
-        private:
+          private:
             Engine::Core *core = nullptr;
             Render::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
@@ -60,13 +59,9 @@ namespace Gek
             RenderStateHandle renderState;
             std::vector<PassData> passList;
 
-        public:
-            Filter(Context *context, Engine::Core *core, std::string filterName)
-                : ContextRegistration(context)
-                , core(core)
-                , videoDevice(core->getRenderDevice())
-                , resources(core->getFullResources())
-                , filterName(filterName)
+          public:
+            Filter(Context * context, Engine::Core * core, std::string filterName)
+                : ContextRegistration(context), core(core), videoDevice(core->getRenderDevice()), resources(core->getFullResources()), filterName(filterName)
             {
                 assert(videoDevice);
                 assert(resources);
@@ -77,7 +72,7 @@ namespace Gek
             void reload(void)
             {
                 getContext()->log(Context::Info, "Loading filter: {}", filterName);
-				
+
                 passList.clear();
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
@@ -118,7 +113,7 @@ namespace Gek
                 auto &rootOptionsNode = JSON::Find(rootNode, "options");
                 rootOptionsNode["enable"] = true;
 
-                for (auto & [key, value] : coreOptionsNode.items())
+                for (auto &[key, value] : coreOptionsNode.items())
                 {
                     rootOptionsNode[key] = value;
                 }
@@ -224,7 +219,7 @@ namespace Gek
                     }
                 }
 
-                for (auto& [bufferName, bufferNode] : JSON::Find(rootNode, "buffers").items())
+                for (auto &[bufferName, bufferNode] : JSON::Find(rootNode, "buffers").items())
                 {
                     if (resourceMap.count(bufferName) > 0)
                     {
@@ -300,13 +295,13 @@ namespace Gek
                     JSON::Object passOptions(rootOptionsNode);
                     for (auto &[key, value] : JSON::Find(passNode, "options").items())
                     {
-                        std::function<void(JSON::Object&, std::string_view, JSON::Object const &)> insertOptions;
-                        insertOptions = [&](JSON::Object&options, std::string_view name, JSON::Object const &node) -> void
+                        std::function<void(JSON::Object &, std::string_view, JSON::Object const &)> insertOptions;
+                        insertOptions = [&](JSON::Object &options, std::string_view name, JSON::Object const &node) -> void
                         {
                             if (node.is_object())
                             {
-                                auto& localOptions = options[name];
-                                for (auto& [key, value] : node.items())
+                                auto &localOptions = options[name];
+                                for (auto &[key, value] : node.items())
                                 {
                                     insertOptions(localOptions, key, value);
                                 }
@@ -324,7 +319,7 @@ namespace Gek
                     addOptions = [&](JSON::Object const &options) -> std::string
                     {
                         std::vector<std::string> optionsData;
-                        for (auto& [optionName, optionNode] : options.items())
+                        for (auto &[optionName, optionNode] : options.items())
                         {
                             if (optionNode.is_object())
                             {
@@ -346,9 +341,7 @@ namespace Gek
                                     {
                                         auto selectedName = selectionNode.get<std::string>();
                                         auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
-                                        {
-                                            return (selectedName == choice);
-                                        });
+                                                                          { return (selectedName == choice); });
 
                                         if (optionsSearch != std::end(choices))
                                         {
@@ -368,7 +361,7 @@ namespace Gek
                                     if (!optionsString.empty())
                                     {
                                         static constexpr std::string_view optionTemplate =
-R"(namespace {0} {{
+                                            R"(namespace {0} {{
 {1}
 }}; // namespace {0}
 )";
@@ -383,28 +376,28 @@ R"(namespace {0} {{
                                 {
                                 case 1:
                                     optionsData.push_back(std::format("    static const float {} = {};", optionName,
-                                        optionNode[0].get<float>()));
+                                                                      optionNode[0].get<float>()));
                                     break;
 
                                 case 2:
                                     optionsData.push_back(std::format("    static const float2 {} = float2({}, {});", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>()));
+                                                                      optionNode[0].get<float>(),
+                                                                      optionNode[1].get<float>()));
                                     break;
 
                                 case 3:
                                     optionsData.push_back(std::format("    static const float3 {} = float3({}, {}, {});", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>(),
-                                        optionNode[2].get<float>()));
+                                                                      optionNode[0].get<float>(),
+                                                                      optionNode[1].get<float>(),
+                                                                      optionNode[2].get<float>()));
                                     break;
 
                                 case 4:
                                     optionsData.push_back(std::format("    static const float4 {} = float4({}, {}, {}, {});", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>(),
-                                        optionNode[2].get<float>(),
-                                        optionNode[3].get<float>()));
+                                                                      optionNode[0].get<float>(),
+                                                                      optionNode[1].get<float>(),
+                                                                      optionNode[2].get<float>(),
+                                                                      optionNode[3].get<float>()));
                                     break;
                                 };
                             }
@@ -430,7 +423,7 @@ R"(namespace {0} {{
                     if (!optionsString.empty())
                     {
                         static constexpr std::string_view optionTemplate =
-R"(namespace Options {{
+                            R"(namespace Options {{
 {}
 }}; // namespace Options
 )";
@@ -472,7 +465,7 @@ R"(namespace Options {{
                     else
                     {
                         engineData +=
-R"(struct InputPixel
+                            R"(struct InputPixel
 {
     float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
@@ -518,7 +511,7 @@ R"(struct InputPixel
                         if (!outputData.empty())
                         {
                             static constexpr std::string_view outputTemplate =
-R"(struct OutputPixel
+                                R"(struct OutputPixel
 {{
 {}
 }};
@@ -636,7 +629,7 @@ R"(struct OutputPixel
                     if (!resourceData.empty())
                     {
                         static constexpr std::string_view resourceTemplate =
-R"(namespace Resources {{
+                            R"(namespace Resources {{
 {}
 }}; // namespace Resources
 )";
@@ -672,7 +665,7 @@ R"(namespace Resources {{
                     if (!unorderedAccessData.empty())
                     {
                         static constexpr std::string_view unorderedAccessTemplate =
-R"(namespace UnorderedAccess {{
+                            R"(namespace UnorderedAccess {{
 {}
 }}; // namespace UnorderedAccess
 )";
@@ -684,28 +677,28 @@ R"(namespace UnorderedAccess {{
                     std::string fileName(FileSystem::CreatePath(filterName, programName).withExtension(".slang").getString());
                     Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
-				}
+                }
 
-				core->setOption("filters", filterName, rootOptionsNode);
-				getContext()->log(Context::Info, "Filter loaded successfully: {}", filterName);
-			}
+                core->setOption("filters", filterName, rootOptionsNode);
+                getContext()->log(Context::Info, "Filter loaded successfully: {}", filterName);
+            }
 
             ~Filter(void)
             {
             }
 
             // Filter
-			Hash getIdentifier(void) const
-			{
-				return GetHash(this);
-			}
+            Hash getIdentifier(void) const
+            {
+                return GetHash(this);
+            }
 
-			std::string_view getName(void) const
-			{
+            std::string_view getName(void) const
+            {
                 return filterName;
             }
 
-            Pass::Mode preparePass(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
+            Pass::Mode preparePass(Render::Device::Context * videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -792,7 +785,7 @@ R"(namespace UnorderedAccess {{
                 return pass.mode;
             }
 
-            void clearPass(Render::Device::Context *videoContext, PassData const &pass)
+            void clearPass(Render::Device::Context * videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -802,7 +795,7 @@ R"(namespace UnorderedAccess {{
                 Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    resources->clearResourceList(videoPipeline,  pass.resourceList.size(), 0);
+                    resources->clearResourceList(videoPipeline, pass.resourceList.size(), 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -830,20 +823,15 @@ R"(namespace UnorderedAccess {{
             class PassImplementation
                 : public Pass
             {
-            public:
+              public:
                 Render::Device::Context *videoContext;
                 ResourceHandle input, output;
                 Filter *filterNode;
                 std::vector<Filter::PassData>::iterator current, end;
 
-            public:
+              public:
                 PassImplementation(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
-                    : videoContext(videoContext)
-                    , input(input)
-                    , output(output)
-                    , filterNode(filterNode)
-                    , current(current)
-                    , end(end)
+                    : videoContext(videoContext), input(input), output(output), filterNode(filterNode), current(current), end(end)
                 {
                 }
 
@@ -869,17 +857,17 @@ R"(namespace UnorderedAccess {{
                 }
 
                 Hash getIdentifier(void) const
-				{
-					return (*current).program.identifier;
-				}
+                {
+                    return (*current).program.identifier;
+                }
 
-				std::string_view getName(void) const
-				{
+                std::string_view getName(void) const
+                {
                     return (*current).name;
                 }
             };
 
-            Pass::Iterator begin(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output)
+            Pass::Iterator begin(Render::Device::Context * videoContext, ResourceHandle input, ResourceHandle output)
             {
                 assert(videoContext);
                 return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, input, output, this, std::begin(passList), std::end(passList)));

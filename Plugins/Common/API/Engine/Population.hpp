@@ -7,15 +7,15 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/String.hpp"
+#include "API/Engine/Entity.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
-#include "API/Engine/Entity.hpp"
-#include <wink/signal.hpp>
+#include "GEK/Utility/String.hpp"
 #include <functional>
+#include <map>
 #include <typeindex>
 #include <vector>
-#include <map>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -43,33 +43,31 @@ namespace Gek
                 }
 
                 Action(std::string const &name, bool state)
-                    : name(String::GetLower(name))
-                    , state(state)
+                    : name(String::GetLower(name)), state(state)
                 {
                 }
 
                 Action(std::string const &name, float value)
-					: name(String::GetLower(name))
-					, value(value)
+                    : name(String::GetLower(name)), value(value)
                 {
                 }
             };
 
             virtual ~Population(void) = default;
 
-            wink::signal<wink::slot<void(std::string const& populationName)>> onLoad;
-            wink::signal<wink::slot<void(std::string const& populationName)>> onSave;
+            wink::signal<wink::slot<void(std::string const &populationName)>> onLoad;
+            wink::signal<wink::slot<void(std::string const &populationName)>> onSave;
 
             std::map<int32_t, wink::signal<wink::slot<void(float frameTime)>>> onUpdate;
             wink::signal<wink::slot<void(Action const &action)>> onAction;
 
             wink::signal<wink::slot<void(void)>> onReset;
 
-            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onEntityCreated;
-            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onEntityDestroyed;
+            wink::signal<wink::slot<void(Plugin::Entity *const entity)>> onEntityCreated;
+            wink::signal<wink::slot<void(Plugin::Entity *const entity)>> onEntityDestroyed;
 
-            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onComponentAdded;
-            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onComponentRemoved;
+            wink::signal<wink::slot<void(Plugin::Entity *const entity)>> onComponentAdded;
+            wink::signal<wink::slot<void(Plugin::Entity *const entity)>> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
@@ -77,12 +75,12 @@ namespace Gek
             virtual void save(std::string const &populationName) = 0;
 
             virtual Plugin::Entity *createEntity(EntityDefinition const &definition) = 0;
-            virtual void killEntity(Plugin::Entity * const entity) = 0;
+            virtual void killEntity(Plugin::Entity *const entity) = 0;
 
-            virtual void addComponent(Plugin::Entity * const entity, ComponentDefinition const &definition) = 0;
-            virtual void removeComponent(Plugin::Entity * const entity, Hash type) = 0;
+            virtual void addComponent(Plugin::Entity *const entity, ComponentDefinition const &definition) = 0;
+            virtual void removeComponent(Plugin::Entity *const entity, Hash type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity * const entity)> &&onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity *const entity)> && onEntity) const = 0;
 
             virtual void action(Action const &action) = 0;
         };

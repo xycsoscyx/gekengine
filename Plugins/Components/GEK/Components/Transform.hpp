@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Fri Oct 21 13:54:12 2016 +0000 $
 #pragma once
 
-#include "GEK/Math/Vector3.hpp"
+#include "API/Engine/Component.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/Quaternion.hpp"
-#include "API/Engine/Component.hpp"
+#include "GEK/Math/Vector3.hpp"
 
 namespace Gek
 {
@@ -18,9 +18,9 @@ namespace Gek
     {
         GEK_COMPONENT(Transform)
         {
-			GEK_COMPONENT_DATA(Transform);
+            GEK_COMPONENT_DATA(Transform);
 
-			Math::Float3 position = Math::Float3::Zero;
+            Math::Float3 position = Math::Float3::Zero;
             Math::Quaternion rotation = Math::Quaternion::Identity;
             Math::Float3 scale = Math::Float3::One;
 

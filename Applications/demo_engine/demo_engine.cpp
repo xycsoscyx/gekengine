@@ -1,9 +1,9 @@
-﻿#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/String.hpp"
+﻿#include "API/Engine/Core.hpp"
+#include "GEK/Engine/Core.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "API/Engine/Core.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/String.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -27,7 +27,7 @@ using namespace Gek;
 #ifdef _WIN32
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ wchar_t *commandLine, _In_ int commandShow)
 #else
-int main(int argumentCount, char const * const argumentList[])
+int main(int argumentCount, char const *const argumentList[])
 #endif
 {
 #ifdef _WIN32

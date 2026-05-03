@@ -9,8 +9,8 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <wink/signal.hpp>
 #include <imgui.h>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -39,9 +39,9 @@ namespace Gek
             virtual void setOption(std::string_view system, std::string_view name, JSON::Object const &value) = 0;
             virtual void deleteOption(std::string_view system, std::string_view name) = 0;
 
-            virtual Plugin::Population * getPopulation(void) const = 0;
-            virtual Plugin::Resources * getResources(void) const = 0;
-            virtual Plugin::Visualizer * getVisualizer(void) const = 0;
+            virtual Plugin::Population *getPopulation(void) const = 0;
+            virtual Plugin::Resources *getResources(void) const = 0;
+            virtual Plugin::Visualizer *getVisualizer(void) const = 0;
 
             virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
         };

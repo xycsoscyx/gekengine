@@ -1,12 +1,12 @@
-﻿#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "API/System/RenderDevice.hpp"
+﻿#include "GEK/Engine/Material.hpp"
 #include "API/Engine/Resources.hpp"
 #include "API/Engine/Visualizer.hpp"
+#include "API/System/RenderDevice.hpp"
 #include "GEK/Engine/Shader.hpp"
-#include "GEK/Engine/Material.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
 #include "Passes.hpp"
 #include <unordered_map>
 #include <vector>
@@ -18,15 +18,14 @@ namespace Gek
         bool isDataTexture(std::string_view textureSlotName)
         {
             const std::string lowered = String::GetLower(textureSlotName);
-            return
-                (lowered.find("normal") != std::string::npos) ||
-                (lowered.find("roughness") != std::string::npos) ||
-                (lowered.find("metal") != std::string::npos) ||
-                (lowered.find("ao") != std::string::npos) ||
-                (lowered.find("occlusion") != std::string::npos) ||
-                (lowered.find("height") != std::string::npos) ||
-                (lowered.find("clarity") != std::string::npos) ||
-                (lowered.find("thickness") != std::string::npos);
+            return (lowered.find("normal") != std::string::npos) ||
+                   (lowered.find("roughness") != std::string::npos) ||
+                   (lowered.find("metal") != std::string::npos) ||
+                   (lowered.find("ao") != std::string::npos) ||
+                   (lowered.find("occlusion") != std::string::npos) ||
+                   (lowered.find("height") != std::string::npos) ||
+                   (lowered.find("clarity") != std::string::npos) ||
+                   (lowered.find("thickness") != std::string::npos);
         }
 
         std::string normalizeMaterialName(std::string_view materialName)
@@ -36,15 +35,15 @@ namespace Gek
             {
                 normalizedPath = normalizedPath.withoutExtension();
             }
-  
-            return normalizedPath.getString();  
+
+            return normalizedPath.getString();
         }
 
         JSON::Object buildImplicitMaterialNode(std::string_view materialName)
         {
             JSON::Object materialNode;
             auto &shaderNode = materialNode["shader"];
-            auto &dataNode = shaderNode["data"];  
+            auto &dataNode = shaderNode["data"];
             std::string textureBase(materialName);
 
             shaderNode["default"] = "solid";
@@ -55,25 +54,23 @@ namespace Gek
             dataNode["metallic"]["file"] = textureBase + "_Metalness";
             return materialNode;
         }
-    }
+    } // namespace
 
     namespace Implementation
     {
         GEK_CONTEXT_USER(Material, Engine::Resources *, std::string, MaterialHandle)
-            , public Engine::Material
+        , public Engine::Material
         {
-        private:
-			std::string materialName;
+          private:
+            std::string materialName;
             Engine::Resources *resources = nullptr;
             std::unordered_map<size_t, Data> dataMap;
             RenderStateHandle renderState;
 
 
-        public:
-            Material(Context *context, Engine::Resources *resources, std::string materialName, MaterialHandle materialHandle)
-                : ContextRegistration(context)
-                , resources(resources)
-				, materialName(normalizeMaterialName(materialName))
+          public:
+            Material(Context * context, Engine::Resources * resources, std::string materialName, MaterialHandle materialHandle)
+                : ContextRegistration(context), resources(resources), materialName(normalizeMaterialName(materialName))
             {
                 assert(resources);
 
@@ -86,8 +83,8 @@ namespace Gek
                 else
                 {
                     getContext()->log(Context::Warning,
-                        "Material definition '{}' missing, synthesizing PBR material from texture set",
-                        this->materialName);
+                                      "Material definition '{}' missing, synthesizing PBR material from texture set",
+                                      this->materialName);
                     materialNode = buildImplicitMaterialNode(this->materialName);
                 }
 
@@ -145,10 +142,10 @@ namespace Gek
             }
 
             // Material
-			std::string_view getName(void) const
-			{
-				return materialName;
-			}
+            std::string_view getName(void) const
+            {
+                return materialName;
+            }
 
             Data const *getData(size_t dataHash)
             {

@@ -39,6 +39,6 @@ namespace Gek
     };
 
     GEK_CONTEXT_BEGIN(System);
-        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Render::Implementation::Device);
+    GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Render::Implementation::Device);
     GEK_CONTEXT_END();
 }; // namespace Gek

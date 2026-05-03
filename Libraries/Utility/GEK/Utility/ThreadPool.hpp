@@ -7,12 +7,12 @@
 /// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
 #pragma once
 
-#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
-#include <tbb/concurrent_queue.h>
+#include "GEK/Utility/String.hpp"
 #include <coroutine>
 #include <execution>
 #include <future>
+#include <tbb/concurrent_queue.h>
 
 namespace Gek
 {
@@ -39,22 +39,22 @@ namespace Gek
 
     class Task
     {
-    public:
+      public:
         struct promise_type
         {
             Task get_return_object() noexcept
             {
-                return { };
+                return {};
             };
 
             std::suspend_never initial_suspend() const noexcept
             {
-                return { };
+                return {};
             }
 
             std::suspend_never final_suspend() const noexcept
             {
-                return { };
+                return {};
             }
 
             void return_void() noexcept
@@ -70,9 +70,9 @@ namespace Gek
 
     class ThreadPool final
     {
-		using Lock = std::unique_lock<std::mutex>;
-	
-	private:
+        using Lock = std::unique_lock<std::mutex>;
+
+      private:
         uint32_t threadCount;
         std::vector<std::thread> workerList;
         tbb::concurrent_queue<std::coroutine_handle<void>> coroutineQueue;
@@ -82,20 +82,20 @@ namespace Gek
         std::atomic_bool stop = false;
         std::atomic_uint32_t activeCount = 0;
 
-    private:
+      private:
         void initializeWorker(void);
         void releaseWorker(void);
 
         void create(void)
         {
-			stop.store(false);
+            stop.store(false);
             workerList.clear();
             workerList.reserve(threadCount);
             for (size_t count = 0; count < threadCount; ++count)
             {
                 // Worker execution loop
                 workerList.emplace_back([&](void) -> void
-                {
+                                        {
                     initializeWorker();
 					while (true)
                     {
@@ -138,8 +138,7 @@ namespace Gek
                         }
                     };
 
-                    releaseWorker();
-                });
+                    releaseWorker(); });
             }
         }
 
@@ -155,7 +154,7 @@ namespace Gek
             activeCondition.notify_one();
         }
 
-    public:
+      public:
         ThreadPool(uint32_t threadCount)
             : threadCount(threadCount)
         {
@@ -169,10 +168,10 @@ namespace Gek
         }
 
         ThreadPool(ThreadPool const &) = delete;
-		ThreadPool(ThreadPool &&) = delete;
-		
-		ThreadPool& operator= (ThreadPool const &) = delete;
-        ThreadPool& operator= (ThreadPool const &&) = delete;
+        ThreadPool(ThreadPool &&) = delete;
+
+        ThreadPool &operator=(ThreadPool const &) = delete;
+        ThreadPool &operator=(ThreadPool const &&) = delete;
 
         bool empty(void) const
         {
@@ -189,18 +188,18 @@ namespace Gek
 
         void drain(bool executePendingTasks = true)
         {
-			if (executePendingTasks)
-			{
+            if (executePendingTasks)
+            {
                 join();
-			}
-			else
-			{
-				coroutineQueue.clear();
-			}
+            }
+            else
+            {
+                coroutineQueue.clear();
+            }
 
             if (!workerList.empty())
             {
-				stop.store(true);
+                stop.store(true);
                 activeCondition.notify_all();
 
                 // Wait for threads to complete work
@@ -214,7 +213,7 @@ namespace Gek
 
             activeCount = 0;
         }
-        
+
         void reset(void)
         {
             drain();
@@ -232,7 +231,7 @@ namespace Gek
                 {
                     return false;
                 }
-                
+
                 constexpr void await_resume() const noexcept
                 {
                 }

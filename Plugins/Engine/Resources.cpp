@@ -1,31 +1,31 @@
 ﻿#define _ENABLE_ATOMIC_ALIGNMENT_FIX
 
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/ThreadPool.hpp"
-#include "GEK/Utility/ShuntingYard.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Shapes/Sphere.hpp"
-#include "GEK/GUI/Utilities.hpp"
-#include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Population.hpp"
-#include "API/Engine/Entity.hpp"
-#include "API/Engine/Component.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Light.hpp"
-#include "GEK/Components/Color.hpp"
-#include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Shader.hpp"
+#include "API/Engine/Component.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
+#include "API/Engine/Visualizer.hpp"
+#include "GEK/Components/Color.hpp"
+#include "GEK/Components/Light.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
+#include "GEK/Engine/Shader.hpp"
 #include "GEK/Engine/Visual.hpp"
+#include "GEK/GUI/Utilities.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/ShuntingYard.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
+#include <atomic>
+#include <imgui_internal.h>
+#include <shared_mutex>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_unordered_set.h>
-#include <atomic>
-#include <shared_mutex>
-#include <imgui_internal.h>
 
 class Float16Compressor
 {
@@ -39,9 +39,9 @@ class Float16Compressor
     static int const shift = 13;
     static int const shiftSign = 16;
 
-    static int32_t const infN = 0x7F800000; // flt32 infinity
-    static int32_t const maxN = 0x477FE000; // max flt16 normal as a flt32
-    static int32_t const minN = 0x38800000; // min flt16 normal as a flt32
+    static int32_t const infN = 0x7F800000;  // flt32 infinity
+    static int32_t const maxN = 0x477FE000;  // max flt16 normal as a flt32
+    static int32_t const minN = 0x38800000;  // min flt16 normal as a flt32
     static int32_t const signN = 0x80000000; // flt32 sign bit
 
     static int32_t const infC = infN >> shift;
@@ -59,7 +59,7 @@ class Float16Compressor
     static int32_t const maxD = infC - maxC - 1;
     static int32_t const minD = minC - subC - 1;
 
-public:
+  public:
     static uint16_t compress(float value)
     {
         Bits v, s;
@@ -113,7 +113,7 @@ namespace Gek
             return normalizedPath.getString();
         }
 
-    }
+    } // namespace
 
     namespace Implementation
     {
@@ -122,7 +122,7 @@ namespace Gek
         template <typename HANDLE, typename TYPE>
         class ResourceCache
         {
-        public:
+          public:
             using TypePtr = std::shared_ptr<TYPE>;
             using AtomicPtr = std::atomic<TypePtr>;
             using ResourceHandleMap = tbb::concurrent_unordered_map<std::size_t, HANDLE>;
@@ -130,18 +130,18 @@ namespace Gek
             using ResourceType = ResourceMap::value_type;
             using HandleType = HANDLE;
 
-        private:
+          private:
             uint32_t validationIdentifier = 0;
             std::atomic_uint32_t nextIdentifier = 0;
 
-        protected:
-            ThreadPool& loadPool;
+          protected:
+            ThreadPool &loadPool;
             ResourceHandleMap resourceHandleMap;
             ResourceMap resourceMap;
             mutable std::shared_mutex cacheMutex;
 
-        public:
-            ResourceCache(ThreadPool& loadPool)
+          public:
+            ResourceCache(ThreadPool &loadPool)
                 : loadPool(loadPool)
             {
             }
@@ -151,7 +151,7 @@ namespace Gek
             void visit(std::function<void(HandleType, TypePtr)> onResource)
             {
                 std::shared_lock<std::shared_mutex> lock(cacheMutex);
-                for (auto& resourcePair : resourceMap)
+                for (auto &resourcePair : resourceMap)
                 {
                     onResource(resourcePair.first, resourcePair.second.load());
                 }
@@ -170,7 +170,7 @@ namespace Gek
                 resourceMap.clear();
             }
 
-            bool setResource(HANDLE handle, TypePtr&& data, HANDLE *fallback = nullptr)
+            bool setResource(HANDLE handle, TypePtr &&data, HANDLE *fallback = nullptr)
             {
                 std::unique_lock<std::shared_mutex> lock(cacheMutex);
                 auto resourceSearch = resourceMap.emplace(handle, TypePtr{});
@@ -196,7 +196,7 @@ namespace Gek
                 return false;
             }
 
-            Task scheduleResource(HANDLE handle, std::function<TypePtr(HandleType)>&& load, HANDLE *fallback = nullptr)
+            Task scheduleResource(HANDLE handle, std::function<TypePtr(HandleType)> &&load, HANDLE *fallback = nullptr)
             {
                 auto localLoad = std::move(load);
                 co_await loadPool.schedule();
@@ -204,7 +204,7 @@ namespace Gek
                 setResource(handle, std::move(resource), fallback);
             }
 
-            virtual TYPE* const getResource(HANDLE handle) const
+            virtual TYPE *const getResource(HANDLE handle) const
             {
                 std::shared_lock<std::shared_mutex> lock(cacheMutex);
                 if (handle.identifier >= validationIdentifier)
@@ -229,15 +229,15 @@ namespace Gek
         class GeneralResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
-        public:
+          public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
-        private:
+          private:
             tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
-        public:
-            GeneralResourceCache(ThreadPool& loadPool)
+          public:
+            GeneralResourceCache(ThreadPool &loadPool)
                 : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
@@ -247,7 +247,7 @@ namespace Gek
                 requestedLoadSet.clear();
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)>&& load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)> &&load)
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
@@ -288,16 +288,16 @@ namespace Gek
         class DynamicResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
-        public:
+          public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
-        private:
+          private:
             tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
             tbb::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
 
-        public:
-            DynamicResourceCache(ThreadPool& loadPool)
+          public:
+            DynamicResourceCache(ThreadPool &loadPool)
                 : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
@@ -315,7 +315,7 @@ namespace Gek
                 ResourceCache<HANDLE, TYPE>::setResource(handle, data);
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)>&& load, uint32_t flags, HANDLE *fallback = nullptr)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)> &&load, uint32_t flags, HANDLE *fallback = nullptr)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -395,17 +395,17 @@ namespace Gek
         class ProgramResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
-        public:
+          public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
-        public:
-            ProgramResourceCache(ThreadPool& loadPool)
+          public:
+            ProgramResourceCache(ThreadPool &loadPool)
                 : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
-            HANDLE getHandle(std::function<TypePtr(HandleType)>&& load)
+            HANDLE getHandle(std::function<TypePtr(HandleType)> &&load)
             {
                 HANDLE handle;
                 handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
@@ -422,14 +422,14 @@ namespace Gek
         class StaticProgramResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
-        public:
-            StaticProgramResourceCache(ThreadPool& loadPool)
+          public:
+            StaticProgramResourceCache(ThreadPool &loadPool)
                 : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
             template <typename FUNCTOR>
-            HANDLE getHandle(FUNCTOR&& load)
+            HANDLE getHandle(FUNCTOR &&load)
             {
                 HANDLE handle;
                 handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
@@ -442,22 +442,22 @@ namespace Gek
         class ReloadResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
-        public:
+          public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
-        private:
+          private:
             tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
-        public:
-            ReloadResourceCache(ThreadPool& loadPool)
+          public:
+            ReloadResourceCache(ThreadPool &loadPool)
                 : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
             void reload(void)
             {
-                for (auto& resourceSearch : ResourceCache<HANDLE, TYPE>::resourceMap)
+                for (auto &resourceSearch : ResourceCache<HANDLE, TYPE>::resourceMap)
                 {
                     auto resource = resourceSearch.second.load();
                     if (resource)
@@ -472,7 +472,7 @@ namespace Gek
                 requestedLoadSet.clear();
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)>&& load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)> &&load)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -513,10 +513,10 @@ namespace Gek
         template <typename TYPE>
         struct ObjectCache
         {
-            std::vector<TYPE*> objectList;
+            std::vector<TYPE *> objectList;
 
             template <typename INPUT, typename HANDLE, typename SOURCE>
-            bool set(std::vector<INPUT>const& inputList, ResourceCache<HANDLE, SOURCE>& cache, TYPE* defaultObject = nullptr)
+            bool set(std::vector<INPUT> const &inputList, ResourceCache<HANDLE, SOURCE> &cache, TYPE *defaultObject = nullptr)
             {
                 const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
@@ -524,7 +524,7 @@ namespace Gek
 
                 for (uint32_t object = 0; object < listCount; ++object)
                 {
-                    auto& input = inputList[object];
+                    auto &input = inputList[object];
                     if (input)
                     {
                         auto resource = cache.getResource(inputList[object]);
@@ -533,7 +533,7 @@ namespace Gek
                             return false;
                         }
 
-                        objectList[object] = dynamic_cast<TYPE*>(resource);
+                        objectList[object] = dynamic_cast<TYPE *>(resource);
                         if (!objectList[object])
                         {
                             return false;
@@ -549,7 +549,7 @@ namespace Gek
             }
 
             template <typename INPUT, typename HANDLE>
-            bool set(std::vector<INPUT> const& inputList, ResourceCache<HANDLE, TYPE>& cache)
+            bool set(std::vector<INPUT> const &inputList, ResourceCache<HANDLE, TYPE> &cache)
             {
                 const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
@@ -569,12 +569,12 @@ namespace Gek
                 return true;
             }
 
-            std::vector<TYPE*>& get(void)
+            std::vector<TYPE *> &get(void)
             {
                 return objectList;
             }
 
-            const std::vector<TYPE*>& get(void) const
+            const std::vector<TYPE *> &get(void) const
             {
                 return objectList;
             }
@@ -586,17 +586,17 @@ namespace Gek
             return *mutex;
         }
 
-        GEK_CONTEXT_USER(Resources, Engine::Core*)
-            , public Engine::Resources
+        GEK_CONTEXT_USER(Resources, Engine::Core *)
+        , public Engine::Resources
         {
-        private:
-            Engine::Core * core = nullptr;
-            Render::Device* videoDevice = nullptr;
-            Plugin::Visualizer* renderer = nullptr;
+          private:
+            Engine::Core *core = nullptr;
+            Render::Device *videoDevice = nullptr;
+            Plugin::Visualizer *renderer = nullptr;
             std::string renderDeviceName;
 
             ThreadPool loadPool;
-            std::recursive_mutex& shaderMutex;
+            std::recursive_mutex &shaderMutex;
 
             StaticProgramResourceCache<ProgramHandle, Render::Program> staticProgramCache;
             ProgramResourceCache<ProgramHandle, Render::Program> programCache;
@@ -626,7 +626,7 @@ namespace Gek
                     return state;
                 }
 
-                bool operator = (bool state)
+                bool operator=(bool state)
                 {
                     Validate::state = state;
                     return state;
@@ -647,23 +647,9 @@ namespace Gek
             bool loggedInvalidRenderTargetList = false;
             std::atomic<bool> shuttingDown = false;
 
-        public:
-            Resources(Context* context, Engine::Core* core)
-                : ContextRegistration(context)
-                , core(core)
-                , videoDevice(core->getRenderDevice())
-                , loadPool(5)
-                , shaderMutex(GetResourcesShaderMutex())
-                , staticProgramCache(loadPool)
-                , programCache(loadPool)
-                , visualCache(loadPool)
-                , materialCache(loadPool)
-                , shaderCache(loadPool)
-                , filterCache(loadPool)
-                , dynamicCache(loadPool)
-                , renderStateCache(loadPool)
-                , depthStateCache(loadPool)
-                , blendStateCache(loadPool)
+          public:
+            Resources(Context * context, Engine::Core * core)
+                : ContextRegistration(context), core(core), videoDevice(core->getRenderDevice()), loadPool(5), shaderMutex(GetResourcesShaderMutex()), staticProgramCache(loadPool), programCache(loadPool), visualCache(loadPool), materialCache(loadPool), shaderCache(loadPool), filterCache(loadPool), dynamicCache(loadPool), renderStateCache(loadPool), depthStateCache(loadPool), blendStateCache(loadPool)
             {
                 assert(core);
                 assert(videoDevice);
@@ -671,7 +657,7 @@ namespace Gek
                 auto renderDevice = core->getOption("render", "device", "renderd3d11"s);
                 String::Replace(renderDevice, "render", "");
                 renderDeviceName = renderDevice;
-                
+
                 core->onChangedDisplay.connect(this, &Resources::onReload);
                 core->onChangedSettings.connect(this, &Resources::onReload);
                 core->onInitialized.connect(this, &Resources::onInitialized);
@@ -693,7 +679,7 @@ namespace Gek
                 renderer = nullptr;
             }
 
-            Validate& getValid(Render::Device::Context::Pipeline* videoPipeline)
+            Validate &getValid(Render::Device::Context::Pipeline * videoPipeline)
             {
                 assert(videoPipeline);
 
@@ -708,7 +694,7 @@ namespace Gek
                 getContext()->setRuntimeMetric("resources.drawSubmitted", static_cast<double>(drawCallSubmittedCount));
                 getContext()->setRuntimeMetric("resources.drawSuppressed", static_cast<double>(drawCallSuppressedCount));
 
-                ImGuiIO& imGuiIo = ImGui::GetIO();
+                ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
                 auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
                 if (mainMenuShowing)
@@ -752,32 +738,31 @@ namespace Gek
             }
 
             template <typename CACHE, typename FUNCTOR>
-            void showObjectMap(CACHE& cache, std::string_view group, FUNCTOR&& onObject)
+            void showObjectMap(CACHE & cache, std::string_view group, FUNCTOR && onObject)
             {
                 if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     cache.visit([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
-                    {
+                                {
                         auto nodeName = std::format("{}_{}", object->getName(), static_cast<uint64_t>(handle.identifier));
                         if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             onObject(object);
                             ImGui::TreePop();
-                        }
-                    });
+                        } });
 
                     ImGui::TreePop();
                 }
             }
 
             template <typename HANDLE, typename TYPE, typename FUNCTOR>
-            void showVideoResourceMap(ResourceCache<HANDLE, TYPE>* cache, std::string_view group, FUNCTOR&& onObject)
+            void showVideoResourceMap(ResourceCache<HANDLE, TYPE> * cache, std::string_view group, FUNCTOR && onObject)
             {
                 if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     std::unordered_map<std::string_view, std::vector<std::pair<HANDLE, std::shared_ptr<TYPE>>>> typeDataMap;
                     cache->visit([&](ResourceCache<HANDLE, TYPE>::HandleType handle, ResourceCache<HANDLE, TYPE>::TypePtr object) -> void
-                    {
+                                 {
                         if (dynamic_cast<Render::Target*>(object.get()))
                         {
                             typeDataMap["Target"].push_back(std::make_pair(handle, object));
@@ -809,17 +794,16 @@ namespace Gek
                                     typeDataMap[typeSearch->second].push_back(std::make_pair(handle, object));
                                 }
                             }
-                        }
-                    });
+                        } });
 
-                    for (auto& typePair : typeDataMap)
+                    for (auto &typePair : typeDataMap)
                     {
                         if (ImGui::TreeNodeEx(typePair.first.data(), ImGuiTreeNodeFlags_Framed))
                         {
-                            for (auto& resourcePair : typePair.second)
+                            for (auto &resourcePair : typePair.second)
                             {
                                 auto handle = resourcePair.first;
-                                auto& object = resourcePair.second;
+                                auto &object = resourcePair.second;
                                 auto nodeName = std::format("{} - {}", object->getName(), static_cast<uint64_t>(handle.identifier));
                                 if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
@@ -838,48 +822,40 @@ namespace Gek
 
             void showVisualCache(void)
             {
-                showObjectMap(visualCache, "Visuals"s, [&](auto& object) -> void
-                {
-                });
+                showObjectMap(visualCache, "Visuals"s, [&](auto &object) -> void {});
             }
 
             void showShaderCache(void)
             {
-                showObjectMap(shaderCache, "Shaders"s, [&](auto& object) -> void
-                {
-                });
+                showObjectMap(shaderCache, "Shaders"s, [&](auto &object) -> void {});
             }
 
             void showFilterCache(void)
             {
-                showObjectMap(filterCache, "Filters"s, [&](auto& object) -> void
-                {
-                });
+                showObjectMap(filterCache, "Filters"s, [&](auto &object) -> void {});
             }
 
             void showProgramCache(void)
             {
                 if (ImGui::TreeNodeEx("Programs", ImGuiTreeNodeFlags_Framed))
                 {
-                    showVideoResourceMap(&staticProgramCache, "Global"s, [&](auto& object) -> void
-                    {
+                    showVideoResourceMap(&staticProgramCache, "Global"s, [&](auto &object) -> void
+                                         {
                         auto information = object->getInformation();
                         auto pathString = information.shaderPath.getString();
                         ImGui::PushItemWidth(-1.0f);
                         ImGui::InputText("##path", const_cast<char*>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
                         ImGui::InputTextMultiline("##data", const_cast<char*>(information.shaderData.data()), information.shaderData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
-                        ImGui::PopItemWidth();
-                    });
+                        ImGui::PopItemWidth(); });
 
-                    showVideoResourceMap(&programCache, "Local"s, [&](auto& object) -> void
-                    {
+                    showVideoResourceMap(&programCache, "Local"s, [&](auto &object) -> void
+                                         {
                         auto information = object->getInformation();
                         auto pathString = information.shaderPath.getString();
                         ImGui::PushItemWidth(-1.0f);
                         ImGui::InputText("##path", const_cast<char*>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
                         ImGui::InputTextMultiline("##data", const_cast<char*>(information.shaderData.data()), information.shaderData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
-                        ImGui::PopItemWidth();
-                    });
+                        ImGui::PopItemWidth(); });
 
                     ImGui::TreePop();
                 }
@@ -887,12 +863,10 @@ namespace Gek
 
             void showMaterialCache(void)
             {
-                showObjectMap(materialCache, "Materials"s, [&](auto& object) -> void
-                {
-                });
+                showObjectMap(materialCache, "Materials"s, [&](auto &object) -> void {});
             }
 
-            void showResourceValue(std::string_view text, std::string_view label, const std::string& value)
+            void showResourceValue(std::string_view text, std::string_view label, const std::string &value)
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted(text.data());
@@ -904,8 +878,8 @@ namespace Gek
 
             void showDynamicCache(void)
             {
-                showVideoResourceMap(&dynamicCache, "Resources"s, [&](auto& object) -> void
-                {
+                showVideoResourceMap(&dynamicCache, "Resources"s, [&](auto &object) -> void
+                                     {
                     if (dynamic_cast<Render::Texture*>(object.get()))
                     {
                         float start = ImGui::GetCursorPosY();
@@ -942,14 +916,13 @@ namespace Gek
                         showResourceValue("Stride", "##stride", std::to_string(description.stride));
                         showResourceValue("Flags", "##flags", std::to_string(description.flags));
                         showResourceValue("Type", "##type", Render::Buffer::GetType(description.type));
-                    }
-                });
+                    } });
             }
 
             void showRenderStateCache(void)
             {
-                showObjectMap(renderStateCache, "Render States"s, [&](auto& object) -> void
-                {
+                showObjectMap(renderStateCache, "Render States"s, [&](auto &object) -> void
+                              {
                     auto const& description = object->getDescription();
                     showResourceValue("Fill Mode", "##fillMode", Render::RenderState::GetFillMode(description.fillMode));
                     showResourceValue("Cull Mode", "##cullMode", Render::RenderState::GetCullMode(description.cullMode));
@@ -960,11 +933,10 @@ namespace Gek
                     showResourceValue("Depth Clip Enable", "##depthClipEnable", std::to_string(description.depthClipEnable));
                     showResourceValue("Scissor Enable", "##scissorEnable", std::to_string(description.scissorEnable));
                     showResourceValue("Multisample Enable", "##multisampleEnable", std::to_string(description.multisampleEnable));
-                    showResourceValue("AntiAliased Line Enable", "##antialiasedLineEnable", std::to_string(description.antialiasedLineEnable));
-                });
+                    showResourceValue("AntiAliased Line Enable", "##antialiasedLineEnable", std::to_string(description.antialiasedLineEnable)); });
             }
 
-            void showStencilState(std::string_view text, Render::DepthState::Description::StencilState const& stencilState)
+            void showStencilState(std::string_view text, Render::DepthState::Description::StencilState const &stencilState)
             {
                 if (ImGui::TreeNodeEx(text.data(), ImGuiTreeNodeFlags_Framed))
                 {
@@ -978,8 +950,8 @@ namespace Gek
 
             void showDepthStateCache(void)
             {
-                showObjectMap(depthStateCache, "Depth States"s, [&](auto& object) -> void
-                {
+                showObjectMap(depthStateCache, "Depth States"s, [&](auto &object) -> void
+                              {
                     auto const& description = object->getDescription();
                     showResourceValue("Enable", "##enable", std::to_string(description.enable));
                     showResourceValue("Write Mask", "##writeMask", Render::DepthState::GetWrite(description.writeMask));
@@ -988,15 +960,14 @@ namespace Gek
                     showResourceValue("Stencil Read Mask", "##stencilReadMask", std::to_string(description.stencilReadMask));
                     showResourceValue("Stencil Write Mask", "##stencilWriteMask", std::to_string(description.stencilWriteMask));
                     showStencilState("Stencil Front State", description.stencilFrontState);
-                    showStencilState("Stencil Back State", description.stencilBackState);
-                });
+                    showStencilState("Stencil Back State", description.stencilBackState); });
             }
 
             int currentBlendStateTarget = 0;
             void showBlendStateCache(void)
             {
-                showObjectMap(blendStateCache, "Blend States"s, [&](auto& object) -> void
-                {
+                showObjectMap(blendStateCache, "Blend States"s, [&](auto &object) -> void
+                              {
                     auto const& description = object->getDescription();
                     showResourceValue("Alpha To Coverage", "##alphaToCoverage", std::to_string(description.alphaToCoverage));
                     showResourceValue("Independent Blend States", "##independentBlendStates", std::to_string(description.independentBlendStates));
@@ -1017,8 +988,7 @@ namespace Gek
                     showResourceValue("Alpha Destination", "##alphaDestination", Render::BlendState::GetSource(targetState.alphaDestination));
                     showResourceValue("Alpha Operation", "##alphaOperation", Render::BlendState::GetOperation(targetState.alphaOperation));
                     showResourceValue("Write Mask", "##writeMask", Render::BlendState::GetMask(targetState.writeMask));
-                    ImGui::Unindent();
-                });
+                    ImGui::Unindent(); });
             }
 
             // Plugin::Processor
@@ -1050,20 +1020,18 @@ namespace Gek
             VisualHandle loadVisual(std::string_view visualName)
             {
                 auto hash = GetHash(visualName);
-                return visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources*>(this), visualName = std::string(visualName)](VisualHandle)->Engine::VisualPtr
-                {
-                    return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName);
-                }).second;
+                return visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
+                                             { return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName); })
+                    .second;
             }
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
                 auto normalizedMaterialName = normalizeMaterialName(materialName);
                 auto hash = GetHash(normalizedMaterialName);
-                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources*>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle)->Engine::MaterialPtr
-                {
-                    return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle);
-                }).second;
+                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle) -> Engine::MaterialPtr
+                                               { return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle); })
+                    .second;
             }
 
             ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallback)
@@ -1074,8 +1042,7 @@ namespace Gek
                 }
 
                 // iterate over formats in case the texture name has no extension
-                static constexpr std::string_view formatList[] =
-                {
+                static constexpr std::string_view formatList[] = {
                     "",
                     ".ktx2",
                     ".dds",
@@ -1089,21 +1056,20 @@ namespace Gek
                 };
 
                 auto hash = GetHash(textureName);
-                for (auto const& format : formatList)
+                for (auto const &format : formatList)
                 {
                     auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", textureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
-                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle)->Render::TexturePtr
-                        {
+                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle) -> Render::TexturePtr
+                                                               {
                             if (shuttingDown.load(std::memory_order_acquire))
                             {
                                 return nullptr;
                             }
 
                             getContext()->log(Context::Info, "Loading texture: {}", texturePath.getString());
-                            return videoDevice->loadTexture(texturePath, flags);
-                        }, 0, &fallback);
+                            return videoDevice->loadTexture(texturePath, flags); }, 0, &fallback);
 
                         if (resource.first)
                         {
@@ -1118,7 +1084,7 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(std::string_view pattern, JSON::Object const& parameters)
+            ResourceHandle createPattern(std::string_view pattern, JSON::Object const &parameters)
             {
                 auto lowerPattern = String::GetLower(pattern);
 
@@ -1207,10 +1173,22 @@ namespace Gek
                     parameterString = String::GetLower(JSON::Value(parameters, "debug"s));
                     if (parameterString == "debug")
                     {
-                        data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
-                        data.push_back(255);    data.push_back(255);    data.push_back(255);    data.push_back(255);
-                        data.push_back(255);    data.push_back(255);    data.push_back(255);    data.push_back(255);
-                        data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(0);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(255);
+                        data.push_back(0);
+                        data.push_back(255);
+                        data.push_back(255);
                         description.format = Render::Format::R8G8B8A8_UNORM;
                         description.width = 2;
                         description.height = 2;
@@ -1228,10 +1206,8 @@ namespace Gek
                 description.name = std::format("{}:{}", lowerPattern, parameterString);
                 description.flags = Render::Texture::Flags::Resource;
 
-                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description, data = move(data)](ResourceHandle)->Render::TexturePtr
-                {
-                    return videoDevice->createTexture(description, data.data());
-                }, 0);
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description, data = move(data)](ResourceHandle) -> Render::TexturePtr
+                                                       { return videoDevice->createTexture(description, data.data()); }, 0);
 
                 if (resource.first)
                 {
@@ -1241,7 +1217,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(Render::Texture::Description const& description, uint32_t flags)
+            ResourceHandle createTexture(Render::Texture::Description const &description, uint32_t flags)
             {
                 if (description.format == Render::Format::Unknown)
                 {
@@ -1253,10 +1229,8 @@ namespace Gek
                     flags |= Resources::Flags::Immediate;
                 }
 
-                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Render::TexturePtr
-                {
-                    return videoDevice->createTexture(description);
-                }, flags);
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle) -> Render::TexturePtr
+                                                       { return videoDevice->createTexture(description); }, flags);
 
                 if (resource.first)
                 {
@@ -1266,7 +1240,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(Render::Buffer::Description const& description, uint32_t flags)
+            ResourceHandle createBuffer(Render::Buffer::Description const &description, uint32_t flags)
             {
                 assert(description.count > 0);
 
@@ -1275,10 +1249,8 @@ namespace Gek
                     flags |= Resources::Flags::Cached;
                 }
 
-                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Render::BufferPtr
-                {
-                    return videoDevice->createBuffer(description);
-                }, flags);
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle) -> Render::BufferPtr
+                                                       { return videoDevice->createBuffer(description); }, flags);
 
                 if (resource.first)
                 {
@@ -1288,7 +1260,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(Render::Buffer::Description const& description, std::vector<uint8_t>&& staticData, uint32_t flags)
+            ResourceHandle createBuffer(Render::Buffer::Description const &description, std::vector<uint8_t> &&staticData, uint32_t flags)
             {
                 assert(description.count > 0);
                 assert(!staticData.empty());
@@ -1299,10 +1271,8 @@ namespace Gek
                 }
 
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
-                auto resource = dynamicCache.getHandle(GetHash(description.name), parameters, [this, description, staticData = move(staticData)](ResourceHandle)->Render::BufferPtr
-                {
-                    return videoDevice->createBuffer(description, (void*)staticData.data());
-                }, flags);
+                auto resource = dynamicCache.getHandle(GetHash(description.name), parameters, [this, description, staticData = move(staticData)](ResourceHandle) -> Render::BufferPtr
+                                                       { return videoDevice->createBuffer(description, (void *)staticData.data()); }, flags);
 
                 if (resource.first)
                 {
@@ -1312,7 +1282,7 @@ namespace Gek
                 return resource.second;
             }
 
-            void setIndexBuffer(Render::Device::Context* videoContext, ResourceHandle resourceHandle, uint32_t offset)
+            void setIndexBuffer(Render::Device::Context * videoContext, ResourceHandle resourceHandle, uint32_t offset)
             {
                 assert(videoContext);
 
@@ -1321,7 +1291,7 @@ namespace Gek
                     auto resource = getResource(resourceHandle);
                     if (drawPrimitiveValid = (resource != nullptr))
                     {
-                        videoContext->setIndexBuffer(dynamic_cast<Render::Buffer*>(resource), offset);
+                        videoContext->setIndexBuffer(dynamic_cast<Render::Buffer *>(resource), offset);
                     }
                     else if (!loggedMissingIndexBuffer)
                     {
@@ -1335,7 +1305,7 @@ namespace Gek
             }
 
             ObjectCache<Render::Buffer> vertexBufferCache;
-            void setVertexBufferList(Render::Device::Context* videoContext, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstSlot, uint32_t* offsetList)
+            void setVertexBufferList(Render::Device::Context * videoContext, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList)
             {
                 assert(videoContext);
 
@@ -1368,11 +1338,11 @@ namespace Gek
             }
 
             ObjectCache<Render::Buffer> constantBufferCache;
-            void setConstantBufferList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setConstantBufferList(Render::Device::Context::Pipeline * videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
-                auto& valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = constantBufferCache.set(resourceHandleList, dynamicCache)))
                 {
                     videoPipeline->setConstantBufferList(constantBufferCache.get(), firstStage);
@@ -1380,11 +1350,11 @@ namespace Gek
             }
 
             ObjectCache<Render::Object> resourceCache;
-            void setResourceList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setResourceList(Render::Device::Context::Pipeline * videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
-                auto& valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = resourceCache.set(resourceHandleList, dynamicCache, videoDevice->getBackBuffer())))
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
@@ -1392,53 +1362,53 @@ namespace Gek
             }
 
             ObjectCache<Render::Object> unorderedAccessCache;
-            void setUnorderedAccessList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setUnorderedAccessList(Render::Device::Context::Pipeline * videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
-                auto& valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = unorderedAccessCache.set(resourceHandleList, dynamicCache)))
                 {
                     videoPipeline->setUnorderedAccessList(unorderedAccessCache.get(), firstStage);
                 }
             }
 
-            void clearIndexBuffer(Render::Device::Context* videoContext)
+            void clearIndexBuffer(Render::Device::Context * videoContext)
             {
                 assert(videoContext);
 
                 videoContext->clearIndexBuffer();
             }
 
-            void clearVertexBufferList(Render::Device::Context* videoContext, uint32_t count, uint32_t firstSlot)
+            void clearVertexBufferList(Render::Device::Context * videoContext, uint32_t count, uint32_t firstSlot)
             {
                 assert(videoContext);
 
                 videoContext->clearVertexBufferList(count, firstSlot);
             }
 
-            void clearConstantBufferList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearConstantBufferList(Render::Device::Context::Pipeline * videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearConstantBufferList(count, firstStage);
             }
 
-            void clearResourceList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearResourceList(Render::Device::Context::Pipeline * videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearResourceList(count, firstStage);
             }
 
-            void clearUnorderedAccessList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearUnorderedAccessList(Render::Device::Context::Pipeline * videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearUnorderedAccessList(count, firstStage);
             }
 
-            void drawPrimitive(Render::Device::Context* videoContext, uint32_t vertexCount, uint32_t firstVertex)
+            void drawPrimitive(Render::Device::Context * videoContext, uint32_t vertexCount, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1455,7 +1425,7 @@ namespace Gek
                 }
             }
 
-            void drawInstancedPrimitive(Render::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
+            void drawInstancedPrimitive(Render::Device::Context * videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
             {
                 ++drawCallAttemptCount;
 
@@ -1470,7 +1440,7 @@ namespace Gek
                 }
             }
 
-            void drawIndexedPrimitive(Render::Device::Context* videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+            void drawIndexedPrimitive(Render::Device::Context * videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1487,7 +1457,7 @@ namespace Gek
                 }
             }
 
-            void drawInstancedIndexedPrimitive(Render::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+            void drawInstancedIndexedPrimitive(Render::Device::Context * videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1504,7 +1474,7 @@ namespace Gek
                 }
             }
 
-            void dispatch(Render::Device::Context* videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
+            void dispatch(Render::Device::Context * videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
                 assert(videoContext);
 
@@ -1552,7 +1522,7 @@ namespace Gek
                 return dynamicCache.getHandle(GetHash(resourceName));
             }
 
-            Engine::Shader* const getShader(ShaderHandle handle) const
+            Engine::Shader *const getShader(ShaderHandle handle) const
             {
                 return shaderCache.getResource(handle);
             }
@@ -1562,10 +1532,8 @@ namespace Gek
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
 
                 auto hash = GetHash(shaderName);
-                auto resource = shaderCache.getHandle(hash, [this, shaderName = std::string(shaderName)](ShaderHandle)->Engine::ShaderPtr
-                {
-                    return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName);
-                });
+                auto resource = shaderCache.getHandle(hash, [this, shaderName = std::string(shaderName)](ShaderHandle) -> Engine::ShaderPtr
+                                                      { return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName); });
 
                 if (material && resource.second)
                 {
@@ -1575,18 +1543,16 @@ namespace Gek
                 return resource.second;
             }
 
-            Engine::Filter* const getFilter(std::string_view filterName)
+            Engine::Filter *const getFilter(std::string_view filterName)
             {
                 auto hash = GetHash(filterName);
-                auto resource = filterCache.getHandle(hash, [this, filterName = std::string(filterName)](ResourceHandle)->Engine::FilterPtr
-                {
-                    return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName);
-                });
+                auto resource = filterCache.getHandle(hash, [this, filterName = std::string(filterName)](ResourceHandle) -> Engine::FilterPtr
+                                                      { return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName); });
 
                 return filterCache.getResource(resource.second);
             }
 
-            Render::Texture::Description const* const getTextureDescription(ResourceHandle resourceHandle) const
+            Render::Texture::Description const *const getTextureDescription(ResourceHandle resourceHandle) const
             {
                 if (!resourceHandle)
                 {
@@ -1604,7 +1570,7 @@ namespace Gek
                 }
             }
 
-            Render::Buffer::Description const* const getBufferDescription(ResourceHandle resourceHandle) const
+            Render::Buffer::Description const *const getBufferDescription(ResourceHandle resourceHandle) const
             {
                 auto descriptionSearch = bufferDescriptionMap.find(resourceHandle);
                 if (descriptionSearch != std::end(bufferDescriptionMap))
@@ -1617,7 +1583,7 @@ namespace Gek
                 }
             }
 
-            Render::Object* const getResource(ResourceHandle resourceHandle) const
+            Render::Object *const getResource(ResourceHandle resourceHandle) const
             {
                 if (!resourceHandle)
                 {
@@ -1645,8 +1611,7 @@ namespace Gek
                     type,
                     entryFunction,
                     uncompiledData,
-                    filePath
-                );
+                    filePath);
 
                 // --- Disk cache read with version/hash invalidation ---
                 if (compiledPath.isFile())
@@ -1656,8 +1621,8 @@ namespace Gek
                     {
                         uint32_t fileVersion = 0;
                         uint64_t fileHash = 0;
-                        cacheFile.read(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
-                        cacheFile.read(reinterpret_cast<char*>(&fileHash), sizeof(fileHash));
+                        cacheFile.read(reinterpret_cast<char *>(&fileVersion), sizeof(fileVersion));
+                        cacheFile.read(reinterpret_cast<char *>(&fileHash), sizeof(fileHash));
                         if (fileVersion == SHADER_CACHE_VERSION && fileHash == hash)
                         {
                             std::vector<uint8_t> cachedShader((std::istreambuf_iterator<char>(cacheFile)), std::istreambuf_iterator<char>());
@@ -1676,7 +1641,7 @@ namespace Gek
                 }
 
                 std::map<std::string_view, std::string> includedMap;
-                auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Render::IncludeType includeType, std::string_view fileName, void const** data, uint32_t* size) -> bool
+                auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Render::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
                 {
                     std::string includeData;
                     if (String::GetLower(fileName) == "gekengine"s)
@@ -1732,9 +1697,9 @@ namespace Gek
                         std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
                         if (outFile)
                         {
-                            outFile.write(reinterpret_cast<const char*>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
-                            outFile.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
-                            outFile.write(reinterpret_cast<const char*>(information.compiledData.data()), information.compiledData.size());
+                            outFile.write(reinterpret_cast<const char *>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
+                            outFile.write(reinterpret_cast<const char *>(&hash), sizeof(hash));
+                            outFile.write(reinterpret_cast<const char *>(information.compiledData.data()), information.compiledData.size());
                             outFile.close();
 
                             getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), SHADER_CACHE_VERSION, hash, information.compiledData.size());
@@ -1745,75 +1710,70 @@ namespace Gek
                 return information;
             }
 
-            Render::Program* getProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
+            Render::Program *getProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
-                auto handle = staticProgramCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Render::ProgramPtr
-                {
+                auto handle = staticProgramCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle) -> Render::ProgramPtr
+                                                           {
                     auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
-                    return videoDevice->createProgram(compiledData);
-                });
+                    return videoDevice->createProgram(compiledData); });
 
                 return staticProgramCache.getResource(handle);
             }
 
             ProgramHandle loadProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
-                return programCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Render::ProgramPtr
-                {
+                return programCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle) -> Render::ProgramPtr
+                                              {
                     auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
-                    return videoDevice->createProgram(compiledData);
-                });
+                    return videoDevice->createProgram(compiledData); });
             }
 
-            RenderStateHandle createRenderState(Render::RenderState::Description const& description)
+            RenderStateHandle createRenderState(Render::RenderState::Description const &description)
             {
                 auto hash = description.getHash();
                 return renderStateCache.getHandle(hash, [this, description](RenderStateHandle) -> Render::RenderStatePtr
-                {
-                    return videoDevice->createRenderState(description);
-                }).second;
+                                                  { return videoDevice->createRenderState(description); })
+                    .second;
             }
 
-            DepthStateHandle createDepthState(Render::DepthState::Description const& description)
+            DepthStateHandle createDepthState(Render::DepthState::Description const &description)
             {
                 auto hash = description.getHash();
                 return depthStateCache.getHandle(hash, [this, description](DepthStateHandle) -> Render::DepthStatePtr
-                {
-                    return videoDevice->createDepthState(description);
-                }).second;
+                                                 { return videoDevice->createDepthState(description); })
+                    .second;
             }
 
-            BlendStateHandle createBlendState(Render::BlendState::Description const& description)
+            BlendStateHandle createBlendState(Render::BlendState::Description const &description)
             {
                 auto hash = description.getHash();
                 return blendStateCache.getHandle(hash, [this, description](BlendStateHandle) -> Render::BlendStatePtr
-                {
-                    return videoDevice->createBlendState(description);
-                }).second;
+                                                 { return videoDevice->createBlendState(description); })
+                    .second;
             }
 
-            void generateMipMaps(Render::Device::Context* videoContext, ResourceHandle resourceHandle)
+            void generateMipMaps(Render::Device::Context * videoContext, ResourceHandle resourceHandle)
             {
                 assert(videoContext);
 
                 auto resource = getResource(resourceHandle);
                 if (resource)
                 {
-                    videoContext->generateMipMaps(dynamic_cast<Render::Texture*>(resource));
+                    videoContext->generateMipMaps(dynamic_cast<Render::Texture *>(resource));
                 }
             }
 
-            void resolveSamples(Render::Device::Context* videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            void resolveSamples(Render::Device::Context * videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 auto source = getResource(sourceHandle);
                 auto destination = getResource(destinationHandle);
                 if (source && destination)
                 {
-                    videoContext->resolveSamples(dynamic_cast<Render::Texture*>(destination), dynamic_cast<Render::Texture*>(source));
+                    videoContext->resolveSamples(dynamic_cast<Render::Texture *>(destination), dynamic_cast<Render::Texture *>(source));
                 }
             }
 
-            void copyResource(Render::Device::Context* videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            void copyResource(Render::Device::Context * videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 assert(videoContext);
 
@@ -1825,7 +1785,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& value)
+            void clearUnorderedAccess(Render::Device::Context * videoContext, ResourceHandle resourceHandle, Math::Float4 const &value)
             {
                 assert(videoContext);
 
@@ -1836,7 +1796,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::UInt4 const& value)
+            void clearUnorderedAccess(Render::Device::Context * videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value)
             {
                 assert(videoContext);
 
@@ -1847,18 +1807,18 @@ namespace Gek
                 }
             }
 
-            void clearRenderTarget(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& color)
+            void clearRenderTarget(Render::Device::Context * videoContext, ResourceHandle resourceHandle, Math::Float4 const &color)
             {
                 assert(videoContext);
 
                 auto resource = getResource(resourceHandle);
                 if (resource)
                 {
-                    videoContext->clearRenderTarget(dynamic_cast<Render::Target*>(resource), color);
+                    videoContext->clearRenderTarget(dynamic_cast<Render::Target *>(resource), color);
                 }
             }
 
-            void clearDepthStencilTarget(Render::Device::Context* videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
+            void clearDepthStencilTarget(Render::Device::Context * videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
             {
                 assert(videoContext);
 
@@ -1869,7 +1829,7 @@ namespace Gek
                 }
             }
 
-            void setMaterial(Render::Device::Context* videoContext, Engine::Shader::Pass* pass, MaterialHandle handle, bool forceShader)
+            void setMaterial(Render::Device::Context * videoContext, Engine::Shader::Pass * pass, MaterialHandle handle, bool forceShader)
             {
                 assert(videoContext);
                 assert(pass);
@@ -1924,7 +1884,7 @@ namespace Gek
                 setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
             }
 
-            void setVisual(Render::Device::Context* videoContext, VisualHandle handle)
+            void setVisual(Render::Device::Context * videoContext, VisualHandle handle)
             {
                 assert(videoContext);
 
@@ -1946,7 +1906,7 @@ namespace Gek
                 }
             }
 
-            void setRenderState(Render::Device::Context* videoContext, RenderStateHandle renderStateHandle)
+            void setRenderState(Render::Device::Context * videoContext, RenderStateHandle renderStateHandle)
             {
                 assert(videoContext);
 
@@ -1960,7 +1920,7 @@ namespace Gek
                 }
             }
 
-            void setDepthState(Render::Device::Context* videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
+            void setDepthState(Render::Device::Context * videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
             {
                 assert(videoContext);
 
@@ -1974,7 +1934,7 @@ namespace Gek
                 }
             }
 
-            void setBlendState(Render::Device::Context* videoContext, BlendStateHandle blendStateHandle, Math::Float4 const& blendFactor, uint32_t sampleMask)
+            void setBlendState(Render::Device::Context * videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask)
             {
                 assert(videoContext);
 
@@ -1988,11 +1948,11 @@ namespace Gek
                 }
             }
 
-            void setProgram(Render::Device::Context::Pipeline* videoPipeline, ProgramHandle programHandle)
+            void setProgram(Render::Device::Context::Pipeline * videoPipeline, ProgramHandle programHandle)
             {
                 assert(videoPipeline);
 
-                auto& valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid)
                 {
                     auto program = programCache.getResource(programHandle);
@@ -2014,13 +1974,13 @@ namespace Gek
 
             ObjectCache<Render::Target> renderTargetCache;
             std::vector<Render::ViewPort> viewPortCache;
-            void setRenderTargetList(Render::Device::Context* videoContext, std::vector<ResourceHandle> const& renderTargetHandleList, ResourceHandle const* depthBuffer)
+            void setRenderTargetList(Render::Device::Context * videoContext, std::vector<ResourceHandle> const &renderTargetHandleList, ResourceHandle const *depthBuffer)
             {
                 assert(videoContext);
 
                 if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache, videoDevice->getBackBuffer())))
                 {
-                    auto& renderTargetList = renderTargetCache.get();
+                    auto &renderTargetList = renderTargetCache.get();
                     const uint32_t renderTargetCount = renderTargetList.size();
                     viewPortCache.resize(renderTargetCount);
                     for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
@@ -2041,7 +2001,7 @@ namespace Gek
                 }
             }
 
-            void clearRenderTargetList(Render::Device::Context* videoContext, int32_t count, bool depthBuffer)
+            void clearRenderTargetList(Render::Device::Context * videoContext, int32_t count, bool depthBuffer)
             {
                 assert(videoContext);
 

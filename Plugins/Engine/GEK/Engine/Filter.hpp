@@ -7,11 +7,11 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/String.hpp"
-#include "GEK/Shapes/Frustum.hpp"
-#include "GEK/Utility/Context.hpp"
 #include "API/Engine/Resources.hpp"
 #include "API/Engine/Visualizer.hpp"
+#include "GEK/Shapes/Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/String.hpp"
 #include <memory>
 
 namespace Gek
@@ -40,18 +40,18 @@ namespace Gek
 
                 virtual bool isEnabled(void) const = 0;
 
-				virtual Hash getIdentifier(void) const = 0;
-				virtual std::string_view getName(void) const = 0;
-			};
+                virtual Hash getIdentifier(void) const = 0;
+                virtual std::string_view getName(void) const = 0;
+            };
 
             virtual ~Filter(void) = default;
 
             virtual void reload(void) = 0;
 
-			virtual Hash getIdentifier(void) const = 0;
-			virtual std::string_view getName(void) const = 0;
+            virtual Hash getIdentifier(void) const = 0;
+            virtual std::string_view getName(void) const = 0;
 
-            virtual Pass::Iterator begin(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output) = 0;
+            virtual Pass::Iterator begin(Render::Device::Context * videoContext, ResourceHandle input, ResourceHandle output) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
 #include "API/Engine/Handles.hpp"
+#include "GEK/Utility/Context.hpp"
 #include <unordered_map>
 
 namespace Gek
@@ -24,7 +24,7 @@ namespace Gek
 
             virtual ~Material(void) = default;
 
-			virtual std::string_view getName(void) const = 0;
+            virtual std::string_view getName(void) const = 0;
 
             virtual Data const *getData(size_t materialHash) = 0;
             virtual RenderStateHandle getRenderState(void) = 0;

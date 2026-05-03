@@ -7,14 +7,14 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
-#include "GEK/Utility/JSON.hpp"
 #include "API/Engine/Component.hpp"
 #include "API/Engine/Entity.hpp"
 #include "API/Engine/Population.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include <wink/signal.hpp>
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/JSON.hpp"
 #include <list>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -34,7 +34,7 @@ namespace Gek
         {
             virtual ~Component(void) = default;
 
-            virtual bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
+            virtual bool onUserInterface(ImGuiContext *const guiContext, Plugin::Entity *const entity, Plugin::Component::Data *data) = 0;
         };
 
         GEK_INTERFACE(Population)
@@ -55,7 +55,7 @@ namespace Gek
         {
             virtual ~Events(void) = default;
 
-            wink::signal<wink::slot<void(Plugin::Entity *entity, Hash type)>> onModified;
+            wink::signal<wink::slot<void(Plugin::Entity * entity, Hash type)>> onModified;
 
             virtual bool isModified(void) = 0;
         };

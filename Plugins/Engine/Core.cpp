@@ -1,27 +1,27 @@
 ﻿
+#include "GEK/Engine/Core.hpp"
+#include "API/Engine/Processor.hpp"
+#include "API/Engine/Visualizer.hpp"
+#include "GEK/Engine/Population.hpp"
+#include "GEK/Engine/Resources.hpp"
+#include "GEK/GUI/Utilities.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/GUI/Utilities.hpp"
-#include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Processor.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Population.hpp"
-#include <imgui_internal.h>
-#include <atomic>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <imgui_internal.h>
 #include <limits>
 #include <numeric>
+#include <thread>
 #include <unordered_map>
 #include <vector>
-#include <thread>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -142,14 +142,14 @@ namespace Gek
         bool IsKeyDown(Window::Key key)
         {
             ImGuiKey imguiKey = GetImGuiKey(key);
-            ImGuiIO& imGuiIo = ImGui::GetIO();
+            ImGuiIO &imGuiIo = ImGui::GetIO();
             return ImGui::IsKeyDown(imguiKey);
         }
 
         GEK_CONTEXT_USER_BASE(Core)
-            , virtual Engine::Core
+        , virtual Engine::Core
         {
-        private:
+          private:
             Window::DevicePtr window;
             bool windowActive = false;
 
@@ -165,7 +165,7 @@ namespace Gek
                 int mode = -1;
                 bool fullScreen = false;
             } current, previous, next;
-           
+
             bool showResetDialog = false;
 
             bool showLoadMenu = false;
@@ -186,8 +186,7 @@ namespace Gek
                 size_t sampleCount = 0;
             };
 
-            std::array<RuntimeMetricPlot, 71> runtimeMetricPlots =
-            {{
+            std::array<RuntimeMetricPlot, 71> runtimeMetricPlots = { {
                 { "render.fpsInstant", "FPS (Instant)", ImVec4(0.95f, 0.82f, 0.26f, 1.0f) },
                 { "render.fpsSmoothed", "FPS (Smoothed)", ImVec4(0.95f, 0.62f, 0.20f, 1.0f) },
                 { "render.frameTimeMs", "Frame CPU (ms)", ImVec4(0.88f, 0.88f, 0.30f, 1.0f) },
@@ -259,7 +258,7 @@ namespace Gek
                 { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
                 { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
                 { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
-            }};
+            } };
             std::array<bool, 71> runtimeMetricVisible = []() -> std::array<bool, 71>
             {
                 std::array<bool, 71> initialVisibility{};
@@ -300,7 +299,7 @@ namespace Gek
             static constexpr int32_t MaxPendingMouseDelta = 32768;
             static constexpr int32_t MaxAppliedMouseDeltaPerFrame = 512;
 
-            void accumulateMouseMovement(std::atomic<int32_t> &pendingMovement, int32_t delta)
+            void accumulateMouseMovement(std::atomic<int32_t> & pendingMovement, int32_t delta)
             {
                 if (delta < -MaxMouseEventDelta || delta > MaxMouseEventDelta)
                 {
@@ -354,9 +353,7 @@ namespace Gek
                 }
 
                 std::sort(std::begin(metricsToLog), std::end(metricsToLog), [](auto const &left, auto const &right) -> bool
-                {
-                    return left.first < right.first;
-                });
+                          { return left.first < right.first; });
 
                 getContext()->log(
                     Context::Info,
@@ -385,8 +382,8 @@ namespace Gek
 
             bool loadingPopulation = false;
 
-        public:
-            Core(Context *context)
+          public:
+            Core(Context * context)
                 : ContextRegistration(context)
             {
 #ifdef _WIN32
@@ -412,7 +409,7 @@ namespace Gek
                     std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", "gek.log");
                 }
 
-				getContext()->log(Context::Info, "Starting GEK Engine");
+                getContext()->log(Context::Info, "Starting GEK Engine");
 
                 const uint32_t defaultSinkMask = static_cast<uint32_t>(getContext()->getLogSinkMask());
                 uint32_t configuredSinkMask = JSON::Value(getOption("logging", "sinkMask"), defaultSinkMask);
@@ -534,7 +531,7 @@ namespace Gek
             {
                 if (current.mode != requestDisplayMode)
                 {
-                    auto& displayModeData = displayModeList[requestDisplayMode];
+                    auto &displayModeData = displayModeList[requestDisplayMode];
                     if (requestDisplayMode < displayModeList.size())
                     {
                         next.mode = requestDisplayMode;
@@ -569,20 +566,19 @@ namespace Gek
             void confirmClose(void)
             {
                 bool isModified = false;
-                listProcessors([&](Plugin::Processor* processor) -> void
-                {
+                listProcessors([&](Plugin::Processor *processor) -> void
+                               {
                     auto castCheck = dynamic_cast<Edit::Events*>(processor);
                     if (castCheck)
                     {
                         isModified = castCheck->isModified();
-                    }
-                });
+                    } });
 
                 if (isModified)
                 {
                     showSaveModified = true;
                     closeOnModified = true;
-                }  
+                }
                 else
                 {
                     forceClose();
@@ -673,10 +669,9 @@ namespace Gek
 
                 std::vector<std::string_view> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
-                {
+                                        {
                     processorNameList.push_back(className);
-					getContext()->log(Context::Info, "- {} processor found", className);
-				});
+					getContext()->log(Context::Info, "- {} processor found", className); });
 
                 processorList.reserve(processorNameList.size());
                 for (auto const &processorName : processorNameList)
@@ -688,7 +683,7 @@ namespace Gek
 
                 queueStartupSceneLoad();
 
-                ImGuiIO& imGuiIo = ImGui::GetIO();
+                ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
                 imGuiIo.MouseDrawCursor = enableInterfaceControl;
                 window->setCursorVisibility(enableInterfaceControl);
@@ -728,7 +723,7 @@ namespace Gek
                     loadingPopulation = false;
                 }
 
-                ImGuiIO& imGuiIo = ImGui::GetIO();
+                ImGuiIO &imGuiIo = ImGui::GetIO();
                 if (windowActive)
                 {
                     float frameTime = static_cast<float>(timer.getUpdateTime());
@@ -923,7 +918,7 @@ namespace Gek
                 accumulateMouseMovement(pendingMouseYMovement, yMovement);
             }
 
-            void onPopulationLoaded(std::string const&)
+            void onPopulationLoaded(std::string const &)
             {
                 populationLoadCompleted.store(true, std::memory_order_release);
             }
@@ -972,14 +967,13 @@ namespace Gek
                         if (ImGui::MenuItem("Load Scene"))
                         {
                             bool isModified = false;
-                            listProcessors([&](Plugin::Processor* processor) -> void
-                            {
+                            listProcessors([&](Plugin::Processor *processor) -> void
+                                           {
                                 auto castCheck = dynamic_cast<Edit::Events*>(processor);
                                 if (castCheck)
                                 {
                                     isModified = castCheck->isModified();
-                                }
-                            });
+                                } });
 
                             if (isModified)
                             {
@@ -1073,7 +1067,8 @@ namespace Gek
                             runtimeMetricVisible[plotIndex] = (key ? predicate(key) : false);
                         }
 
-                        runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                        runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool
+                                                           { return value; });
                     };
 
                     bool viewAllChanged = ImGui::Checkbox("View all metrics", &runtimeMetricViewAll);
@@ -1087,46 +1082,50 @@ namespace Gek
 
                     if (ImGui::Button("All"))
                     {
-                        applyMetricFilter([](std::string_view) -> bool { return true; });
+                        applyMetricFilter([](std::string_view) -> bool
+                                          { return true; });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("None"))
                     {
-                        applyMetricFilter([](std::string_view) -> bool { return false; });
+                        applyMetricFilter([](std::string_view) -> bool
+                                          { return false; });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("Visualizer"))
                     {
-                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("visualizer."); });
+                        applyMetricFilter([](std::string_view key) -> bool
+                                          { return key.starts_with("visualizer."); });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("Model"))
                     {
-                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("model."); });
+                        applyMetricFilter([](std::string_view key) -> bool
+                                          { return key.starts_with("model."); });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("Resources"))
                     {
-                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("resources."); });
+                        applyMetricFilter([](std::string_view key) -> bool
+                                          { return key.starts_with("resources."); });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("Render"))
                     {
-                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("render."); });
+                        applyMetricFilter([](std::string_view key) -> bool
+                                          { return key.starts_with("render."); });
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button("Backend"))
                     {
                         applyMetricFilter([](std::string_view key) -> bool
-                        {
-                            return key.starts_with("render.") || key.starts_with("vulkan.") || key.starts_with("d3d11.");
-                        });
+                                          { return key.starts_with("render.") || key.starts_with("vulkan.") || key.starts_with("d3d11."); });
                     }
 
                     ImGui::Separator();
@@ -1173,8 +1172,8 @@ namespace Gek
                         if (fpsSmoothed <= 6.0 && presentCpuMs <= 1.0)
                         {
                             const char *dominantCost = (waitFenceCpuMs >= recordCpuMs)
-                                ? "GPU sync stall (waitFence)"
-                                : "CPU command recording";
+                                                           ? "GPU sync stall (waitFence)"
+                                                           : "CPU command recording";
                             ImGui::TextColored(ImVec4(1.0f, 0.70f, 0.30f, 1.0f), "Likely bottleneck: %s", dominantCost);
                         }
                     }
@@ -1199,7 +1198,8 @@ namespace Gek
                                 ImGui::SameLine();
                                 if (ImGui::Checkbox(plot.label, &runtimeMetricVisible[plotIndex]))
                                 {
-                                    runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                                    runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool
+                                                                       { return value; });
                                 }
 
                                 ImGui::PopID();
@@ -1659,7 +1659,7 @@ namespace Gek
 
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index) -> const char *
-                    {
+                                   {
                         Core *core = static_cast<Core *>(data);
                         if (index < 0 || index >= static_cast<int>(core->displayModeStringList.size()))
                         {
@@ -1667,8 +1667,7 @@ namespace Gek
                         }
 
                         auto &mode = core->displayModeStringList[index];
-                        return mode.c_str();
-                    }, this, static_cast<int>(displayModeStringList.size()), 10);
+                        return mode.c_str(); }, this, static_cast<int>(displayModeStringList.size()), 10);
 
                     ImGui::PopItemWidth();
                     ImGui::Spacing();
@@ -1710,9 +1709,7 @@ namespace Gek
                                             {
                                                 auto selectedName = selectionNode.get<std::string>();
                                                 auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
-                                                {
-                                                    return (selectedName == choice);
-                                                });
+                                                                                  { return (selectedName == choice); });
 
                                                 if (optionsSearch != std::end(optionList))
                                                 {
@@ -1730,15 +1727,14 @@ namespace Gek
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
                                         if (ImGui::Combo(label.data(), &selection, [](void *userData, int index) -> const char *
-                                        {
+                                                         {
                                             auto &optionList = *static_cast<std::vector<std::string> *>(userData);
                                             if (index >= 0 && index < static_cast<int>(optionList.size()))
                                             {
                                                 return optionList[index].c_str();
                                             }
 
-                                            return "";
-                                        }, &optionList, static_cast<int>(optionList.size()), 10))
+                                            return ""; }, &optionList, static_cast<int>(optionList.size()), 10))
                                         {
                                             settingNode["selection"] = selection;
                                             changedVisualOptions = true;
@@ -1975,8 +1971,8 @@ namespace Gek
                     return;
                 }
 
-                auto& io = ImGui::GetIO();
-                auto& style = ImGui::GetStyle();
+                auto &io = ImGui::GetIO();
+                auto &style = ImGui::GetStyle();
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                 if (ImGui::Begin("Settings", &showSettings))
@@ -2060,7 +2056,7 @@ namespace Gek
                     ImGui::TextUnformatted(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                 }
 
-				ImGui::End();
+                ImGui::End();
             }
 
             bool showSaveModified = false;
@@ -2071,15 +2067,14 @@ namespace Gek
             {
                 scenes.clear();
                 currentSelectedScene = 0;
-                getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
-                {
+                getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const &filePath) -> bool
+                                            {
                     if (filePath.isFile())
                     {
                         scenes.push_back(filePath.withoutExtension().getFileName());
                     }
 
-                    return true;
-                });
+                    return true; });
             }
 
             void queuePopulationLoad(std::string const &sceneName)
@@ -2130,7 +2125,7 @@ namespace Gek
                     return;
                 }
 
-                auto& io = ImGui::GetIO();
+                auto &io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                 if (ImGui::Begin("Save Changes?", &showSaveModified, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                 {
@@ -2178,7 +2173,6 @@ namespace Gek
                     closeOnModified = false;
                     loadOnModified = false;
                 }
-
             }
 
             void triggerLoadWindow(void)
@@ -2210,7 +2204,7 @@ namespace Gek
                         if (ImGui::BeginListBox("##loadscene"))
                         {
                             uint32_t sceneIndex = 0;
-                            for (auto& scene : scenes)
+                            for (auto &scene : scenes)
                             {
                                 ImGui::PushID(sceneIndex);
                                 bool selected = (sceneIndex == currentSelectedScene);
@@ -2243,7 +2237,7 @@ namespace Gek
                     }
                 }
 
-				ImGui::End();
+                ImGui::End();
             }
 
             void showReset(void)
@@ -2289,14 +2283,14 @@ namespace Gek
                     ImGui::TextUnformatted("Loading...");
                 }
 
-				ImGui::End();
+                ImGui::End();
             }
 
             // Plugin::Core
-			Context * const getContext(void) const
-			{
-				return ContextRegistration::getContext();
-			}
+            Context *const getContext(void) const
+            {
+                return ContextRegistration::getContext();
+            }
 
             JSON::Object getOption(std::string_view system, std::string_view name) const
             {
@@ -2305,7 +2299,7 @@ namespace Gek
 
             void setOption(std::string_view system, std::string_view name, JSON::Object const &value)
             {
-				configuration[system][name] = value;
+                configuration[system][name] = value;
             }
 
             void deleteOption(std::string_view system, std::string_view name)
@@ -2318,37 +2312,37 @@ namespace Gek
                 }
             }
 
-            Window::Device * getWindowDevice(void) const
+            Window::Device *getWindowDevice(void) const
             {
                 return window.get();
             }
 
-            Render::Device * getRenderDevice(void) const
+            Render::Device *getRenderDevice(void) const
             {
                 return renderDevice.get();
             }
 
-            Engine::Population * getFullPopulation(void) const
+            Engine::Population *getFullPopulation(void) const
             {
                 return population.get();
             }
 
-            Engine::Resources * getFullResources(void) const
+            Engine::Resources *getFullResources(void) const
             {
                 return resources.get();
             }
 
-            Plugin::Population * getPopulation(void) const
+            Plugin::Population *getPopulation(void) const
             {
                 return population.get();
             }
 
-            Plugin::Resources * getResources(void) const
+            Plugin::Resources *getResources(void) const
             {
                 return resources.get();
             }
 
-            Plugin::Visualizer * getVisualizer(void) const
+            Plugin::Visualizer *getVisualizer(void) const
             {
                 return visualizer.get();
             }

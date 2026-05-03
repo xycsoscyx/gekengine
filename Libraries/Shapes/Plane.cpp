@@ -5,18 +5,12 @@ namespace Gek
     namespace Shapes
     {
         Plane::Plane(void) noexcept
-            : a(0.0f)
-            , b(0.0f)
-            , c(0.0f)
-            , d(0.0f)
+            : a(0.0f), b(0.0f), c(0.0f), d(0.0f)
         {
         }
 
         Plane::Plane(float a, float b, float c, float d) noexcept
-            : a(a)
-            , b(b)
-            , c(c)
-            , d(d)
+            : a(a), b(b), c(c), d(d)
         {
         }
 
@@ -40,7 +34,7 @@ namespace Gek
         {
         }
 
-        Plane &Plane::operator = (Plane const &plane) noexcept
+        Plane &Plane::operator=(Plane const &plane) noexcept
         {
             vector = plane.vector;
             return (*this);

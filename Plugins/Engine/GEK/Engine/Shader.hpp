@@ -7,11 +7,11 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK/Utility/String.hpp"
-#include "GEK/Shapes/Frustum.hpp"
-#include "GEK/Utility/Context.hpp"
 #include "API/System/RenderDevice.hpp"
 #include "GEK/Engine/Material.hpp"
+#include "GEK/Shapes/Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/String.hpp"
 #include <memory>
 
 namespace Gek
@@ -41,8 +41,8 @@ namespace Gek
 
                 virtual bool isEnabled(void) const = 0;
 
-				virtual Hash getIdentifier(void) const = 0;
-				virtual std::string_view getName(void) const = 0;
+                virtual Hash getIdentifier(void) const = 0;
+                virtual std::string_view getName(void) const = 0;
 
                 virtual size_t getMaterialHash(void) const = 0;
                 virtual uint32_t getFirstResourceStage(void) const = 0;
@@ -63,8 +63,8 @@ namespace Gek
 
                 virtual Iterator next(void) = 0;
 
-				virtual Hash getIdentifier(void) const = 0;
-				virtual std::string_view getName(void) const = 0;
+                virtual Hash getIdentifier(void) const = 0;
+                virtual std::string_view getName(void) const = 0;
                 virtual std::vector<Initializer> const &getInitializerList(void) const = 0;
                 virtual RenderStateHandle getRenderState(void) const = 0;
             };
@@ -73,16 +73,16 @@ namespace Gek
 
             virtual void reload(void) = 0;
 
-			virtual Hash getIdentifier(void) const = 0;
-			virtual std::string_view getName(void) const = 0;
+            virtual Hash getIdentifier(void) const = 0;
+            virtual std::string_view getName(void) const = 0;
 
             virtual uint32_t getDrawOrder(void) const = 0;
             virtual bool isLightingRequired(void) const = 0;
 
-            virtual ResourceHandle getTextureResource(const std::string& name) = 0;
+            virtual ResourceHandle getTextureResource(const std::string &name) = 0;
 
             virtual Material::Iterator begin(void) = 0;
-            virtual Pass::Iterator begin(Render::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;
+            virtual Pass::Iterator begin(Render::Device::Context * videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

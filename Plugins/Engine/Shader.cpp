@@ -1,22 +1,22 @@
 #include "GEK/Engine/Shader.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/JSON.hpp"
-#include "GEK/Shapes/Sphere.hpp"
-#include "GEK/Utility/ContextUser.hpp"
-#include "API/System/RenderDevice.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
 #include "API/Engine/Resources.hpp"
 #include "API/Engine/Visualizer.hpp"
-#include "API/Engine/Population.hpp"
-#include "API/Engine/Entity.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Light.hpp"
+#include "API/System/RenderDevice.hpp"
 #include "GEK/Components/Color.hpp"
+#include "GEK/Components/Light.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Material.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/String.hpp"
 #include "Passes.hpp"
-#include <unordered_map>
 #include <format>
+#include <unordered_map>
 #include <vector>
 
 namespace Gek
@@ -24,9 +24,9 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Shader, Engine::Core *, std::string)
-            , public Engine::Shader
+        , public Engine::Shader
         {
-        public:
+          public:
             struct MaterialData
             {
                 std::vector<Material::Initializer> initializerList;
@@ -70,7 +70,7 @@ namespace Gek
                 Spot = 2,
             };
 
-        private:
+          private:
             Engine::Core *core = nullptr;
             Render::Device *renderDevice = nullptr;
             Engine::Resources *resources = nullptr;
@@ -87,13 +87,9 @@ namespace Gek
             MaterialMap materialMap;
             bool lightingRequired = false;
 
-        public:
-            Shader(Context *context, Engine::Core *core, std::string shaderName)
-                : ContextRegistration(context)
-                , core(core)
-                , renderDevice(core->getRenderDevice())
-                , resources(core->getFullResources())
-                , shaderName(shaderName)
+          public:
+            Shader(Context * context, Engine::Core * core, std::string shaderName)
+                : ContextRegistration(context), core(core), renderDevice(core->getRenderDevice()), resources(core->getFullResources()), shaderName(shaderName)
             {
                 assert(renderDevice);
                 assert(resources);
@@ -104,7 +100,7 @@ namespace Gek
             void reload(void)
             {
                 getContext()->log(Context::Info, "Loading shader: {}", shaderName);
-			
+
                 passList.clear();
                 materialMap.clear();
 
@@ -129,7 +125,7 @@ namespace Gek
                 const auto &coreOptionsNode = core->getOption("shaders", shaderName);
                 if (coreOptionsNode.is_object())
                 {
-                    for (auto& [key, value] : coreOptionsNode.items())
+                    for (auto &[key, value] : coreOptionsNode.items())
                     {
                         shuntingYard.setVariable(key, JSON::Evaluate(value, shuntingYard, 0.0f));
                     }
@@ -138,7 +134,7 @@ namespace Gek
                 auto rootOptionsNode = JSON::Find(rootNode, "options");
                 if (coreOptionsNode.is_object())
                 {
-                    for (auto& [key, value] : coreOptionsNode.items())
+                    for (auto &[key, value] : coreOptionsNode.items())
                     {
                         rootOptionsNode[key] = value;
                     }
@@ -150,7 +146,7 @@ namespace Gek
                     auto importExternal = [&](std::string_view importName) -> void
                     {
                         JSON::Object importOptions = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", importName).withExtension(".json")));
-                        for (auto& [key, value] : importOptions.items())
+                        for (auto &[key, value] : importOptions.items())
                         {
                             if (!rootOptionsNode.contains(key))
                             {
@@ -165,7 +161,7 @@ namespace Gek
                     }
                     else if (importSearch->is_array())
                     {
-                        for (auto& importName : *importSearch)
+                        for (auto &importName : *importSearch)
                         {
                             importExternal(importName.get<std::string>());
                         }
@@ -214,7 +210,7 @@ namespace Gek
                 }
 
                 static constexpr std::string_view lightsData =
-R"(namespace Lights
+                    R"(namespace Lights
 {
     cbuffer Parameters : register(b3)
     {
@@ -288,7 +284,7 @@ R"(namespace Lights
                     resourceSemanticsMap["finalBuffer"] = std::format("Texture2D<{}>", getFormatSemantic(description->format));
                 }
 
-                for (auto& [key, value] : JSON::Find(rootNode, "textures").items())
+                for (auto &[key, value] : JSON::Find(rootNode, "textures").items())
                 {
                     std::string textureName(key);
                     if (resourceMap.count(textureName) > 0)
@@ -315,7 +311,7 @@ R"(namespace Lights
                         {
                             description.width = JSON::Evaluate(sizeNode, shuntingYard, 1);
                         }
-                        else if(sizeNode.is_array())
+                        else if (sizeNode.is_array())
                         {
                             switch (sizeNode.size())
                             {
@@ -357,7 +353,7 @@ R"(namespace Lights
                     }
                 }
 
-                for (auto& [bufferName, bufferNode] : JSON::Find(rootNode, "buffers").items())
+                for (auto &[bufferName, bufferNode] : JSON::Find(rootNode, "buffers").items())
                 {
                     if (resourceMap.count(bufferName) > 0)
                     {
@@ -401,7 +397,7 @@ R"(namespace Lights
                 }
 
                 auto materialsNode = JSON::Find(rootNode, "materials");
-                for (auto& [materialName, materialNode] : materialsNode.items())
+                for (auto &[materialName, materialNode] : materialsNode.items())
                 {
                     auto &materialData = materialMap[materialName];
                     for (auto data : JSON::Find(materialNode, "data"))
@@ -453,13 +449,13 @@ R"(namespace Lights
                     JSON::Object passOptions(rootOptionsNode);
                     for (auto &[key, value] : JSON::Find(passNode, "options").items())
                     {
-                        std::function<void(JSON::Object&, std::string_view, JSON::Object const &)> insertOptions;
-                        insertOptions = [&](JSON::Object& options, std::string_view name, JSON::Object const &node) -> void
+                        std::function<void(JSON::Object &, std::string_view, JSON::Object const &)> insertOptions;
+                        insertOptions = [&](JSON::Object &options, std::string_view name, JSON::Object const &node) -> void
                         {
                             if (node.is_object())
                             {
-                                auto& localOptions = options[name];
-                                for (auto& [key, value] : node.items())
+                                auto &localOptions = options[name];
+                                for (auto &[key, value] : node.items())
                                 {
                                     insertOptions(localOptions, key, value);
                                 }
@@ -474,7 +470,7 @@ R"(namespace Lights
                     }
 
                     std::function<std::string(JSON::Object const &)> addOptions;
-                    addOptions = [&](JSON::Object const & options) -> std::string
+                    addOptions = [&](JSON::Object const &options) -> std::string
                     {
                         std::vector<std::string> outerData;
                         for (auto &[optionName, optionNode] : options.items())
@@ -499,9 +495,7 @@ R"(namespace Lights
                                     {
                                         auto selectedName = selectionNode.get<std::string>();
                                         auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
-                                        {
-                                            return (selectedName == choice);
-                                        });
+                                                                          { return (selectedName == choice); });
 
                                         if (optionsSearch != std::end(choices))
                                         {
@@ -522,7 +516,7 @@ R"(namespace Lights
                                     if (!innerString.empty())
                                     {
                                         static constexpr std::string_view innerTemplate =
-R"(namespace {0} {{
+                                            R"(namespace {0} {{
 {1}
 }}; // namespace {0}
 )";
@@ -537,28 +531,28 @@ R"(namespace {0} {{
                                 {
                                 case 1:
                                     outerData.push_back(std::format("    static const float {} = {};", optionName,
-                                        optionNode[0].get<float>()));
+                                                                    optionNode[0].get<float>()));
                                     break;
 
                                 case 2:
                                     outerData.push_back(std::format("    static const float2 {} = float2({}, {});", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>()));
+                                                                    optionNode[0].get<float>(),
+                                                                    optionNode[1].get<float>()));
                                     break;
 
                                 case 3:
                                     outerData.push_back(std::format("    static const float3 {} = float3({}, {}, {});", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>(),
-                                        optionNode[2].get<float>()));
+                                                                    optionNode[0].get<float>(),
+                                                                    optionNode[1].get<float>(),
+                                                                    optionNode[2].get<float>()));
                                     break;
 
                                 case 4:
                                     outerData.push_back(std::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
-                                        optionNode[0].get<float>(),
-                                        optionNode[1].get<float>(),
-                                        optionNode[2].get<float>(),
-                                        optionNode[3].get<float>()));
+                                                                    optionNode[0].get<float>(),
+                                                                    optionNode[1].get<float>(),
+                                                                    optionNode[2].get<float>(),
+                                                                    optionNode[3].get<float>()));
                                     break;
                                 };
                             }
@@ -584,7 +578,7 @@ R"(namespace {0} {{
                     if (!optionsString.empty())
                     {
                         static constexpr std::string_view optionsTemplate =
-R"(namespace Options {{
+                            R"(namespace Options {{
 {}
 }}; // namespace Options
 )";
@@ -671,7 +665,7 @@ R"(namespace Options {{
                         if (!outputData.empty())
                         {
                             static constexpr std::string_view outputTemplate =
-R"(struct OutputPixel
+                                R"(struct OutputPixel
 {{
 {}
 }}; // struct OutputPixel
@@ -720,10 +714,10 @@ R"(struct OutputPixel
                             }
                         }
 
-						if (depthStateInformation.enable)
-						{
+                        if (depthStateInformation.enable)
+                        {
                             auto depthBuffer = JSON::Value(passNode, "depthBuffer", String::Empty);
-							auto depthBufferSearch = resourceMap.find(depthBuffer);
+                            auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
                                 pass.depthBuffer = depthBufferSearch->second;
@@ -731,7 +725,7 @@ R"(struct OutputPixel
                             else
                             {
                                 getContext()->log(Context::Error, "Missing depth buffer encountered: {}", depthBuffer);
-							}
+                            }
                         }
 
                         Render::BlendState::Description blendStateInformation;
@@ -878,7 +872,7 @@ R"(struct OutputPixel
                     if (!resourceData.empty())
                     {
                         static constexpr std::string_view resourceTemplate =
-R"(namespace Resources
+                            R"(namespace Resources
 {{
 {}
 }}; // namespace Resources
@@ -915,7 +909,7 @@ R"(namespace Resources
                     if (!unorderedAccessData.empty())
                     {
                         static constexpr std::string_view unorderedAccessTemplate =
-R"(namespace UnorderedAccess
+                            R"(namespace UnorderedAccess
 {{
 {}
 }}; // namespace UnorderedAccess
@@ -928,19 +922,19 @@ R"(namespace UnorderedAccess
                     std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".slang").getString());
                     Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, String::Join(engineData, "\r\n"));
-				}
+                }
 
-				getContext()->log(Context::Info, "Shader loaded successfully: {}", shaderName);
-			}
+                getContext()->log(Context::Info, "Shader loaded successfully: {}", shaderName);
+            }
 
             // Shader
-			Hash getIdentifier(void) const
-			{
-				return GetHash(this);
-			}
+            Hash getIdentifier(void) const
+            {
+                return GetHash(this);
+            }
 
-			std::string_view getName(void) const
-			{
+            std::string_view getName(void) const
+            {
                 return shaderName;
             }
 
@@ -954,7 +948,7 @@ R"(namespace UnorderedAccess
                 return lightingRequired;
             }
 
-            Pass::Mode preparePass(Render::Device::Context *videoContext, PassData const &pass)
+            Pass::Mode preparePass(Render::Device::Context * videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -1035,7 +1029,7 @@ R"(namespace UnorderedAccess
                 return pass.mode;
             }
 
-            void clearPass(Render::Device::Context *videoContext, PassData const &pass)
+            void clearPass(Render::Device::Context * videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -1079,15 +1073,13 @@ R"(namespace UnorderedAccess
             struct MaterialImplementation
                 : public Material
             {
-            public:
+              public:
                 Shader *rootNode;
                 Shader::MaterialMap::iterator current, end;
 
-            public:
+              public:
                 MaterialImplementation(Shader *rootNode, Shader::MaterialMap::iterator current, Shader::MaterialMap::iterator end)
-                    : rootNode(rootNode)
-                    , current(current)
-                    , end(end)
+                    : rootNode(rootNode), current(current), end(end)
                 {
                 }
 
@@ -1097,13 +1089,13 @@ R"(namespace UnorderedAccess
                     return Iterator(++next == end ? nullptr : new MaterialImplementation(rootNode, next, end));
                 }
 
-				Hash getIdentifier(void) const
-				{
-					return GetHash(this);
-				}
+                Hash getIdentifier(void) const
+                {
+                    return GetHash(this);
+                }
 
-				std::string_view getName(void) const
-				{
+                std::string_view getName(void) const
+                {
                     return (*current).first;
                 }
 
@@ -1121,17 +1113,14 @@ R"(namespace UnorderedAccess
             class PassImplementation
                 : public Pass
             {
-            public:
+              public:
                 Render::Device::Context *videoContext;
                 Shader *rootNode;
                 Shader::PassList::iterator current, end;
 
-            public:
+              public:
                 PassImplementation(Render::Device::Context *videoContext, Shader *rootNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
-                    : videoContext(videoContext)
-                    , rootNode(rootNode)
-                    , current(current)
-                    , end(end)
+                    : videoContext(videoContext), rootNode(rootNode), current(current), end(end)
                 {
                 }
 
@@ -1171,18 +1160,18 @@ R"(namespace UnorderedAccess
                     return (*current).lighting;
                 }
 
-				Hash getIdentifier(void) const
-				{
-					return (*current).program.identifier;
-				}
+                Hash getIdentifier(void) const
+                {
+                    return (*current).program.identifier;
+                }
 
-				std::string_view getName(void) const
-				{
+                std::string_view getName(void) const
+                {
                     return (*current).name;
                 }
             };
 
-            ResourceHandle getTextureResource(const std::string& name)
+            ResourceHandle getTextureResource(const std::string &name)
             {
                 auto textureSearch = textureResourceMap.find(name);
                 if (textureSearch != std::end(textureResourceMap))
@@ -1198,7 +1187,7 @@ R"(namespace UnorderedAccess
                 return Material::Iterator(materialMap.empty() ? nullptr : new MaterialImplementation(this, std::begin(materialMap), std::end(materialMap)));
             }
 
-            Pass::Iterator begin(Render::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum)
+            Pass::Iterator begin(Render::Device::Context * videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum)
             {
                 assert(videoContext);
 

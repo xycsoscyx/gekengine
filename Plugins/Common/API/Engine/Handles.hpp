@@ -27,12 +27,12 @@ namespace Gek
             return (identifier != 0);
         }
 
-        bool operator == (Handle<TYPE, UNIQUE> const &handle) const
+        bool operator==(Handle<TYPE, UNIQUE> const &handle) const
         {
             return (identifier == handle.identifier);
         }
 
-        bool operator != (Handle<TYPE, UNIQUE> const &handle) const
+        bool operator!=(Handle<TYPE, UNIQUE> const &handle) const
         {
             return (identifier != handle.identifier);
         }
@@ -58,4 +58,4 @@ namespace std
             return value.identifier;
         }
     };
-};
+}; // namespace std
