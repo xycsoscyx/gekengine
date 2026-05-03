@@ -12,7 +12,14 @@ set_target_properties(${ProjectID} PROPERTIES
 )
 
 target_link_libraries(${ProjectID} PRIVATE argparse ktx)
+target_link_libraries(${ProjectID} PRIVATE stb bcdec)
 target_link_libraries(${ProjectID} PUBLIC Math Utility Resources)
+
+target_include_directories(${ProjectID} PRIVATE ${bc7enc_rdo_SOURCE_DIR})
+target_sources(${ProjectID} PRIVATE
+	${bc7enc_rdo_SOURCE_DIR}/bc7enc.cpp
+	${bc7enc_rdo_SOURCE_DIR}/rgbcx.cpp
+)
 
 if (WIN32)
 	target_link_libraries(${ProjectID} PRIVATE d3d11 dxgi)

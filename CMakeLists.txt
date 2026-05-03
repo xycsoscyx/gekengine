@@ -58,6 +58,14 @@ endif()
 
 include(FetchContent)
 
+# External dependency pinning policy:
+# - Use immutable commit SHAs for new dependencies.
+# - Update pins only via explicit dependency bump changes.
+# - Avoid floating references such as master/main for reproducibility.
+set(GEK_DEP_STB_GIT_TAG "31c1ad37456438565541f4919958214b6e762fb4")
+set(GEK_DEP_BC7ENC_RDO_GIT_TAG "dbe416d28a5530b4e8cc45b14bf034dc6b96bbde")
+set(GEK_DEP_BCDEC_GIT_TAG "93628fe5627102fe5187b7eeb99122dec6612c36")
+
 FetchContent_Declare(argparse OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG v3.2 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(argparse)
 
@@ -97,6 +105,39 @@ FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.co
 FetchContent_MakeAvailable(wink)
 include_directories("${wink_SOURCE_DIR}")
 
+FetchContent_Declare(stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG ${GEK_DEP_STB_GIT_TAG}
+)
+FetchContent_GetProperties(stb)
+if(NOT stb_POPULATED)
+    FetchContent_Populate(stb)
+endif()
+
+FetchContent_Declare(bc7enc_rdo
+    GIT_REPOSITORY https://github.com/richgel999/bc7enc_rdo.git
+    GIT_TAG ${GEK_DEP_BC7ENC_RDO_GIT_TAG}
+)
+FetchContent_GetProperties(bc7enc_rdo)
+if(NOT bc7enc_rdo_POPULATED)
+    FetchContent_Populate(bc7enc_rdo)
+endif()
+
+FetchContent_Declare(bcdec
+    GIT_REPOSITORY https://github.com/iOrange/bcdec.git
+    GIT_TAG ${GEK_DEP_BCDEC_GIT_TAG}
+)
+FetchContent_GetProperties(bcdec)
+if(NOT bcdec_POPULATED)
+    FetchContent_Populate(bcdec)
+endif()
+
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+
+add_library(bcdec INTERFACE)
+target_include_directories(bcdec INTERFACE ${bcdec_SOURCE_DIR})
+
 if(GEK_BUILD_TESTS)
     FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0 OVERRIDE_FIND_PACKAGE)
 
@@ -108,9 +149,7 @@ if(GEK_BUILD_TESTS)
     FetchContent_MakeAvailable(googletest)
 endif()
 
-
 # Add libktx for KTX2 texture support
-include(FetchContent)
 set(KTX_FEATURE_TESTS OFF)
 FetchContent_Declare(
     ktx
@@ -118,6 +157,13 @@ FetchContent_Declare(
     GIT_TAG v4.0.0
 )
 FetchContent_MakeAvailable(ktx)
+# Workaround: FetchContent causes CMAKE_SOURCE_DIR to resolve to the parent project root inside
+# ktx's own CMakeLists.txt, making its PUBLIC_HEADER install paths point to gekengine/include/
+# instead of ktx_SOURCE_DIR/include/. Override after population so the generated install script
+# references the correct source location.
+set_target_properties(ktx PROPERTIES
+    PUBLIC_HEADER "${ktx_SOURCE_DIR}/include/ktx.h;${ktx_SOURCE_DIR}/include/ktxvulkan.h"
+)
 
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-DNOMINMAX)

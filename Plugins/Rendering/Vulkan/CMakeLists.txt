@@ -71,7 +71,7 @@ if(DEFINED slang_SOURCE_DIR)
 endif()
 target_link_libraries(rendervulkan PUBLIC Math Utility Resources Common)
 find_package(Vulkan REQUIRED)
-target_link_libraries(rendervulkan PRIVATE Vulkan::Vulkan ktx slang)
+target_link_libraries(rendervulkan PRIVATE Vulkan::Vulkan ktx slang stb)
 set_target_properties(rendervulkan PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 install(TARGETS rendervulkan
     RUNTIME DESTINATION bin/plugins/render

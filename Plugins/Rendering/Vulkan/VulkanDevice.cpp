@@ -24,12 +24,15 @@
 
 #ifdef WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
-    #include <ktx.h>
-    #include <ktxvulkan.h>
     #include <objbase.h>
+    #include <dxgiformat.h>
 #endif
 
 #include <vulkan/vulkan.h>
+#include <ktx.h>
+#include <ktxvulkan.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include <slang.h>
 #include <slang-com-ptr.h>
@@ -6283,32 +6286,6 @@ namespace Gek
                 }
 
                 std::string extension = String::GetLower(filePath.getExtension());
-                ::DirectX::ScratchImage decodedImage;
-                HRESULT decodeResult = E_FAIL;
-
-#ifdef WIN32
-                struct ScopedComInitialize
-                {
-                    bool shouldUninitialize = false;
-
-                    ScopedComInitialize(void)
-                    {
-                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-                        if (initializeResult == S_OK || initializeResult == S_FALSE)
-                        {
-                            shouldUninitialize = true;
-                        }
-                    }
-
-                    ~ScopedComInitialize(void)
-                    {
-                        if (shouldUninitialize)
-                        {
-                            CoUninitialize();
-                        }
-                    }
-                } scopedComInitialize;
-#endif
 
                 // KTX2 loading using libktx
                 if (extension == ".ktx2") {
@@ -6380,7 +6357,34 @@ namespace Gek
                     getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: could not create texture from KTX2 for '{}'", filePath.getString());
                     return nullptr;
                 }
-                // ...existing code for fallback/other formats...
+
+                // Raster image fallback via stb_image
+                int imgWidth = 0, imgHeight = 0, imgChannels = 0;
+                stbi_uc *pixels = stbi_load_from_memory(sourceData.data(), static_cast<int>(sourceData.size()), &imgWidth, &imgHeight, &imgChannels, 4);
+                if (!pixels)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: stb_image could not decode '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                std::vector<uint8_t> uploadData(pixels, pixels + (static_cast<size_t>(imgWidth) * imgHeight * 4));
+                stbi_image_free(pixels);
+
+                Render::Texture::Description stbDescription;
+                stbDescription.name = filePath.getString();
+                stbDescription.format = (flags & Render::TextureLoadFlags::sRGB) ? Render::Format::R8G8B8A8_UNORM_SRGB : Render::Format::R8G8B8A8_UNORM;
+                stbDescription.width = static_cast<uint32_t>(imgWidth);
+                stbDescription.height = static_cast<uint32_t>(imgHeight);
+                stbDescription.depth = 1;
+                stbDescription.mipMapCount = 1;
+                stbDescription.flags = Render::Texture::Flags::Resource;
+
+                if (auto texture = createTexture(stbDescription, uploadData.data()))
+                {
+                    return texture;
+                }
+
+                return createAllocationFailureFallback(filePath.getString());
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
@@ -6431,118 +6435,24 @@ namespace Gek
                     return nullptr;
                 }
 
-                ::DirectX::ScratchImage decodedImage;
-
-#ifdef WIN32
-                struct ScopedComInitialize
+                int imgWidth = 0, imgHeight = 0, imgChannels = 0;
+                stbi_uc *pixels = stbi_load_from_memory(static_cast<stbi_uc const *>(buffer), static_cast<int>(size), &imgWidth, &imgHeight, &imgChannels, 4);
+                if (!pixels)
                 {
-                    bool shouldUninitialize = false;
-
-                    ScopedComInitialize(void)
-                    {
-                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-                        if (initializeResult == S_OK || initializeResult == S_FALSE)
-                        {
-                            shouldUninitialize = true;
-                        }
-                    }
-
-                    ~ScopedComInitialize(void)
-                    {
-                        if (shouldUninitialize)
-                        {
-                            CoUninitialize();
-                        }
-                    }
-                } scopedComInitialize;
-#endif
-
-                HRESULT decodeResult = ::DirectX::LoadFromDDSMemory(reinterpret_cast<const std::byte *>(buffer), size, ::DirectX::DDS_FLAGS_NONE, nullptr, decodedImage);
-                if (FAILED(decodeResult))
-                {
-                    decodeResult = ::DirectX::LoadFromTGAMemory(reinterpret_cast<const uint8_t *>(buffer), size, nullptr, decodedImage);
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: stb_image decode error");
+                    return createAllocationFailureFallback("memory_texture");
                 }
 
-                if (FAILED(decodeResult))
-                {
-                    auto wicFlags = (flags & Render::TextureLoadFlags::sRGB) ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB;
-                    wicFlags |= ::DirectX::WIC_FLAGS_FORCE_RGB;
-                    decodeResult = ::DirectX::LoadFromWICMemory(reinterpret_cast<const std::byte *>(buffer), size, wicFlags, nullptr, decodedImage);
-                }
-
-                if (FAILED(decodeResult))
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: decode error");
-                    return nullptr;
-                }
-
-                const auto metadata = decodedImage.GetMetadata();
-                if (metadata.width == 0 || metadata.height == 0 || metadata.depth == 0)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: invalid metadata");
-                    return nullptr;
-                }
-
-                const DXGI_FORMAT targetFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
-                ::DirectX::ScratchImage convertedImage;
-                const ::DirectX::Image *image = nullptr;
-                if (metadata.format == targetFormat)
-                {
-                    image = decodedImage.GetImage(0, 0, 0);
-                }
-                else
-                {
-                    if (FAILED(::DirectX::Convert(decodedImage.GetImages(), decodedImage.GetImageCount(), metadata, targetFormat, ::DirectX::TEX_FILTER_DEFAULT, ::DirectX::TEX_THRESHOLD_DEFAULT, convertedImage)))
-                    {
-                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: RGBA conversion error");
-                        return nullptr;
-                    }
-
-                    image = convertedImage.GetImage(0, 0, 0);
-                }
-                if (!image || !image->pixels)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: converted image missing pixels");
-                    return nullptr;
-                }
-
-                const uint32_t width = static_cast<uint32_t>(image->width);
-                const uint32_t height = static_cast<uint32_t>(image->height);
-                if (width == 0 || height == 0)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: converted image has zero extent");
-                    return nullptr;
-                }
-
-                const uint32_t uploadWidth = width;
-                const uint32_t uploadHeight = height;
-
-                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
-                if (image->rowPitch < requiredRowPitch)
-                {
-                    getContext()->log(
-                        Gek::Context::Error,
-                        "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
-                        static_cast<uint64_t>(image->rowPitch),
-                        static_cast<uint64_t>(requiredRowPitch));
-                    return nullptr;
-                }
-
-                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
-                for (uint32_t row = 0; row < uploadHeight; ++row)
-                {
-                    const uint8_t *sourceRow = image->pixels + (static_cast<size_t>(row) * image->rowPitch);
-                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
-                    std::memcpy(destRow, sourceRow, requiredRowPitch);
-                }
+                std::vector<uint8_t> uploadData(pixels, pixels + (static_cast<size_t>(imgWidth) * imgHeight * 4));
+                stbi_image_free(pixels);
 
                 Render::Texture::Description description;
                 description.name = "memory_texture";
                 description.format = (flags & Render::TextureLoadFlags::sRGB)
                     ? Render::Format::R8G8B8A8_UNORM_SRGB
                     : Render::Format::R8G8B8A8_UNORM;
-                description.width = uploadWidth;
-                description.height = uploadHeight;
+                description.width = static_cast<uint32_t>(imgWidth);
+                description.height = static_cast<uint32_t>(imgHeight);
                 description.depth = 1;
                 description.mipMapCount = 1;
                 description.flags = Render::Texture::Flags::Resource;
@@ -6552,7 +6462,6 @@ namespace Gek
                     return texture;
                 }
 
-                getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed after retries");
                 return createAllocationFailureFallback("memory_texture");
             }
 
@@ -6561,64 +6470,43 @@ namespace Gek
                 std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
 
                 Texture::Description description;
-                std::vector<uint8_t> sourceData = FileSystem::Load(filePath, 1024 * 4);
-                if (sourceData.empty())
+                std::string extension = String::GetLower(filePath.getExtension());
+
+                if (extension == ".ktx2")
                 {
+                    std::vector<uint8_t> sourceData = FileSystem::Load(filePath);
+                    if (sourceData.empty()) { return description; }
+
+                    ktxTexture2 *kTexture = nullptr;
+                    KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(sourceData.data(), sourceData.size(), KTX_TEXTURE_CREATE_SKIP_KVDATA_BIT, &kTexture);
+                    if (ktxResult != KTX_SUCCESS || !kTexture) { return description; }
+
+                    description.name = filePath.getString();
+                    description.format = GetFormat(ktxTexture_GetVkFormat(ktxTexture(kTexture)));
+                    description.width = kTexture->baseWidth;
+                    description.height = kTexture->baseHeight;
+                    description.depth = kTexture->baseDepth;
+                    description.mipMapCount = kTexture->numLevels;
+                    description.flags = Render::Texture::Flags::Resource;
+                    ktxTexture_Destroy(ktxTexture(kTexture));
                     return description;
                 }
 
-                ::DirectX::TexMetadata metadata{};
-                std::string extension = String::GetLower(filePath.getExtension());
+                std::vector<uint8_t> sourceData = FileSystem::Load(filePath, 1024 * 4);
+                if (sourceData.empty()) { return description; }
 
-#ifdef WIN32
-                struct ScopedComInitialize
-                {
-                    bool shouldUninitialize = false;
-
-                    ScopedComInitialize(void)
-                    {
-                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-                        if (initializeResult == S_OK || initializeResult == S_FALSE)
-                        {
-                            shouldUninitialize = true;
-                        }
-                    }
-
-                    ~ScopedComInitialize(void)
-                    {
-                        if (shouldUninitialize)
-                        {
-                            CoUninitialize();
-                        }
-                    }
-                } scopedComInitialize;
-#endif
-
-                HRESULT metadataResult = E_FAIL;
-                if (extension == ".dds")
-                {
-                    metadataResult = ::DirectX::GetMetadataFromDDSMemory(sourceData.data(), sourceData.size(), ::DirectX::DDS_FLAGS_NONE, metadata);
-                }
-                else if (extension == ".tga")
-                {
-                    metadataResult = ::DirectX::GetMetadataFromTGAMemory(sourceData.data(), sourceData.size(), metadata);
-                }
-                else
-                {
-                    metadataResult = ::DirectX::GetMetadataFromWICMemory(sourceData.data(), sourceData.size(), ::DirectX::WIC_FLAGS_NONE, metadata);
-                }
-
-                if (FAILED(metadataResult))
+                int width = 0, height = 0, channels = 0;
+                if (!stbi_info_from_memory(sourceData.data(), static_cast<int>(sourceData.size()), &width, &height, &channels))
                 {
                     return description;
                 }
 
                 description.name = filePath.getString();
                 description.format = Render::Format::R8G8B8A8_UNORM;
-                description.width = static_cast<uint32_t>(metadata.width);
-                description.height = static_cast<uint32_t>(metadata.height);
-                description.depth = static_cast<uint32_t>(std::max<size_t>(metadata.depth, 1));
-                description.mipMapCount = static_cast<uint32_t>(std::max<size_t>(metadata.mipLevels, 1));
+                description.width = static_cast<uint32_t>(width);
+                description.height = static_cast<uint32_t>(height);
+                description.depth = 1;
+                description.mipMapCount = 1;
                 description.flags = Render::Texture::Flags::Resource;
                 return description;
             }

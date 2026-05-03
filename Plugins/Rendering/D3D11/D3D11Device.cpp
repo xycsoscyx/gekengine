@@ -6,7 +6,8 @@
 #include "API/System/RenderDevice.hpp"
 #include "API/System/WindowDevice.hpp"
 #include <ktx.h>
-#include <DirectXTex.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <wincodec.h>
 #include <atlbase.h>
 #include <dxgi1_3.h>
@@ -531,102 +532,67 @@ namespace Gek
             }
         }
 
-        bool validateTextureMetadataForD3D11(Gek::Context *context, ID3D11Device *d3dDevice, ::DirectX::TexMetadata const &metadata)
+        bool validateTextureForD3D11(Gek::Context *context, ID3D11Device *d3dDevice, DXGI_FORMAT format, uint32_t width, uint32_t height)
         {
             if (!d3dDevice)
             {
-                if (context)
-                {
-                    context->log(Gek::Context::Error, "D3D11 texture validation failed: device is null");
-                }
+                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: device is null"); }
                 return false;
             }
 
-            if (metadata.format == DXGI_FORMAT_UNKNOWN || metadata.width == 0 || metadata.height == 0)
+            if (format == DXGI_FORMAT_UNKNOWN || width == 0 || height == 0)
             {
-                if (context)
-                {
-                    context->log(
-                        Gek::Context::Error,
-                        "D3D11 texture validation failed: invalid metadata (format={}, width={}, height={}, depth={})",
-                        static_cast<int>(metadata.format),
-                        metadata.width,
-                        metadata.height,
-                        metadata.depth);
-                }
+                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: invalid format or dimensions"); }
                 return false;
             }
 
             uint32_t formatSupport = 0;
-            const HRESULT formatSupportResult = d3dDevice->CheckFormatSupport(metadata.format, &formatSupport);
-            if (FAILED(formatSupportResult))
+            HRESULT hr = d3dDevice->CheckFormatSupport(format, &formatSupport);
+            if (FAILED(hr))
             {
-                logD3D11Failure(context, d3dDevice, "CheckFormatSupport", formatSupportResult);
+                logD3D11Failure(context, d3dDevice, "CheckFormatSupport", hr);
                 return false;
             }
 
-            bool supportsTextureDimension = false;
-            switch (metadata.dimension)
+            if (width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
             {
-            case ::DirectX::TEX_DIMENSION_TEXTURE1D:
-                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE1D) != 0);
-                if (metadata.width > D3D11_REQ_TEXTURE1D_U_DIMENSION)
-                {
-                    if (context)
-                    {
-                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 1D width exceeds D3D11 limit");
-                    }
-                    return false;
-                }
-                break;
-
-            case ::DirectX::TEX_DIMENSION_TEXTURE2D:
-                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D) != 0);
-                if (metadata.width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || metadata.height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
-                {
-                    if (context)
-                    {
-                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 2D dimensions exceed D3D11 limit");
-                    }
-                    return false;
-                }
-                break;
-
-            case ::DirectX::TEX_DIMENSION_TEXTURE3D:
-                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE3D) != 0);
-                if (metadata.width > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
-                    metadata.height > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
-                    metadata.depth > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION)
-                {
-                    if (context)
-                    {
-                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 3D dimensions exceed D3D11 limit");
-                    }
-                    return false;
-                }
-                break;
-
-            default:
-                if (context)
-                {
-                    context->log(Gek::Context::Error, "D3D11 texture validation failed: unsupported texture dimension {}", static_cast<int>(metadata.dimension));
-                }
+                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: dimensions exceed D3D11 limit"); }
                 return false;
             }
 
-            if (!supportsTextureDimension || (formatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE) == 0)
+            if ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D) == 0 || (formatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE) == 0)
             {
-                if (context)
-                {
-                    context->log(
-                        Gek::Context::Error,
-                        "D3D11 texture validation failed: format {} is missing required texture/sample support flags",
-                        static_cast<int>(metadata.format));
-                }
+                if (context) { context->log(Gek::Context::Error, "D3D11 texture validation failed: format {} lacks texture2D/sample support", static_cast<int>(format)); }
                 return false;
             }
 
             return true;
+        }
+
+        static DXGI_FORMAT VkFormatToDxgi(uint32_t vkFormat)
+        {
+            switch (vkFormat)
+            {
+            case 37:  return DXGI_FORMAT_R8G8B8A8_UNORM;       // VK_FORMAT_R8G8B8A8_UNORM
+            case 43:  return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;  // VK_FORMAT_R8G8B8A8_SRGB
+            case 131: return DXGI_FORMAT_BC1_UNORM;             // VK_FORMAT_BC1_RGB_UNORM_BLOCK
+            case 132: return DXGI_FORMAT_BC1_UNORM_SRGB;        // VK_FORMAT_BC1_RGB_SRGB_BLOCK
+            case 133: return DXGI_FORMAT_BC1_UNORM;             // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
+            case 134: return DXGI_FORMAT_BC1_UNORM_SRGB;        // VK_FORMAT_BC1_RGBA_SRGB_BLOCK
+            case 135: return DXGI_FORMAT_BC2_UNORM;             // VK_FORMAT_BC2_UNORM_BLOCK
+            case 136: return DXGI_FORMAT_BC2_UNORM_SRGB;        // VK_FORMAT_BC2_SRGB_BLOCK
+            case 137: return DXGI_FORMAT_BC3_UNORM;             // VK_FORMAT_BC3_UNORM_BLOCK
+            case 138: return DXGI_FORMAT_BC3_UNORM_SRGB;        // VK_FORMAT_BC3_SRGB_BLOCK
+            case 139: return DXGI_FORMAT_BC4_UNORM;             // VK_FORMAT_BC4_UNORM_BLOCK
+            case 140: return DXGI_FORMAT_BC4_SNORM;             // VK_FORMAT_BC4_SNORM_BLOCK
+            case 141: return DXGI_FORMAT_BC5_UNORM;             // VK_FORMAT_BC5_UNORM_BLOCK
+            case 142: return DXGI_FORMAT_BC5_SNORM;             // VK_FORMAT_BC5_SNORM_BLOCK
+            case 143: return DXGI_FORMAT_BC6H_UF16;             // VK_FORMAT_BC6H_UFLOAT_BLOCK
+            case 144: return DXGI_FORMAT_BC6H_SF16;             // VK_FORMAT_BC6H_SFLOAT_BLOCK
+            case 145: return DXGI_FORMAT_BC7_UNORM;             // VK_FORMAT_BC7_UNORM_BLOCK
+            case 146: return DXGI_FORMAT_BC7_UNORM_SRGB;        // VK_FORMAT_BC7_SRGB_BLOCK
+            default:  return DXGI_FORMAT_UNKNOWN;
+            }
         }
 
         Render::Format GetFormat(DXGI_FORMAT format)
@@ -3443,231 +3409,256 @@ namespace Gek
                 }
             }
 
+            Render::TexturePtr loadTextureFromKtx2(std::vector<uint8_t> const &fileData, FileSystem::Path const &filePath)
+            {
+                ktxTexture2 *kTexture = nullptr;
+                KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(fileData.data(), fileData.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
+                if (ktxResult != KTX_SUCCESS || !kTexture)
+                {
+                    getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: KTX2 decode error for '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                DXGI_FORMAT dxgiFormat = VkFormatToDxgi(kTexture->vkFormat);
+                if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
+                {
+                    getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: unsupported KTX2 vkFormat {} for '{}'", kTexture->vkFormat, filePath.getString());
+                    ktxTexture_Destroy(ktxTexture(kTexture));
+                    return nullptr;
+                }
+
+                uint32_t mipLevels = kTexture->numLevels;
+                uint32_t width = kTexture->baseWidth;
+                uint32_t height = kTexture->baseHeight;
+
+                if (!validateTextureForD3D11(getContext(), d3dDevice, dxgiFormat, width, height))
+                {
+                    ktxTexture_Destroy(ktxTexture(kTexture));
+                    return nullptr;
+                }
+
+                std::vector<D3D11_SUBRESOURCE_DATA> subresources;
+                subresources.reserve(mipLevels);
+                for (uint32_t mip = 0; mip < mipLevels; ++mip)
+                {
+                    ktx_size_t offset = 0;
+                    ktxTexture_GetImageOffset(ktxTexture(kTexture), mip, 0, 0, &offset);
+                    ktx_size_t imageSize = ktxTexture_GetImageSize(ktxTexture(kTexture), mip);
+                    uint32_t mipWidth = std::max(width >> mip, 1u);
+                    // For BCn formats, pitch is in 4x4 blocks
+                    uint32_t blockWidth = (mipWidth + 3) / 4;
+                    uint32_t blockBytes = (dxgiFormat == DXGI_FORMAT_BC1_UNORM || dxgiFormat == DXGI_FORMAT_BC1_UNORM_SRGB || dxgiFormat == DXGI_FORMAT_BC4_UNORM || dxgiFormat == DXGI_FORMAT_BC4_SNORM) ? 8 : 16;
+                    D3D11_SUBRESOURCE_DATA srd = {};
+                    srd.pSysMem = kTexture->pData + offset;
+                    srd.SysMemPitch = blockWidth * blockBytes;
+                    srd.SysMemSlicePitch = static_cast<UINT>(imageSize);
+                    subresources.push_back(srd);
+                }
+
+                D3D11_TEXTURE2D_DESC desc = {};
+                desc.Width = width;
+                desc.Height = height;
+                desc.MipLevels = mipLevels;
+                desc.ArraySize = 1;
+                desc.Format = dxgiFormat;
+                desc.SampleDesc.Count = 1;
+                desc.Usage = D3D11_USAGE_DEFAULT;
+                desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+                CComPtr<ID3D11Texture2D> d3dTexture;
+                HRESULT hr = d3dDevice->CreateTexture2D(&desc, subresources.data(), &d3dTexture);
+                ktxTexture_Destroy(ktxTexture(kTexture));
+                if (FAILED(hr) || !d3dTexture)
+                {
+                    logD3D11Failure(getContext(), d3dDevice, "CreateTexture2D from KTX2", hr);
+                    return nullptr;
+                }
+
+                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                hr = d3dDevice->CreateShaderResourceView(d3dTexture, nullptr, &d3dShaderResourceView);
+                if (FAILED(hr) || !d3dShaderResourceView)
+                {
+                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceView from KTX2", hr);
+                    return nullptr;
+                }
+
+                Render::Texture::Description description;
+                description.width = width;
+                description.height = height;
+                description.depth = 1;
+                description.format = Render::Implementation::GetFormat(dxgiFormat);
+                description.mipMapCount = mipLevels;
+                CComPtr<ID3D11Resource> d3dResource;
+                d3dShaderResourceView->GetResource(&d3dResource);
+                return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
+            }
+
             Render::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
                 assert(d3dDevice);
 
-                std::string extension(String::GetLower(filePath.getExtension()));
-                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-                if (extension == ".dds")
-                {
-                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
-                    {
-                        auto loadFlags = ::DirectX::DDS_FLAGS_NONE;
-                        return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), loadFlags, nullptr, image);
-                    };
-                }
-                else if (extension == ".tga")
-                {
-                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
-                    {
-                        return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image);
-                    };
-                }
-                else if (extension == ".png" || extension == ".bmp" ||
-                         extension == ".jpg" || extension == ".jpeg" ||
-                         extension == ".tif" || extension == ".tiff")
-                {
-                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
-                    {
-                        auto loadFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB);
-                        return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), loadFlags, nullptr, image);
-                    };
-                }
-
-                if (!load)
-                {
-                    getContext()->log(Gek::Context::Error, "Unknown texture extension encountered");
-                    return nullptr;
-                }
-
-                std::vector<uint8_t> buffer(FileSystem::Load(filePath));
-                if (buffer.empty())
+                std::vector<uint8_t> fileData(FileSystem::Load(filePath));
+                if (fileData.empty())
                 {
                     getContext()->log(Gek::Context::Error, "Unable to load data from texture file: {}", filePath.getString());
                     return nullptr;
                 }
 
-                ::DirectX::ScratchImage image;
-                HRESULT resultValue = load(buffer, image);
-                if (FAILED(resultValue))
+                std::string extension(String::GetLower(filePath.getExtension()));
+                if (extension == ".ktx2")
                 {
-                    logD3D11Failure(getContext(), d3dDevice, "texture decode from file", resultValue);
+                    return loadTextureFromKtx2(fileData, filePath);
+                }
+
+                int width = 0, height = 0, channels = 0;
+                stbi_uc *pixels = stbi_load_from_memory(fileData.data(), static_cast<int>(fileData.size()), &width, &height, &channels, 4);
+                if (!pixels)
+                {
+                    getContext()->log(Gek::Context::Error, "stb_image failed to decode texture: {}", filePath.getString());
                     return nullptr;
                 }
 
-                const auto &metadata = image.GetMetadata();
-                if (!validateTextureMetadataForD3D11(getContext(), d3dDevice, metadata))
+                DXGI_FORMAT dxgiFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+                if (!validateTextureForD3D11(getContext(), d3dDevice, dxgiFormat, static_cast<uint32_t>(width), static_cast<uint32_t>(height)))
                 {
+                    stbi_image_free(pixels);
+                    return nullptr;
+                }
+
+                D3D11_TEXTURE2D_DESC desc = {};
+                desc.Width = static_cast<UINT>(width);
+                desc.Height = static_cast<UINT>(height);
+                desc.MipLevels = 1;
+                desc.ArraySize = 1;
+                desc.Format = dxgiFormat;
+                desc.SampleDesc.Count = 1;
+                desc.Usage = D3D11_USAGE_DEFAULT;
+                desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+                D3D11_SUBRESOURCE_DATA initData = {};
+                initData.pSysMem = pixels;
+                initData.SysMemPitch = static_cast<UINT>(width) * 4;
+
+                CComPtr<ID3D11Texture2D> d3dTexture;
+                HRESULT hr = d3dDevice->CreateTexture2D(&desc, &initData, &d3dTexture);
+                stbi_image_free(pixels);
+                if (FAILED(hr) || !d3dTexture)
+                {
+                    logD3D11Failure(getContext(), d3dDevice, "CreateTexture2D from stb_image", hr);
                     return nullptr;
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                auto createFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_DEFAULT : ::DirectX::CREATETEX_IGNORE_SRGB);
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
-                if (FAILED(resultValue) || !d3dShaderResourceView)
+                hr = d3dDevice->CreateShaderResourceView(d3dTexture, nullptr, &d3dShaderResourceView);
+                if (FAILED(hr) || !d3dShaderResourceView)
                 {
-                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceViewEx (file texture)", resultValue);
-                    return nullptr;
-                }
-
-                CComPtr<ID3D11Resource> d3dResource;
-                d3dShaderResourceView->GetResource(&d3dResource);
-                if (!d3dResource)
-                {
-                    getContext()->log(Gek::Context::Error, "Unable to get texture resource");
+                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceView from stb_image", hr);
                     return nullptr;
                 }
 
                 Render::Texture::Description description;
-                description.width = image.GetMetadata().width;
-                description.height = image.GetMetadata().height;
-                description.depth = image.GetMetadata().depth;
-                description.format = Render::Implementation::GetFormat(image.GetMetadata().format);
-                description.mipMapCount = image.GetMetadata().mipLevels;
+                description.width = static_cast<uint32_t>(width);
+                description.height = static_cast<uint32_t>(height);
+                description.depth = 1;
+                description.format = Render::Implementation::GetFormat(dxgiFormat);
+                description.mipMapCount = 1;
+                CComPtr<ID3D11Resource> d3dResource;
+                d3dShaderResourceView->GetResource(&d3dResource);
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
-                }
-                else if (extension == ".ktx2") {
-                    std::vector<uint8_t> buffer(FileSystem::Load(filePath));
-                    if (buffer.empty()) {
-                        getContext()->log(Gek::Context::Error, "Unable to load data from texture file: {}", filePath.getString());
-                        return nullptr;
-                    }
-                    ktxTexture2* kTexture = nullptr;
-                    KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
-                    if (ktxResult != KTX_SUCCESS || !kTexture) {
-                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: KTX2 decode error for '{}'", filePath.getString());
-                        return nullptr;
-                    }
-                    DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(ktxTexture2_GLFormat(kTexture));
-                    if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
-                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: unsupported KTX2 format for '{}'", filePath.getString());
-                        ktxTexture_Destroy(ktxTexture(kTexture));
-                        return nullptr;
-                    }
-                    uint32_t mipLevels = kTexture->numLevels;
-                    uint32_t width = kTexture->baseWidth;
-                    uint32_t height = kTexture->baseHeight;
-                    std::vector<D3D11_SUBRESOURCE_DATA> subresources;
-                    for (uint32_t mip = 0; mip < mipLevels; ++mip) {
-                        ktx_size_t offset, size;
-                        ktxTexture_GetImageOffset(ktxTexture(kTexture), mip, 0, 0, &offset);
-                        size = ktxTexture_GetImageSize(ktxTexture(kTexture), mip);
-                        D3D11_SUBRESOURCE_DATA srd = {};
-                        srd.pSysMem = kTexture->pData + offset;
-                        srd.SysMemPitch = std::max(width >> mip, 1u) * 4; // Adjust for format if needed
-                        subresources.push_back(srd);
-                    }
-                    D3D11_TEXTURE2D_DESC desc = {};
-                    desc.Width = width;
-                    desc.Height = height;
-                    desc.MipLevels = mipLevels;
-                    desc.ArraySize = 1;
-                    desc.Format = dxgiFormat;
-                    desc.Usage = D3D11_USAGE_DEFAULT;
-                    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-                    desc.CPUAccessFlags = 0;
-                    desc.MiscFlags = 0;
-                    ID3D11Texture2D* texture = nullptr;
-                    HRESULT hr = d3dDevice->CreateTexture2D(&desc, subresources.data(), &texture);
-                    ktxTexture_Destroy(ktxTexture(kTexture));
-                    if (FAILED(hr) || !texture) {
-                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: could not create texture from KTX2 for '{}'", filePath.getString());
-                        return nullptr;
-                    }
-                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    hr = d3dDevice->CreateShaderResourceView(texture, nullptr, &d3dShaderResourceView);
-                    if (FAILED(hr) || !d3dShaderResourceView) {
-                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: could not create SRV from KTX2 for '{}'", filePath.getString());
-                        texture->Release();
-                        return nullptr;
-                    }
-                    Render::Texture::Description description;
-                    description.width = width;
-                    description.height = height;
-                    description.depth = 1;
-                    description.format = Render::Implementation::GetFormat(dxgiFormat);
-                    description.mipMapCount = mipLevels;
-                    return std::make_unique<ViewTexture>(texture, d3dShaderResourceView, description);
-                }
-                // ...existing code for fallback/other formats...
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
             {
-                HRESULT resultValue = E_FAIL;
-                ::DirectX::ScratchImage image;
-                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory((const std::byte *)buffer, size, ::DirectX::DDS_FLAGS_NONE, nullptr, image)))
+                int width = 0, height = 0, channels = 0;
+                stbi_uc *pixels = stbi_load_from_memory(static_cast<stbi_uc const *>(buffer), static_cast<int>(size), &width, &height, &channels, 4);
+                if (!pixels)
                 {
-                    if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory((const uint8_t *)buffer, size, nullptr, image)))
-                    {
-                        auto wicLoadFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB);
-                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory((const std::byte *)buffer, size, wicLoadFlags, nullptr, image)))
-                        {
-                            logD3D11Failure(getContext(), d3dDevice, "texture decode from memory", resultValue);
-                            return nullptr;
-                        }
-                    }
+                    getContext()->log(Gek::Context::Error, "stb_image failed to decode in-memory texture");
+                    return nullptr;
                 }
 
-                const auto &metadata = image.GetMetadata();
-                if (!validateTextureMetadataForD3D11(getContext(), d3dDevice, metadata))
+                DXGI_FORMAT dxgiFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+                if (!validateTextureForD3D11(getContext(), d3dDevice, dxgiFormat, static_cast<uint32_t>(width), static_cast<uint32_t>(height)))
                 {
+                    stbi_image_free(pixels);
+                    return nullptr;
+                }
+
+                D3D11_TEXTURE2D_DESC desc = {};
+                desc.Width = static_cast<UINT>(width);
+                desc.Height = static_cast<UINT>(height);
+                desc.MipLevels = 1;
+                desc.ArraySize = 1;
+                desc.Format = dxgiFormat;
+                desc.SampleDesc.Count = 1;
+                desc.Usage = D3D11_USAGE_DEFAULT;
+                desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+                D3D11_SUBRESOURCE_DATA initData = {};
+                initData.pSysMem = pixels;
+                initData.SysMemPitch = static_cast<UINT>(width) * 4;
+
+                CComPtr<ID3D11Texture2D> d3dTexture;
+                HRESULT hr = d3dDevice->CreateTexture2D(&desc, &initData, &d3dTexture);
+                stbi_image_free(pixels);
+                if (FAILED(hr) || !d3dTexture)
+                {
+                    logD3D11Failure(getContext(), d3dDevice, "CreateTexture2D from stb_image (memory)", hr);
                     return nullptr;
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                auto createFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_DEFAULT : ::DirectX::CREATETEX_IGNORE_SRGB);
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
-                if (FAILED(resultValue) || !d3dShaderResourceView)
+                hr = d3dDevice->CreateShaderResourceView(d3dTexture, nullptr, &d3dShaderResourceView);
+                if (FAILED(hr) || !d3dShaderResourceView)
                 {
-                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceViewEx (memory texture)", resultValue);
-                    return nullptr;
-                }
-
-                CComPtr<ID3D11Resource> d3dResource;
-                d3dShaderResourceView->GetResource(&d3dResource);
-                if (!d3dResource)
-                {
-                    getContext()->log(Gek::Context::Error, "Unable to get texture resource");
+                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceView from stb_image (memory)", hr);
                     return nullptr;
                 }
 
                 Render::Texture::Description description;
-                description.width = image.GetMetadata().width;
-                description.height = image.GetMetadata().height;
-                description.depth = image.GetMetadata().depth;
-                description.format = Render::Implementation::GetFormat(image.GetMetadata().format);
-                description.mipMapCount = image.GetMetadata().mipLevels;
+                description.width = static_cast<uint32_t>(width);
+                description.height = static_cast<uint32_t>(height);
+                description.depth = 1;
+                description.format = Render::Implementation::GetFormat(dxgiFormat);
+                description.mipMapCount = 1;
+                CComPtr<ID3D11Resource> d3dResource;
+                d3dShaderResourceView->GetResource(&d3dResource);
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
-                std::string extension(String::GetLower(filePath.getExtension()));
-                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
-                if (extension == ".dds")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), ::DirectX::DDS_FLAGS_NONE, metadata); };
-                }
-                else if (extension == ".tga")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromTGAMemory(buffer.data(), buffer.size(), metadata); };
-                }
-                else if (extension == ".png" || extension == ".bmp" ||
-                         extension == ".jpg" || extension == ".jpeg" ||
-                         extension == ".tif" || extension == ".tiff")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, metadata); };
-                }
-
                 static const Texture::Description EmptyDescription;
-                if (!getMetadata)
+
+                std::string extension(String::GetLower(filePath.getExtension()));
+                if (extension == ".ktx2")
                 {
-                    getContext()->log(Gek::Context::Error, "Unknown texture extension encountered");
-                    return EmptyDescription;
+                    std::vector<uint8_t> buffer(FileSystem::Load(filePath));
+                    if (buffer.empty())
+                    {
+                        getContext()->log(Gek::Context::Error, "Unable to load KTX2 file for description: {}", filePath.getString());
+                        return EmptyDescription;
+                    }
+
+                    ktxTexture2 *kTexture = nullptr;
+                    KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_SKIP_KVDATA_BIT, &kTexture);
+                    if (ktxResult != KTX_SUCCESS || !kTexture)
+                    {
+                        getContext()->log(Gek::Context::Error, "KTX2 header parse failed for: {}", filePath.getString());
+                        return EmptyDescription;
+                    }
+
+                    Texture::Description description;
+                    description.width = kTexture->baseWidth;
+                    description.height = kTexture->baseHeight;
+                    description.depth = kTexture->baseDepth;
+                    description.mipMapCount = kTexture->numLevels;
+                    description.format = Render::Implementation::GetFormat(VkFormatToDxgi(kTexture->vkFormat));
+                    ktxTexture_Destroy(ktxTexture(kTexture));
+                    return description;
                 }
 
+                // For raster images, use stb_image header-only probe
                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, 1024 * 4));
                 if (buffer.empty())
                 {
@@ -3675,20 +3666,19 @@ namespace Gek
                     return EmptyDescription;
                 }
 
-                ::DirectX::TexMetadata metadata;
-                HRESULT resultValue = getMetadata(buffer, metadata);
-                if (FAILED(resultValue))
+                int width = 0, height = 0, channels = 0;
+                if (!stbi_info_from_memory(buffer.data(), static_cast<int>(buffer.size()), &width, &height, &channels))
                 {
-                    getContext()->log(Gek::Context::Error, "Unable to get metadata from file: {}", filePath.getString());
+                    getContext()->log(Gek::Context::Error, "stb_image could not read texture header: {}", filePath.getString());
                     return EmptyDescription;
                 }
 
                 Texture::Description description;
-                description.width = metadata.width;
-                description.height = metadata.height;
-                description.depth = metadata.depth;
-                description.mipMapCount = metadata.mipLevels;
-                description.format = Render::Implementation::GetFormat(metadata.format);
+                description.width = static_cast<uint32_t>(width);
+                description.height = static_cast<uint32_t>(height);
+                description.depth = 1;
+                description.mipMapCount = 1;
+                description.format = Render::Format::R8G8B8A8_UNORM;
                 return description;
             }
 
