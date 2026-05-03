@@ -23,8 +23,10 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <atomic>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace Gek;
@@ -178,13 +180,67 @@ void GatherBlockRgba(
     }
 }
 
-void CompressToBc1(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, std::vector<uint8_t> &output)
+template <typename FunctionType>
+void ParallelForEach(uint32_t itemCount, bool enableParallel, FunctionType &&function)
+{
+    if (!enableParallel || itemCount < 256)
+    {
+        for (uint32_t index = 0; index < itemCount; ++index)
+        {
+            function(index);
+        }
+
+        return;
+    }
+
+    uint32_t threadCount = std::max<uint32_t>(1, std::thread::hardware_concurrency());
+    threadCount = std::min(threadCount, itemCount);
+
+    if (threadCount <= 1)
+    {
+        for (uint32_t index = 0; index < itemCount; ++index)
+        {
+            function(index);
+        }
+
+        return;
+    }
+
+    std::atomic<uint32_t> nextIndex{ 0 };
+    std::vector<std::thread> workers;
+    workers.reserve(threadCount);
+
+    for (uint32_t threadIndex = 0; threadIndex < threadCount; ++threadIndex)
+    {
+        workers.emplace_back([&]()
+        {
+            while (true)
+            {
+                uint32_t index = nextIndex.fetch_add(1);
+                if (index >= itemCount)
+                {
+                    break;
+                }
+
+                function(index);
+            }
+        });
+    }
+
+    for (auto &worker : workers)
+    {
+        worker.join();
+    }
+}
+
+void CompressToBc1(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, bool enableParallel, std::vector<uint8_t> &output)
 {
     rgbcx::init();
 
     uint32_t blockWidth = (width + 3) / 4;
     uint32_t blockHeight = (height + 3) / 4;
     output.resize(static_cast<size_t>(blockWidth) * blockHeight * 8);
+    uint32_t blockCount = blockWidth * blockHeight;
 
     uint32_t level = 8;
     if (quality == CompressionQuality::Fast)
@@ -196,46 +252,45 @@ void CompressToBc1(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
         level = 16;
     }
 
-    std::array<uint8_t, 64> blockPixels{};
-    for (uint32_t by = 0; by < blockHeight; ++by)
+    ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
     {
-        for (uint32_t bx = 0; bx < blockWidth; ++bx)
-        {
-            GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
-            size_t blockOffset = (static_cast<size_t>(by) * blockWidth + bx) * 8;
-            rgbcx::encode_bc1(level, output.data() + blockOffset, blockPixels.data(), false, false);
-        }
-    }
+        uint32_t bx = (blockIndex % blockWidth);
+        uint32_t by = (blockIndex / blockWidth);
+        std::array<uint8_t, 64> blockPixels{};
+        GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
+        size_t blockOffset = static_cast<size_t>(blockIndex) * 8;
+        rgbcx::encode_bc1(level, output.data() + blockOffset, blockPixels.data(), false, false);
+    });
 }
 
-void CompressToBc4(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, std::vector<uint8_t> &output)
+void CompressToBc4(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, bool enableParallel, std::vector<uint8_t> &output)
 {
     rgbcx::init();
 
     uint32_t blockWidth = (width + 3) / 4;
     uint32_t blockHeight = (height + 3) / 4;
     output.resize(static_cast<size_t>(blockWidth) * blockHeight * 8);
+    uint32_t blockCount = blockWidth * blockHeight;
 
-    std::array<uint8_t, 64> blockPixels{};
-    for (uint32_t by = 0; by < blockHeight; ++by)
+    ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
     {
-        for (uint32_t bx = 0; bx < blockWidth; ++bx)
+        uint32_t bx = (blockIndex % blockWidth);
+        uint32_t by = (blockIndex / blockWidth);
+        std::array<uint8_t, 64> blockPixels{};
+        GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
+        size_t blockOffset = static_cast<size_t>(blockIndex) * 8;
+        if (quality == CompressionQuality::High)
         {
-            GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
-            size_t blockOffset = (static_cast<size_t>(by) * blockWidth + bx) * 8;
-            if (quality == CompressionQuality::High)
-            {
-                rgbcx::encode_bc4_hq(output.data() + blockOffset, blockPixels.data(), 4);
-            }
-            else
-            {
-                rgbcx::encode_bc4(output.data() + blockOffset, blockPixels.data(), 4);
-            }
+            rgbcx::encode_bc4_hq(output.data() + blockOffset, blockPixels.data(), 4);
         }
-    }
+        else
+        {
+            rgbcx::encode_bc4(output.data() + blockOffset, blockPixels.data(), 4);
+        }
+    });
 }
 
-void CompressToBc7(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, std::vector<uint8_t> &output)
+void CompressToBc7(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t height, CompressionQuality quality, bool enableParallel, std::vector<uint8_t> &output)
 {
     static bool encoderInitialized = false;
     if (!encoderInitialized)
@@ -265,17 +320,17 @@ void CompressToBc7(std::vector<uint8_t> const &rgba, uint32_t width, uint32_t he
     uint32_t blockWidth = (width + 3) / 4;
     uint32_t blockHeight = (height + 3) / 4;
     output.resize(static_cast<size_t>(blockWidth) * blockHeight * 16);
+    uint32_t blockCount = blockWidth * blockHeight;
 
-    std::array<uint8_t, 64> blockPixels{};
-    for (uint32_t by = 0; by < blockHeight; ++by)
+    ParallelForEach(blockCount, enableParallel, [&](uint32_t blockIndex)
     {
-        for (uint32_t bx = 0; bx < blockWidth; ++bx)
-        {
-            GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
-            size_t blockOffset = (static_cast<size_t>(by) * blockWidth + bx) * 16;
-            bc7enc_compress_block(output.data() + blockOffset, blockPixels.data(), &params);
-        }
-    }
+        uint32_t bx = (blockIndex % blockWidth);
+        uint32_t by = (blockIndex / blockWidth);
+        std::array<uint8_t, 64> blockPixels{};
+        GatherBlockRgba(rgba, width, height, bx, by, blockPixels.data());
+        size_t blockOffset = static_cast<size_t>(blockIndex) * 16;
+        bc7enc_compress_block(output.data() + blockOffset, blockPixels.data(), &params);
+    });
 }
 
 uint32_t GetMipLevelCount(uint32_t width, uint32_t height)
@@ -565,16 +620,16 @@ CompressStatus compressTexture(
         switch (encodedFormat)
         {
         case EncodedFormat::BC1Srgb:
-            CompressToBc1(mipRgba, mipWidth, mipHeight, settings.quality, compressedData);
+            CompressToBc1(mipRgba, mipWidth, mipHeight, settings.quality, settings.enableParallel, compressedData);
             break;
 
         case EncodedFormat::BC4Unorm:
-            CompressToBc4(mipRgba, mipWidth, mipHeight, settings.quality, compressedData);
+            CompressToBc4(mipRgba, mipWidth, mipHeight, settings.quality, settings.enableParallel, compressedData);
             break;
 
         case EncodedFormat::BC7Srgb:
         case EncodedFormat::BC7Unorm:
-            CompressToBc7(mipRgba, mipWidth, mipHeight, settings.quality, compressedData);
+            CompressToBc7(mipRgba, mipWidth, mipHeight, settings.quality, settings.enableParallel, compressedData);
             break;
         }
 
