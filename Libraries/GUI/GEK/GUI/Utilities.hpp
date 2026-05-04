@@ -11,9 +11,12 @@
 
 #include "GEK/Utility/String.hpp"
 
+// clang-format off
+// imgui.h and imgui_internal.h must be included before ImGuizmo.h.
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
+// clang-format on
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"

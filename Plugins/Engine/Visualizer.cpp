@@ -620,12 +620,12 @@ PixelOutput main(in VertexInput input)
                 element.semantic = Render::InputElement::Semantic::Position;
                 elementList.push_back(element);
 
-                element.format = Render::Format::R32G32_FLOAT;
-                element.semantic = Render::InputElement::Semantic::TexCoord;
-                elementList.push_back(element);
-
                 element.format = Render::Format::R8G8B8A8_UNORM;
                 element.semantic = Render::InputElement::Semantic::Color;
+                elementList.push_back(element);
+
+                element.format = Render::Format::R32G32_FLOAT;
+                element.semantic = Render::InputElement::Semantic::TexCoord;
                 elementList.push_back(element);
 
                 gui.inputLayout = renderDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());

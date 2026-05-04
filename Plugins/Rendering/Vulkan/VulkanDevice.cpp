@@ -28,9 +28,12 @@
 #include <objbase.h>
 #endif
 
-#include <ktx.h>
+// clang-format off
+// ktxvulkan.h requires vulkan/vulkan.h to be included first.
 #include <vulkan/vulkan.h>
+#include <ktx.h>
 #include <ktxvulkan.h>
+// clang-format on
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
