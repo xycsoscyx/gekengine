@@ -588,15 +588,15 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 struct VertexInput
 {
     float2 position : POSITION;
-    float4 color : COLOR0;
     float2 texCoord  : TEXCOORD0;
+    float4 color : COLOR0;
 };
 
 struct PixelOutput
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR0;
     float2 texCoord  : TEXCOORD0;
+    float4 color : COLOR0;
 };
 
 [shader("vertex")]
@@ -620,12 +620,12 @@ PixelOutput main(in VertexInput input)
                 element.semantic = Render::InputElement::Semantic::Position;
                 elementList.push_back(element);
 
-                element.format = Render::Format::R8G8B8A8_UNORM;
-                element.semantic = Render::InputElement::Semantic::Color;
-                elementList.push_back(element);
-
                 element.format = Render::Format::R32G32_FLOAT;
                 element.semantic = Render::InputElement::Semantic::TexCoord;
+                elementList.push_back(element);
+
+                element.format = Render::Format::R8G8B8A8_UNORM;
+                element.semantic = Render::InputElement::Semantic::Color;
                 elementList.push_back(element);
 
                 gui.inputLayout = renderDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());
@@ -641,8 +641,8 @@ PixelOutput main(in VertexInput input)
                     R"(struct PixelInput
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR0;
     float2 texCoord  : TEXCOORD0;
+    float4 color : COLOR0;
 };
 
 Texture2D<float4> uiTexture : register(t0);
