@@ -659,16 +659,31 @@ namespace Gek
 
             struct Information
             {
+                struct VertexInputSignature
+                {
+                    std::string semanticName;
+                    uint32_t semanticIndex = 0;
+                    uint32_t shaderLocation = 0;
+                };
+
                 Type type;
                 std::string name;
                 FileSystem::Path shaderPath;
                 std::string shaderData;
                 std::string entryFunction;
                 std::vector<uint8_t> compiledData;
+                std::vector<VertexInputSignature> vertexInputSignatures;
                 uint64_t programId = 0;
 
                 Information(Information const &information)
-                    : name(information.name), type(information.type), entryFunction(information.entryFunction), shaderData(information.shaderData), shaderPath(information.shaderPath), compiledData(information.compiledData), programId(information.programId)
+                    : name(information.name),
+                      type(information.type),
+                      entryFunction(information.entryFunction),
+                      shaderData(information.shaderData),
+                      shaderPath(information.shaderPath),
+                      compiledData(information.compiledData),
+                      vertexInputSignatures(information.vertexInputSignatures),
+                      programId(information.programId)
                 {
                 }
 

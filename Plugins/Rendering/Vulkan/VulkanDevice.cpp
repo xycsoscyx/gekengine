@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <regex>
 #include <set>
 #include <utility>
 
@@ -506,6 +507,115 @@ namespace Gek
             "COLOR",
         };
 
+        std::string ToUpperAscii(std::string_view value)
+        {
+            std::string normalized(value);
+            std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](char character)
+                           { return static_cast<char>(std::toupper(static_cast<unsigned char>(character))); });
+            return normalized;
+        }
+
+        bool SplitSemanticToken(std::string_view token, std::string &semanticName, uint32_t &semanticIndex)
+        {
+            if (token.empty())
+            {
+                return false;
+            }
+
+            size_t suffixStart = token.size();
+            while (suffixStart > 0 && std::isdigit(static_cast<unsigned char>(token[suffixStart - 1])) != 0)
+            {
+                --suffixStart;
+            }
+
+            semanticName = ToUpperAscii(token.substr(0, suffixStart));
+            semanticIndex = 0;
+            if (suffixStart < token.size())
+            {
+                semanticIndex = static_cast<uint32_t>(std::strtoul(std::string(token.substr(suffixStart)).c_str(), nullptr, 10));
+            }
+
+            return !semanticName.empty();
+        }
+
+        void ExtractVertexInputSignatures(std::string_view source, std::string_view entryFunction, std::vector<Render::Program::Information::VertexInputSignature> &signatures)
+        {
+            signatures.clear();
+
+            if (source.empty() || entryFunction.empty())
+            {
+                return;
+            }
+
+            std::string sourceText(source);
+            std::string entryName(entryFunction);
+
+            std::string inputStructName;
+            {
+                const std::regex entryRegex(std::format("\\b{}\\s*\\(([^)]*)\\)", entryName));
+                std::smatch entryMatch;
+                if (std::regex_search(sourceText, entryMatch, entryRegex) && entryMatch.size() >= 2)
+                {
+                    const std::string parameterList = entryMatch[1].str();
+                    const std::regex inputParamRegex("\\bin\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+[A-Za-z_][A-Za-z0-9_]*");
+                    std::smatch inputParamMatch;
+                    if (std::regex_search(parameterList, inputParamMatch, inputParamRegex) && inputParamMatch.size() >= 2)
+                    {
+                        inputStructName = inputParamMatch[1].str();
+                    }
+                }
+            }
+
+            if (inputStructName.empty())
+            {
+                return;
+            }
+
+            std::string structBody;
+            {
+                const std::regex structRegex(std::format("struct\\s+{}\\s*\\{{([\\s\\S]*?)\\}}\\s*;", inputStructName));
+                std::smatch structMatch;
+                if (std::regex_search(sourceText, structMatch, structRegex) && structMatch.size() >= 2)
+                {
+                    structBody = structMatch[1].str();
+                }
+            }
+
+            if (structBody.empty())
+            {
+                return;
+            }
+
+            const std::regex semanticRegex(R"(:\s*([A-Za-z_][A-Za-z0-9_]*)\s*;)");
+            auto begin = std::sregex_iterator(structBody.begin(), structBody.end(), semanticRegex);
+            auto end = std::sregex_iterator();
+            for (auto iterator = begin; iterator != end; ++iterator)
+            {
+                const std::string token = (*iterator)[1].str();
+                if (token.size() >= 3)
+                {
+                    const std::string tokenPrefix = ToUpperAscii(std::string_view(token.data(), std::min<size_t>(3, token.size())));
+                    if (tokenPrefix == "SV_")
+                    {
+                        continue;
+                    }
+                }
+
+                std::string semanticName;
+                uint32_t semanticIndex = 0;
+                if (!SplitSemanticToken(token, semanticName, semanticIndex))
+                {
+                    continue;
+                }
+
+                Render::Program::Information::VertexInputSignature signature;
+                signature.semanticName = std::move(semanticName);
+                signature.semanticIndex = semanticIndex;
+                signature.shaderLocation = static_cast<uint32_t>(signatures.size());
+                signatures.push_back(std::move(signature));
+            }
+        }
+
         template <typename CONVERT, typename SOURCE>
         auto getObject(SOURCE *source)
         {
@@ -655,9 +765,10 @@ namespace Gek
         {
           public:
             std::vector<Render::InputElement> elementList;
+            std::vector<uint32_t> shaderLocationList;
 
-            InputLayout(const std::vector<Render::InputElement> &elementList)
-                : elementList(elementList)
+            InputLayout(const std::vector<Render::InputElement> &elementList, std::vector<uint32_t> shaderLocationList)
+                : elementList(elementList), shaderLocationList(std::move(shaderLocationList))
             {
             }
         };
@@ -3847,6 +3958,7 @@ namespace Gek
                     std::array<bool, 8> bindingUsed{};
                     std::array<VkVertexInputRate, 8> bindingRate{};
                     std::array<uint32_t, 8> bindingStride{};
+                    std::set<uint32_t> usedLocations;
 
                     std::array<uint32_t, 8> runningOffset{};
                     for (uint32_t index = 0; index < command.inputLayout->elementList.size(); ++index)
@@ -3867,8 +3979,25 @@ namespace Gek
                             bindingStride[slot] = command.vertexBuffers[slot]->getDescription().stride;
                         }
 
+                        uint32_t shaderLocation = index;
+                        if (index < command.inputLayout->shaderLocationList.size())
+                        {
+                            shaderLocation = command.inputLayout->shaderLocationList[index];
+                        }
+
+                        if (usedLocations.contains(shaderLocation))
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan pipeline input duplicate location {} for program '{}'",
+                                shaderLocation,
+                                command.vertexProgram ? command.vertexProgram->getInformation().name : "unknown");
+                            continue;
+                        }
+                        usedLocations.insert(shaderLocation);
+
                         VkVertexInputAttributeDescription attribute{};
-                        attribute.location = index;
+                        attribute.location = shaderLocation;
                         attribute.binding = slot;
                         attribute.format = format;
                         attribute.offset = (element.alignedByteOffset == Render::InputElement::AppendAligned) ? runningOffset[slot] : element.alignedByteOffset;
@@ -4936,7 +5065,48 @@ namespace Gek
 
             Render::ObjectPtr createInputLayout(const std::vector<Render::InputElement> &elementList, Render::Program::Information const &information)
             {
-                return std::make_unique<InputLayout>(elementList);
+                std::vector<uint32_t> shaderLocations(elementList.size(), UINT32_MAX);
+                uint32_t semanticIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
+
+                for (uint32_t elementIndex = 0; elementIndex < elementList.size(); ++elementIndex)
+                {
+                    const auto &element = elementList[elementIndex];
+                    const uint32_t semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
+                    const std::string semanticName = ToUpperAscii(SemanticNameList[static_cast<uint8_t>(element.semantic)]);
+
+                    for (auto const &signature : information.vertexInputSignatures)
+                    {
+                        if (signature.semanticIndex != semanticIndex)
+                        {
+                            continue;
+                        }
+
+                        if (ToUpperAscii(signature.semanticName) != semanticName)
+                        {
+                            continue;
+                        }
+
+                        shaderLocations[elementIndex] = signature.shaderLocation;
+                        break;
+                    }
+
+                    if (shaderLocations[elementIndex] == UINT32_MAX)
+                    {
+                        shaderLocations[elementIndex] = elementIndex;
+                        if (!information.vertexInputSignatures.empty())
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan input-layout fallback for program '{}': using positional location {} for semantic {}{}",
+                                information.name,
+                                elementIndex,
+                                semanticName,
+                                semanticIndex);
+                        }
+                    }
+                }
+
+                return std::make_unique<InputLayout>(elementList, std::move(shaderLocations));
             }
 
             bool compileProgram(Render::Program::Information & information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr)
@@ -5335,6 +5505,12 @@ namespace Gek
                     const char *diagMsg = spirvDiagnostics ? reinterpret_cast<const char *>(spirvDiagnostics->getBufferPointer()) : "Unknown error";
                     getContext()->log(Gek::Context::Error, "Failed to generate SPIRV code for Slang program: {}", diagMsg);
                     return false;
+                }
+
+                information.vertexInputSignatures.clear();
+                if (information.type == Render::Program::Type::Vertex)
+                {
+                    ExtractVertexInputSignatures(resolvedProgram, information.entryFunction, information.vertexInputSignatures);
                 }
 
                 information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t *)spirvCode->getBufferPointer(), (uint8_t *)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();
