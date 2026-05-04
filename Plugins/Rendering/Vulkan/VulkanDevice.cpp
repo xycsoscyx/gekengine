@@ -29,8 +29,8 @@
 #endif
 
 #include <ktx.h>
-#include <ktxvulkan.h>
 #include <vulkan/vulkan.h>
+#include <ktxvulkan.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
