@@ -1,1 +1,5 @@
-add_subdirectory(win32)
+if(WIN32)
+	add_subdirectory(win32)
+elseif(UNIX AND NOT APPLE)
+	add_subdirectory(wayland)
+endif()

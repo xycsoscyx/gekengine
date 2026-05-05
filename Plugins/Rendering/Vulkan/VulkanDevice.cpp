@@ -22,10 +22,13 @@
 #include <set>
 #include <utility>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <dxgiformat.h>
 #include <objbase.h>
+#elif defined(__linux__)
+#define VK_USE_PLATFORM_WAYLAND_KHR
+#include <wayland-client.h>
 #endif
 
 // clang-format off
@@ -624,8 +627,7 @@ namespace Gek
                               return left.semanticName < right.semanticName;
                           }
 
-                          return left.semanticIndex < right.semanticIndex;
-                      });
+                          return left.semanticIndex < right.semanticIndex; });
         }
 
         template <typename CONVERT, typename SOURCE>
@@ -3064,10 +3066,10 @@ namespace Gek
 
                 std::vector<const char *> instanceExtensions = {
                     VK_KHR_SURFACE_EXTENSION_NAME,
-#ifdef WIN32
+#ifdef _WIN32
                     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-#else
-                    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#elif defined(__linux__)
+                    VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
 #endif
 
                 };
@@ -3332,18 +3334,20 @@ namespace Gek
 
             void createSurface(void)
             {
-#ifdef WIN32
+#ifdef _WIN32
                 VkWin32SurfaceCreateInfoKHR createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
                 createInfo.hinstance = GetModuleHandle(nullptr);
                 createInfo.hwnd = reinterpret_cast<HWND>(window->getWindowData(0));
                 auto result = vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+#elif defined(__linux__)
+                VkWaylandSurfaceCreateInfoKHR createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+                createInfo.display = reinterpret_cast<wl_display *>(window->getWindowData(0));
+                createInfo.surface = reinterpret_cast<wl_surface *>(window->getWindowData(1));
+                auto result = vkCreateWaylandSurfaceKHR(instance, &createInfo, nullptr, &surface);
 #else
-                VkXlibSurfaceCreateInfoKHR createInfo{};
-                createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-                createInfo.dpy = reinterpret_cast<Display *>(window->getWindowData(0));
-                createInfo.window = *reinterpret_cast<::Window *>(window->getWindowData(1));
-                auto result = vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface);
+                auto result = VK_ERROR_EXTENSION_NOT_PRESENT;
 #endif
                 if (result == VK_SUCCESS)
                 {
@@ -4035,7 +4039,6 @@ namespace Gek
                         binding.inputRate = bindingRate[slot];
                         bindingDescriptions.push_back(binding);
                     }
-
                 }
 
                 VkPipelineShaderStageCreateInfo vertexStage{};
@@ -4561,7 +4564,7 @@ namespace Gek
             Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
                 Render::DisplayModeList displayModeList;
-#ifdef WIN32
+#ifdef _WIN32
                 DEVMODE windowsDisplayMode;
                 ZeroMemory(&windowsDisplayMode, sizeof(DEVMODE));
                 windowsDisplayMode.dmSize = sizeof(DEVMODE);

@@ -49,14 +49,21 @@ int main(int argumentCount, char const *const argumentList[])
     auto configPath = binaryPath / "cache" / "config.json";
     auto config = Gek::JSON::Load(configPath);
     auto renderOptions = Gek::JSON::Find(config, "render");
-    std::string renderDevice = Gek::JSON::Value(renderOptions, "device", "renderd3d11"s);
+#ifdef _WIN32
+    const std::string defaultRenderDevice = "renderd3d11";
+    const std::string systemPluginName = "systemwin32";
+#else
+    const std::string defaultRenderDevice = "rendervulkan";
+    const std::string systemPluginName = "systemwayland";
+#endif
+    std::string renderDevice = Gek::JSON::Value(renderOptions, "device", defaultRenderDevice);
     renderOptions["device"] = renderDevice;
     config["render"] = renderOptions;
     Gek::JSON::Save(config, configPath);
 
     std::vector<FileSystem::Path> pluginList;
     pluginList.push_back(renderPluginPath / renderDevice);
-    pluginList.push_back(systemPluginPath / "systemwin32");
+    pluginList.push_back(systemPluginPath / systemPluginName);
 
     ContextPtr context(Context::Create(&searchPathList, &pluginList));
     if (context)
