@@ -14,44 +14,58 @@ set_target_properties(systemwayland PROPERTIES
 
 target_link_libraries(systemwayland PUBLIC Math Utility Resources Common)
 
-# --- Find wayland-client ---
-# Prefer CMake's built-in FindWayland (CMake >= 3.22) which works without pkg-config.
+# --- Find wayland-client (no pkg-config dependency) ---
+# Try CMake's built-in FindWayland first (CMake >= 3.22).
 find_package(Wayland QUIET COMPONENTS Client)
 if(Wayland_FOUND)
     target_link_libraries(systemwayland PRIVATE Wayland::Client)
 else()
-    # Fallback: pkg-config
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
-    target_include_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS})
-    target_link_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARY_DIRS})
-    target_link_libraries(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
-    target_compile_options(systemwayland PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
+    # Direct library/header search — works without pkg-config as long as libwayland-dev is installed.
+    find_library(WAYLAND_CLIENT_LIB NAMES wayland-client
+        REQUIRED
+        DOC "wayland-client library — install libwayland-dev")
+    find_path(WAYLAND_CLIENT_INCLUDE_DIR NAMES wayland-client.h
+        REQUIRED
+        DOC "wayland-client headers — install libwayland-dev")
+    if(NOT WAYLAND_CLIENT_LIB OR NOT WAYLAND_CLIENT_INCLUDE_DIR)
+        message(FATAL_ERROR
+            "wayland-client not found.\n"
+            "Install libwayland-dev (Debian/Ubuntu: sudo apt-get install -y libwayland-dev)")
+    endif()
+    target_include_directories(systemwayland PRIVATE "${WAYLAND_CLIENT_INCLUDE_DIR}")
+    target_link_libraries(systemwayland PRIVATE "${WAYLAND_CLIENT_LIB}")
 endif()
 
 # --- Find wayland-protocols data directory ---
+# Try pkg-config first; fall back to the fixed install path on Debian/Ubuntu.
 set(WAYLAND_PROTOCOLS_DIR "")
 find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND OR PKG_CONFIG_FOUND)
+if(PKG_CONFIG_FOUND)
     pkg_check_modules(WAYLAND_PROTOCOLS QUIET wayland-protocols)
     if(WAYLAND_PROTOCOLS_FOUND)
         pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
     endif()
 endif()
-if(NOT WAYLAND_PROTOCOLS_DIR)
-    # Common install path on Debian/Ubuntu when wayland-protocols package is present
+if(NOT WAYLAND_PROTOCOLS_DIR OR NOT EXISTS "${WAYLAND_PROTOCOLS_DIR}")
     if(EXISTS "/usr/share/wayland-protocols")
         set(WAYLAND_PROTOCOLS_DIR "/usr/share/wayland-protocols")
     else()
-        message(FATAL_ERROR "Could not find wayland-protocols data directory. Install the wayland-protocols package.")
+        message(FATAL_ERROR
+            "wayland-protocols data directory not found.\n"
+            "Install wayland-protocols (Debian/Ubuntu: sudo apt-get install -y wayland-protocols)")
     endif()
 endif()
 message(STATUS "wayland-protocols dir: ${WAYLAND_PROTOCOLS_DIR}")
 
 # --- Find wayland-scanner ---
-find_program(WAYLAND_SCANNER wayland-scanner REQUIRED
+find_program(WAYLAND_SCANNER wayland-scanner
     HINTS /usr/bin /usr/local/bin
-    DOC "wayland-scanner tool (provided by libwayland-bin on Debian/Ubuntu)")
+    DOC "wayland-scanner — install libwayland-bin")
+if(NOT WAYLAND_SCANNER)
+    message(FATAL_ERROR
+        "wayland-scanner not found.\n"
+        "Install libwayland-bin (Debian/Ubuntu: sudo apt-get install -y libwayland-bin)")
+endif()
 
 set(WL_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated")
 file(MAKE_DIRECTORY "${WL_GENERATED_DIR}")
