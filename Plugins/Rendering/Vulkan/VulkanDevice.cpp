@@ -245,6 +245,7 @@ namespace Gek
             }
         }
 
+#ifdef _WIN32
         DXGI_FORMAT ResolveDxgiFormatForSrgbPreference(DXGI_FORMAT format, bool preferSrgb)
         {
             if (preferSrgb)
@@ -382,6 +383,7 @@ namespace Gek
 
             return rowPitch * blocksHigh;
         }
+#endif
 
         uint32_t GetFormatStride(Render::Format format)
         {
