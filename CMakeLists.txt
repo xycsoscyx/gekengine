@@ -150,7 +150,8 @@ if(GEK_BUILD_TESTS)
 endif()
 
 # Add libktx for KTX2 texture support
-set(KTX_FEATURE_TESTS OFF)
+set(KTX_FEATURE_TOOLS OFF CACHE BOOL "Disable KTX command-line tools in vendored builds" FORCE)
+set(KTX_FEATURE_TESTS OFF CACHE BOOL "Disable KTX tests in vendored builds" FORCE)
 FetchContent_Declare(
     ktx
     GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
