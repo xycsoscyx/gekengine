@@ -19,7 +19,6 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <regex>
 #include <set>
 #include <utility>
 
@@ -538,82 +537,95 @@ namespace Gek
             return !semanticName.empty();
         }
 
-        void ExtractVertexInputSignatures(std::string_view source, std::string_view entryFunction, std::vector<Render::Program::Information::VertexInputSignature> &signatures)
+        void AppendVertexInputSignatures(
+            slang::VariableLayoutReflection *variableLayout,
+            std::vector<Render::Program::Information::VertexInputSignature> &signatures,
+            std::set<uint32_t> &usedLocations)
+        {
+            if (!variableLayout)
+            {
+                return;
+            }
+
+            const char *semanticToken = variableLayout->getSemanticName();
+            if (semanticToken && semanticToken[0] != '\0')
+            {
+                // Leaf variable with a semantic — record it and do not recurse.
+                std::string semanticName;
+                uint32_t embeddedSemanticIndex = 0;
+                if (SplitSemanticToken(semanticToken, semanticName, embeddedSemanticIndex))
+                {
+                    if (!semanticName.starts_with("SV_"))
+                    {
+                        const size_t rawOffset = variableLayout->getOffset(slang::ParameterCategory::VaryingInput);
+                        if (rawOffset < SLANG_UNKNOWN_SIZE)
+                        {
+                            const uint32_t absoluteLocation = static_cast<uint32_t>(rawOffset);
+                            const uint32_t semanticIndex = static_cast<uint32_t>(variableLayout->getSemanticIndex()) + embeddedSemanticIndex;
+                            if (usedLocations.insert(absoluteLocation).second)
+                            {
+                                Render::Program::Information::VertexInputSignature signature;
+                                signature.semanticName = std::move(semanticName);
+                                signature.semanticIndex = semanticIndex;
+                                signature.shaderLocation = absoluteLocation;
+                                signatures.push_back(std::move(signature));
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            // No semantic on this variable — it is a struct; descend into its fields.
+            auto *typeLayout = variableLayout->getTypeLayout();
+            if (!typeLayout)
+            {
+                return;
+            }
+
+            for (uint32_t fieldIndex = 0; fieldIndex < typeLayout->getFieldCount(); ++fieldIndex)
+            {
+                AppendVertexInputSignatures(typeLayout->getFieldByIndex(fieldIndex), signatures, usedLocations);
+            }
+        }
+
+        void ExtractVertexInputSignaturesFromReflection(
+            slang::ProgramLayout *programLayout,
+            std::vector<Render::Program::Information::VertexInputSignature> &signatures)
         {
             signatures.clear();
 
-            if (source.empty() || entryFunction.empty())
+            if (!programLayout || programLayout->getEntryPointCount() == 0)
             {
                 return;
             }
 
-            std::string sourceText(source);
-            std::string entryName(entryFunction);
-
-            std::string inputStructName;
-            {
-                const std::regex entryRegex(std::format("\\b{}\\s*\\(([^)]*)\\)", entryName));
-                std::smatch entryMatch;
-                if (std::regex_search(sourceText, entryMatch, entryRegex) && entryMatch.size() >= 2)
-                {
-                    const std::string parameterList = entryMatch[1].str();
-                    const std::regex inputParamRegex("\\bin\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+[A-Za-z_][A-Za-z0-9_]*");
-                    std::smatch inputParamMatch;
-                    if (std::regex_search(parameterList, inputParamMatch, inputParamRegex) && inputParamMatch.size() >= 2)
-                    {
-                        inputStructName = inputParamMatch[1].str();
-                    }
-                }
-            }
-
-            if (inputStructName.empty())
+            auto *entryPoint = programLayout->getEntryPointByIndex(0);
+            if (!entryPoint)
             {
                 return;
             }
 
-            std::string structBody;
+            std::set<uint32_t> usedLocations;
+            for (uint32_t parameterIndex = 0; parameterIndex < entryPoint->getParameterCount(); ++parameterIndex)
             {
-                const std::regex structRegex(std::format("struct\\s+{}\\s*\\{{([\\s\\S]*?)\\}}\\s*;", inputStructName));
-                std::smatch structMatch;
-                if (std::regex_search(sourceText, structMatch, structRegex) && structMatch.size() >= 2)
-                {
-                    structBody = structMatch[1].str();
-                }
+                AppendVertexInputSignatures(entryPoint->getParameterByIndex(parameterIndex), signatures, usedLocations);
             }
 
-            if (structBody.empty())
-            {
-                return;
-            }
+            std::sort(signatures.begin(), signatures.end(), [](const auto &left, const auto &right)
+                      {
+                          if (left.shaderLocation != right.shaderLocation)
+                          {
+                              return left.shaderLocation < right.shaderLocation;
+                          }
 
-            const std::regex semanticRegex(R"(:\s*([A-Za-z_][A-Za-z0-9_]*)\s*;)");
-            auto begin = std::sregex_iterator(structBody.begin(), structBody.end(), semanticRegex);
-            auto end = std::sregex_iterator();
-            for (auto iterator = begin; iterator != end; ++iterator)
-            {
-                const std::string token = (*iterator)[1].str();
-                if (token.size() >= 3)
-                {
-                    const std::string tokenPrefix = ToUpperAscii(std::string_view(token.data(), std::min<size_t>(3, token.size())));
-                    if (tokenPrefix == "SV_")
-                    {
-                        continue;
-                    }
-                }
+                          if (left.semanticName != right.semanticName)
+                          {
+                              return left.semanticName < right.semanticName;
+                          }
 
-                std::string semanticName;
-                uint32_t semanticIndex = 0;
-                if (!SplitSemanticToken(token, semanticName, semanticIndex))
-                {
-                    continue;
-                }
-
-                Render::Program::Information::VertexInputSignature signature;
-                signature.semanticName = std::move(semanticName);
-                signature.semanticIndex = semanticIndex;
-                signature.shaderLocation = static_cast<uint32_t>(signatures.size());
-                signatures.push_back(std::move(signature));
-            }
+                          return left.semanticIndex < right.semanticIndex;
+                      });
         }
 
         template <typename CONVERT, typename SOURCE>
@@ -4023,6 +4035,7 @@ namespace Gek
                         binding.inputRate = bindingRate[slot];
                         bindingDescriptions.push_back(binding);
                     }
+
                 }
 
                 VkPipelineShaderStageCreateInfo vertexStage{};
@@ -4064,8 +4077,10 @@ namespace Gek
                 rasterizer.lineWidth = 1.0f;
                 static constexpr VkCullModeFlags vkCullModes[] = { VK_CULL_MODE_NONE, VK_CULL_MODE_FRONT_BIT, VK_CULL_MODE_BACK_BIT };
                 rasterizer.cullMode = vkCullModes[static_cast<uint8_t>(key.cullMode)];
-                rasterizer.cullMode = VK_CULL_MODE_NONE;
-                rasterizer.frontFace = key.frontCounterClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                // Y-flip viewport compensation: D3D-authored assets use CW=front (frontCounterClockwise=false).
+                // The negative-height viewport trick matches D3D clip-space NDC, so winding in screen
+                // space is identical to D3D — CW triangles must remain front-facing in Vulkan too.
+                rasterizer.frontFace = key.frontCounterClockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
                 rasterizer.depthBiasEnable = VK_FALSE;
 
                 VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -5067,7 +5082,6 @@ namespace Gek
             {
                 std::vector<uint32_t> shaderLocations(elementList.size(), UINT32_MAX);
                 uint32_t semanticIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
-
                 for (uint32_t elementIndex = 0; elementIndex < elementList.size(); ++elementIndex)
                 {
                     const auto &element = elementList[elementIndex];
@@ -5088,6 +5102,48 @@ namespace Gek
 
                         shaderLocations[elementIndex] = signature.shaderLocation;
                         break;
+                    }
+
+                    if (shaderLocations[elementIndex] == UINT32_MAX)
+                    {
+                        uint32_t bestBaseSemanticIndex = 0;
+                        uint32_t bestBaseLocation = 0;
+                        bool foundBaseSemantic = false;
+
+                        for (auto const &signature : information.vertexInputSignatures)
+                        {
+                            if (ToUpperAscii(signature.semanticName) != semanticName)
+                            {
+                                continue;
+                            }
+
+                            if (signature.semanticIndex > semanticIndex)
+                            {
+                                continue;
+                            }
+
+                            if (!foundBaseSemantic || signature.semanticIndex > bestBaseSemanticIndex)
+                            {
+                                foundBaseSemantic = true;
+                                bestBaseSemanticIndex = signature.semanticIndex;
+                                bestBaseLocation = signature.shaderLocation;
+                            }
+                        }
+
+                        if (foundBaseSemantic)
+                        {
+                            shaderLocations[elementIndex] = bestBaseLocation + (semanticIndex - bestBaseSemanticIndex);
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan input-layout derived location for program '{}': semantic {}{} mapped to location {} from reflected {}{} at {}",
+                                information.name,
+                                semanticName,
+                                semanticIndex,
+                                shaderLocations[elementIndex],
+                                semanticName,
+                                bestBaseSemanticIndex,
+                                bestBaseLocation);
+                        }
                     }
 
                     if (shaderLocations[elementIndex] == UINT32_MAX)
@@ -5510,7 +5566,33 @@ namespace Gek
                 information.vertexInputSignatures.clear();
                 if (information.type == Render::Program::Type::Vertex)
                 {
-                    ExtractVertexInputSignatures(resolvedProgram, information.entryFunction, information.vertexInputSignatures);
+                    slang::IBlob *layoutDiagnosticsRaw = nullptr;
+                    slang::ProgramLayout *programLayout = composedProgram->getLayout(0, &layoutDiagnosticsRaw);
+                    Slang::ComPtr<slang::IBlob> layoutDiagnostics(layoutDiagnosticsRaw);
+                    if (!programLayout)
+                    {
+                        if (layoutDiagnostics)
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Failed to reflect Vulkan vertex inputs for program '{}': {}",
+                                information.name,
+                                reinterpret_cast<const char *>(layoutDiagnostics->getBufferPointer()));
+                        }
+                        else
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Failed to reflect Vulkan vertex inputs for program '{}'",
+                                information.name);
+                        }
+                    }
+                    else
+                    {
+                        ExtractVertexInputSignaturesFromReflection(programLayout, information.vertexInputSignatures);
+
+                        static_cast<void>(0); // reflection complete
+                    }
                 }
 
                 information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t *)spirvCode->getBufferPointer(), (uint8_t *)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();

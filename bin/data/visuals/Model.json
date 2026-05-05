@@ -50,7 +50,7 @@
         },
         {
             "name": "tangent",
-            "format": "R32G32B32_FLOAT",
+            "format": "R32G32B32A32_FLOAT",
             "semantic": "TANGENT"
         },
         {

@@ -41,7 +41,7 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
 
     OutputVertex outputVertex;
     outputVertex.position = mul(float4(inputVertex.position, 1.0), inputVertex.transform).xyz;
-	outputVertex.tangent = tangent;
+	outputVertex.tangent = float4(tangent, inputVertex.tangent.w * transformHandedness);
     outputVertex.biTangent = biTangent;
     outputVertex.normal = normal;
     outputVertex.texCoord = inputVertex.texCoord;
