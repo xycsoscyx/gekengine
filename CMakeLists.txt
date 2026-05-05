@@ -162,9 +162,22 @@ FetchContent_MakeAvailable(ktx)
 # ktx's own CMakeLists.txt, making its PUBLIC_HEADER install paths point to gekengine/include/
 # instead of ktx_SOURCE_DIR/include/. Override after population so the generated install script
 # references the correct source location.
-set_target_properties(ktx PROPERTIES
-    PUBLIC_HEADER "${ktx_SOURCE_DIR}/include/ktx.h;${ktx_SOURCE_DIR}/include/ktxvulkan.h"
-)
+if(TARGET ktx)
+    set_target_properties(ktx PROPERTIES
+        PUBLIC_HEADER "${ktx_SOURCE_DIR}/include/ktx.h;${ktx_SOURCE_DIR}/include/ktxvulkan.h"
+    )
+endif()
+if(TARGET ktx_read)
+    set_target_properties(ktx_read PROPERTIES
+        PUBLIC_HEADER "${ktx_SOURCE_DIR}/include/ktx.h;${ktx_SOURCE_DIR}/include/ktxvulkan.h"
+    )
+endif()
+
+# Compatibility fallback: upstream KTX still appends ${CMAKE_SOURCE_DIR}/include/ktxvulkan.h
+# in its internal CMake, so ensure those paths exist for install() on Linux/CI.
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include")
+configure_file("${ktx_SOURCE_DIR}/include/ktx.h" "${CMAKE_CURRENT_LIST_DIR}/include/ktx.h" COPYONLY)
+configure_file("${ktx_SOURCE_DIR}/include/ktxvulkan.h" "${CMAKE_CURRENT_LIST_DIR}/include/ktxvulkan.h" COPYONLY)
 
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-DNOMINMAX)

@@ -8,6 +8,7 @@ set_target_properties(systemwayland PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/system"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/system"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    PREFIX ""
     OUTPUT_NAME $<IF:$<CONFIG:Debug>,systemwayland_debug,systemwayland>
     DEBUG_POSTFIX ""
 )

@@ -57,6 +57,7 @@ set_target_properties(rendervulkan PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/render"
 	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/render"
 	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+	PREFIX ""
 	OUTPUT_NAME $<IF:$<CONFIG:Debug>,rendervulkan_debug,rendervulkan>
 	DEBUG_POSTFIX ""
 )
