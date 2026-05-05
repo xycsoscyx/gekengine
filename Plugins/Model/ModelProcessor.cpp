@@ -365,11 +365,11 @@ namespace Gek
         Edit::Events *events = nullptr;
 
         VisualHandle visual;
-        Render::BufferPtr instanceBuffer;
+        std::vector<Render::BufferPtr> instanceBufferPool;
         // Keep instance buffers alive for 3 frames to avoid freeing them while the GPU
         // is still executing commands that reference them.
         static constexpr size_t kInstanceBufferFrameSlots = 3;
-        std::array<std::vector<std::shared_ptr<Render::Buffer>>, kInstanceBufferFrameSlots> instanceBufferRetireSlots;
+        std::array<std::vector<Render::BufferPtr>, kInstanceBufferFrameSlots> instanceBufferRetireSlots;
         size_t instanceBufferRetireIndex = 0;
         ThreadPool loadPool;
 
@@ -422,14 +422,6 @@ namespace Gek
                                      { addEntity(entity); });
 
             visual = resources->loadVisual("model");
-
-            Render::Buffer::Description instanceDescription;
-            instanceDescription.name = "model:instances";
-            instanceDescription.stride = sizeof(Math::Float4x4);
-            instanceDescription.count = 100;
-            instanceDescription.type = Render::Buffer::Type::Vertex;
-            instanceDescription.flags = Render::Buffer::Flags::Mappable;
-            instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
         void scheduleLoadMesh(Header::Mesh & meshHeader, Group::Model::Mesh & mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t *meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
@@ -852,6 +844,13 @@ namespace Gek
 
             // Advance the retire ring: clear the slot from 3 frames ago (GPU is done by then).
             instanceBufferRetireIndex = (instanceBufferRetireIndex + 1) % kInstanceBufferFrameSlots;
+            for (auto &retiredBuffer : instanceBufferRetireSlots[instanceBufferRetireIndex])
+            {
+                if (retiredBuffer)
+                {
+                    instanceBufferPool.push_back(std::move(retiredBuffer));
+                }
+            }
             instanceBufferRetireSlots[instanceBufferRetireIndex].clear();
 
             // Cull by entity/group
@@ -1032,23 +1031,29 @@ namespace Gek
                 }
 
                 uint32_t const requiredInstanceCount = static_cast<uint32_t>(instanceList.size());
-                uint32_t currentInstanceCapacity = 0;
-                if (instanceBuffer)
+                Render::BufferPtr batchBuffer;
+                auto poolIt = std::find_if(
+                    std::begin(instanceBufferPool), std::end(instanceBufferPool),
+                    [requiredInstanceCount](Render::BufferPtr const &candidate) -> bool
+                    {
+                        return candidate && (candidate->getDescription().count >= requiredInstanceCount);
+                    });
+                if (poolIt != std::end(instanceBufferPool))
                 {
-                    currentInstanceCapacity = instanceBuffer->getDescription().count;
+                    batchBuffer = std::move(*poolIt);
+                    instanceBufferPool.erase(poolIt);
                 }
-
-                if (!instanceBuffer || currentInstanceCapacity < requiredInstanceCount)
+                else
                 {
                     Render::Buffer::Description instanceDescription;
                     instanceDescription.name = "model:instances";
                     instanceDescription.stride = sizeof(Math::Float4x4);
-                    instanceDescription.count = std::max<uint32_t>(requiredInstanceCount, std::max<uint32_t>(100, (currentInstanceCapacity > 0 ? currentInstanceCapacity * 2 : 0)));
+                    instanceDescription.count = std::max<uint32_t>(requiredInstanceCount, 100);
                     instanceDescription.type = Render::Buffer::Type::Vertex;
                     instanceDescription.flags = Render::Buffer::Flags::Mappable;
 
-                    instanceBuffer = videoDevice->createBuffer(instanceDescription);
-                    if (!instanceBuffer)
+                    batchBuffer = videoDevice->createBuffer(instanceDescription);
+                    if (!batchBuffer)
                     {
                         getContext()->log(Context::Warning,
                             "ModelProcessor skipped draw batch due to instance buffer creation failure (instances={})",
@@ -1057,13 +1062,16 @@ namespace Gek
                     }
                 }
 
+                instanceBufferRetireSlots[instanceBufferRetireIndex].push_back(std::move(batchBuffer));
+                Render::Buffer *batchBufferHandle = instanceBufferRetireSlots[instanceBufferRetireIndex].back().get();
+
                 queuedBatchCount.fetch_add(1);
-				renderer->queueDrawCall(visual, material, [this, drawDataList = std::move(drawDataList), instanceList = std::move(instanceList)](Render::Device::Context *videoContext) -> void
+                renderer->queueDrawCall(visual, material, [this, batchBufferHandle, drawDataList = std::move(drawDataList), instanceList = std::move(instanceList)](Render::Device::Context *videoContext) -> void
 				{
-					if (instanceBuffer)
+                    if (batchBufferHandle)
 					{
 						Math::Float4x4 *instanceData = nullptr;
-						if (!videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+                        if (!videoDevice->mapBuffer(batchBufferHandle, instanceData))
 						{
 							getContext()->log(Context::Warning,
 								"ModelProcessor skipped draw batch due to instance buffer mapping failure (instances={})",
@@ -1072,8 +1080,8 @@ namespace Gek
 						}
 
 						std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-						videoDevice->unmapBuffer(instanceBuffer.get());
-						videoContext->setVertexBufferList({ instanceBuffer.get() }, 4);
+                        videoDevice->unmapBuffer(batchBufferHandle);
+                        videoContext->setVertexBufferList({ batchBufferHandle }, 4);
 						for (auto const &drawData : drawDataList)
 						{
 							if (drawData.data)
