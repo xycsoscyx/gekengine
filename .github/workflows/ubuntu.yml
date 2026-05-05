@@ -18,7 +18,7 @@ jobs:
           submodules: recursive
 
       - name: Install Linux windowing dependencies
-        run: sudo apt-get update && sudo apt-get install -y libwayland-dev wayland-protocols libxkbcommon-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y libwayland-dev libwayland-bin wayland-protocols libxkbcommon-dev pkg-config
 
       - name: Setup Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.1
