@@ -14,12 +14,44 @@ set_target_properties(systemwayland PROPERTIES
 
 target_link_libraries(systemwayland PUBLIC Math Utility Resources Common)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
-pkg_check_modules(WAYLAND_PROTOCOLS REQUIRED wayland-protocols)
-pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+# --- Find wayland-client ---
+# Prefer CMake's built-in FindWayland (CMake >= 3.22) which works without pkg-config.
+find_package(Wayland QUIET COMPONENTS Client)
+if(Wayland_FOUND)
+    target_link_libraries(systemwayland PRIVATE Wayland::Client)
+else()
+    # Fallback: pkg-config
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+    target_include_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS})
+    target_link_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARY_DIRS})
+    target_link_libraries(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
+    target_compile_options(systemwayland PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
+endif()
 
-find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
+# --- Find wayland-protocols data directory ---
+set(WAYLAND_PROTOCOLS_DIR "")
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND OR PKG_CONFIG_FOUND)
+    pkg_check_modules(WAYLAND_PROTOCOLS QUIET wayland-protocols)
+    if(WAYLAND_PROTOCOLS_FOUND)
+        pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+    endif()
+endif()
+if(NOT WAYLAND_PROTOCOLS_DIR)
+    # Common install path on Debian/Ubuntu when wayland-protocols package is present
+    if(EXISTS "/usr/share/wayland-protocols")
+        set(WAYLAND_PROTOCOLS_DIR "/usr/share/wayland-protocols")
+    else()
+        message(FATAL_ERROR "Could not find wayland-protocols data directory. Install the wayland-protocols package.")
+    endif()
+endif()
+message(STATUS "wayland-protocols dir: ${WAYLAND_PROTOCOLS_DIR}")
+
+# --- Find wayland-scanner ---
+find_program(WAYLAND_SCANNER wayland-scanner REQUIRED
+    HINTS /usr/bin /usr/local/bin
+    DOC "wayland-scanner tool (provided by libwayland-bin on Debian/Ubuntu)")
 
 set(WL_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated")
 file(MAKE_DIRECTORY "${WL_GENERATED_DIR}")
@@ -45,10 +77,7 @@ target_sources(systemwayland PRIVATE
     "${WL_GENERATED_DIR}/relative-pointer-unstable-v1-client-protocol.c"
 )
 
-target_include_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS} "${WL_GENERATED_DIR}")
-target_link_directories(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARY_DIRS})
-target_link_libraries(systemwayland PRIVATE ${WAYLAND_CLIENT_LIBRARIES})
-target_compile_options(systemwayland PRIVATE ${WAYLAND_CLIENT_CFLAGS_OTHER})
+target_include_directories(systemwayland PRIVATE "${WL_GENERATED_DIR}")
 
 install(TARGETS systemwayland
     RUNTIME DESTINATION bin/plugins/system
