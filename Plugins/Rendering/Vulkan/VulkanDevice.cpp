@@ -7391,7 +7391,9 @@ namespace Gek
                     std::fflush(stderr);
                 }
 
-                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
+                // Use a 2-second timeout to survive FIFO V-SYNC periods (16.7ms at 60Hz) and slow frames.
+                // The old 10ms timeout was shorter than one V-SYNC period, causing constant spurious timeouts.
+                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 2'000'000'000ULL);
 
                 if (traceFrameRecord)
                 {
@@ -7457,7 +7459,8 @@ namespace Gek
                 std::fflush(stderr);
             }
 
-            VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, 10'000'000ULL, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
+            // Use a 2-second timeout; on FIFO swapchains images may not be available for a full V-SYNC period.
+            VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, 2'000'000'000ULL, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
 
             if (traceFrameRecord)
             {
