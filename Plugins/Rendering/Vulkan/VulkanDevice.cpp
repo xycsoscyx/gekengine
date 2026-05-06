@@ -2155,7 +2155,7 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
-                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
                         command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
@@ -2242,7 +2242,7 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
-                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
                         command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
@@ -2341,7 +2341,7 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
-                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
                         command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
@@ -2440,7 +2440,7 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
-                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
                         command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
@@ -2513,7 +2513,7 @@ namespace Gek
                     commandList->identifier = pipelineDevice->nextCommandListIdentifier++;
                     if (isDeferredContext)
                     {
-                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                         auto deferredContextCommandIterator = pipelineDevice->deferredContextDrawCommands.find(this);
                         if (deferredContextCommandIterator != pipelineDevice->deferredContextDrawCommands.end())
                         {
@@ -2797,9 +2797,9 @@ namespace Gek
                 return *mutex;
             }
 
-            static std::mutex &getDrawCommandMutex(void)
+            static std::recursive_mutex &getDrawCommandMutex(void)
             {
-                static std::mutex *mutex = new std::mutex();
+                static std::recursive_mutex *mutex = new std::recursive_mutex();
                 return *mutex;
             }
 
@@ -4918,7 +4918,7 @@ namespace Gek
                     return false;
                 }
 
-                std::unique_lock<std::mutex> lock(getDrawCommandMutex());
+                std::unique_lock<std::recursive_mutex> lock(getDrawCommandMutex());
 
                 if (vulkanBuffer->usesVersionedConstantBacking)
                 {
@@ -4987,7 +4987,7 @@ namespace Gek
                 auto vulkanBuffer = getObject<Buffer>(buffer);
                 if (vulkanBuffer && !(vulkanBuffer->getDescription().flags & Render::Buffer::Flags::Mappable) && vulkanBuffer->mappedData)
                 {
-                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(getDrawCommandMutex());
                     vkUnmapMemory(device, vulkanBuffer->memory);
                     vulkanBuffer->mappedData = nullptr;
                 }
@@ -4998,7 +4998,7 @@ namespace Gek
                 auto vulkanBuffer = getObject<Buffer>(object);
                 if (vulkanBuffer && data)
                 {
-                    std::unique_lock<std::mutex> lock(getDrawCommandMutex());
+                    std::unique_lock<std::recursive_mutex> lock(getDrawCommandMutex());
 
                     if (vulkanBuffer->usesVersionedConstantBacking)
                     {
@@ -6975,7 +6975,7 @@ namespace Gek
                     return;
                 }
 
-                std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                std::lock_guard<std::recursive_mutex> lock(getDrawCommandMutex());
                 auto deferredListIterator = deferredCommandLists.find(vkCommandList->identifier);
                 if (deferredListIterator == deferredCommandLists.end())
                 {
@@ -7394,7 +7394,7 @@ namespace Gek
                 }
                 inFlightFencePending = false;
                 {
-                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                    std::lock_guard<std::recursive_mutex> lock(getDrawCommandMutex());
                     releaseVersionedConstantBufferSlots();
                 }
             }
