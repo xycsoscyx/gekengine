@@ -577,6 +577,25 @@ namespace Gek
                 device->onCloseRequested();
                 device->stop.store(true);
             }
+
+#if defined(XDG_TOPLEVEL_CONFIGURE_BOUNDS_SINCE_VERSION)
+            static void xdgTopLevelConfigureBounds(void *data, xdg_toplevel *xdgToplevel, int32_t width, int32_t height)
+            {
+                (void)data;
+                (void)xdgToplevel;
+                (void)width;
+                (void)height;
+            }
+#endif
+
+#if defined(XDG_TOPLEVEL_WM_CAPABILITIES_SINCE_VERSION)
+            static void xdgTopLevelWmCapabilities(void *data, xdg_toplevel *xdgToplevel, wl_array *capabilities)
+            {
+                (void)data;
+                (void)xdgToplevel;
+                (void)capabilities;
+            }
+#endif
 #endif
 
             static void seatCapabilities(void *data, wl_seat *seat, uint32_t capabilities)
@@ -604,6 +623,18 @@ namespace Gek
                                 pointerMotion,
                                 pointerButton,
                                 pointerAxis,
+#if defined(WL_POINTER_FRAME_SINCE_VERSION)
+                                pointerFrame,
+                                pointerAxisSource,
+                                pointerAxisStop,
+                                pointerAxisDiscrete,
+#endif
+#if defined(WL_POINTER_AXIS_VALUE120_SINCE_VERSION)
+                                pointerAxisValue120,
+#endif
+#if defined(WL_POINTER_AXIS_RELATIVE_DIRECTION_SINCE_VERSION)
+                                pointerAxisRelativeDirection,
+#endif
                             };
 
                             wl_pointer_add_listener(device->pointer, &pointerListener, device);
@@ -727,6 +758,57 @@ namespace Gek
                 auto *device = reinterpret_cast<Device *>(data);
                 device->onMouseWheel(-static_cast<float>(wl_fixed_to_double(value)));
             }
+
+#if defined(WL_POINTER_FRAME_SINCE_VERSION)
+            static void pointerFrame(void *data, wl_pointer *pointer)
+            {
+                (void)data;
+                (void)pointer;
+            }
+
+            static void pointerAxisSource(void *data, wl_pointer *pointer, uint32_t axisSource)
+            {
+                (void)data;
+                (void)pointer;
+                (void)axisSource;
+            }
+
+            static void pointerAxisStop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis)
+            {
+                (void)data;
+                (void)pointer;
+                (void)time;
+                (void)axis;
+            }
+
+            static void pointerAxisDiscrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete)
+            {
+                (void)data;
+                (void)pointer;
+                (void)axis;
+                (void)discrete;
+            }
+#endif
+
+#if defined(WL_POINTER_AXIS_VALUE120_SINCE_VERSION)
+            static void pointerAxisValue120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120)
+            {
+                (void)data;
+                (void)pointer;
+                (void)axis;
+                (void)value120;
+            }
+#endif
+
+#if defined(WL_POINTER_AXIS_RELATIVE_DIRECTION_SINCE_VERSION)
+            static void pointerAxisRelativeDirection(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction)
+            {
+                (void)data;
+                (void)pointer;
+                (void)axis;
+                (void)direction;
+            }
+#endif
 
             static void keyboardKeymap(void *data, wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size)
             {
@@ -977,6 +1059,12 @@ namespace Gek
                 static const xdg_toplevel_listener xdgToplevelListener = {
                     xdgTopLevelConfigure,
                     xdgTopLevelClose,
+#if defined(XDG_TOPLEVEL_CONFIGURE_BOUNDS_SINCE_VERSION)
+                    xdgTopLevelConfigureBounds,
+#endif
+#if defined(XDG_TOPLEVEL_WM_CAPABILITIES_SINCE_VERSION)
+                    xdgTopLevelWmCapabilities,
+#endif
                 };
                 xdg_toplevel_add_listener(xdgToplevel, &xdgToplevelListener, this);
 
