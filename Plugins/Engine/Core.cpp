@@ -656,6 +656,21 @@ namespace Gek
                     auto displayMode = JSON::Value(deviceOptions, "mode", preferredDisplayMode);
                     setDisplayMode(displayMode);
                 }
+                else
+                {
+                    auto clientRectangle = window->getClientRectangle();
+                    uint32_t fallbackWidth = static_cast<uint32_t>(std::max(1, clientRectangle.maximum.x - clientRectangle.minimum.x));
+                    uint32_t fallbackHeight = static_cast<uint32_t>(std::max(1, clientRectangle.maximum.y - clientRectangle.minimum.y));
+
+                    if (fallbackWidth <= 1 || fallbackHeight <= 1)
+                    {
+                        fallbackWidth = 1280;
+                        fallbackHeight = 720;
+                    }
+
+                    getContext()->log(Context::Warning, "No display modes reported by render device; using fallback {}x{}", fallbackWidth, fallbackHeight);
+                    renderDevice->setDisplayMode(Render::DisplayMode(fallbackWidth, fallbackHeight, deviceDescription.displayFormat));
+                }
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 population->onLoad.connect(this, &Core::onPopulationLoaded);

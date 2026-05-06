@@ -279,6 +279,7 @@ namespace Gek
             bool cursorVisible = true;
             bool readMouseMovement = true;
             bool isMinimized = false;
+            bool hasReportedInitialSize = false;
             Math::Int2 cursorPosition = Math::Int2::Zero;
 
             std::atomic_bool stop = false;
@@ -442,6 +443,14 @@ namespace Gek
             {
                 auto *device = reinterpret_cast<Device *>(data);
                 xdg_surface_ack_configure(xdgSurface, serial);
+                device->getContext()->log(Context::Debug, "Wayland xdg_surface configure ack: serial={}, size={}x{}", serial, device->clientWidth, device->clientHeight);
+
+                if (!device->hasReportedInitialSize)
+                {
+                    device->hasReportedInitialSize = true;
+                    device->onSizeChanged(device->isMinimized);
+                }
+
                 if (device->surface)
                 {
                     wl_surface_commit(device->surface);
@@ -487,6 +496,13 @@ namespace Gek
                     device->isMinimized = minimized;
                     device->onSizeChanged(device->isMinimized);
                 }
+
+                device->getContext()->log(Context::Debug, "Wayland xdg_toplevel configure: width={}, height={}, applied={}x{}, minimized={}",
+                    width,
+                    height,
+                    device->clientWidth,
+                    device->clientHeight,
+                    device->isMinimized);
             }
 
             static void xdgTopLevelClose(void *data, xdg_toplevel *xdgToplevel)
@@ -779,6 +795,7 @@ namespace Gek
                 clientWidth = std::max<uint32_t>(1, description.initialWidth);
                 clientHeight = std::max<uint32_t>(1, description.initialHeight);
                 readMouseMovement = description.readMouseMovement;
+                getContext()->log(Context::Info, "Wayland initial window size request: {}x{}", clientWidth, clientHeight);
 
                 display = wl_display_connect(nullptr);
                 if (!display)
@@ -857,8 +874,12 @@ namespace Gek
                     xdg_toplevel_set_title(xdgToplevel, description.windowName.c_str());
                 }
 
+                xdg_toplevel_set_min_size(xdgToplevel, static_cast<int32_t>(clientWidth), static_cast<int32_t>(clientHeight));
+
                 wl_surface_commit(surface);
                 wl_display_roundtrip(display);
+
+                getContext()->log(Context::Info, "Wayland surface committed; initial negotiated size: {}x{}", clientWidth, clientHeight);
 
                 updatePointerExtensions();
 
@@ -1005,6 +1026,8 @@ namespace Gek
                 clientWidth = static_cast<uint32_t>(std::max<int32_t>(1, size.x));
                 clientHeight = static_cast<uint32_t>(std::max<int32_t>(1, size.y));
 
+                getContext()->log(Context::Info, "Wayland resize requested: {}x{}", clientWidth, clientHeight);
+
 #if GEK_WAYLAND_HAS_XDG_SHELL
                 if (xdgToplevel)
                 {
@@ -1016,6 +1039,8 @@ namespace Gek
                 {
                     wl_surface_commit(surface);
                 }
+
+                onSizeChanged(isMinimized);
             }
         };
 
