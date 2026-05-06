@@ -51,6 +51,14 @@ namespace Gek
     {
         static std::atomic_bool gVulkanDeviceShuttingDown{ false };
 
+        static void waitForResourceDestroyIdle(VkDevice device)
+        {
+            if ((device != VK_NULL_HANDLE) && !gVulkanDeviceShuttingDown.load(std::memory_order_relaxed))
+            {
+                vkDeviceWaitIdle(device);
+            }
+        }
+
         Render::Format GetFormat(VkFormat format)
         {
             switch (format)
@@ -771,6 +779,8 @@ namespace Gek
                     return;
                 }
 
+                waitForResourceDestroyIdle(device);
+
                 if (sampler != VK_NULL_HANDLE)
                 {
                     vkDestroySampler(device, sampler, nullptr);
@@ -854,6 +864,8 @@ namespace Gek
                     device = VK_NULL_HANDLE;
                     return;
                 }
+
+                waitForResourceDestroyIdle(device);
 
                 if (usesVersionedConstantBacking)
                 {
@@ -972,6 +984,8 @@ namespace Gek
 
             virtual ~ViewTexture(void)
             {
+                waitForResourceDestroyIdle(device);
+
                 if (sampler != VK_NULL_HANDLE)
                 {
                     vkDestroySampler(device, sampler, nullptr);
@@ -1062,6 +1076,8 @@ namespace Gek
 
             virtual ~TargetTexture(void)
             {
+                waitForResourceDestroyIdle(device);
+
                 if (sampler != VK_NULL_HANDLE)
                 {
                     vkDestroySampler(device, sampler, nullptr);
@@ -1138,6 +1154,8 @@ namespace Gek
 
             virtual ~DepthTexture(void)
             {
+                waitForResourceDestroyIdle(device);
+
                 if (sampler != VK_NULL_HANDLE)
                 {
                     vkDestroySampler(device, sampler, nullptr);
@@ -1198,6 +1216,8 @@ namespace Gek
 
             virtual ~Program(void)
             {
+                waitForResourceDestroyIdle(device);
+
                 if (shaderModule != VK_NULL_HANDLE)
                 {
                     vkDestroyShaderModule(device, shaderModule, nullptr);
