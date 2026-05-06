@@ -86,11 +86,26 @@ set(RELATIVE_POINTER_XML "${WAYLAND_PROTOCOLS_DIR}/unstable/relative-pointer/rel
 execute_process(COMMAND "${WAYLAND_SCANNER}" client-header "${RELATIVE_POINTER_XML}" "${WL_GENERATED_DIR}/relative-pointer-unstable-v1-client-protocol.h")
 execute_process(COMMAND "${WAYLAND_SCANNER}" private-code  "${RELATIVE_POINTER_XML}" "${WL_GENERATED_DIR}/relative-pointer-unstable-v1-client-protocol.c")
 
+# xdg-decoration (unstable v1)
+set(XDG_DECORATION_XML "${WAYLAND_PROTOCOLS_DIR}/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml")
+if(EXISTS "${XDG_DECORATION_XML}")
+    execute_process(COMMAND "${WAYLAND_SCANNER}" client-header "${XDG_DECORATION_XML}" "${WL_GENERATED_DIR}/xdg-decoration-unstable-v1-client-protocol.h")
+    execute_process(COMMAND "${WAYLAND_SCANNER}" private-code  "${XDG_DECORATION_XML}" "${WL_GENERATED_DIR}/xdg-decoration-unstable-v1-client-protocol.c")
+    set(HAS_XDG_DECORATION_PROTOCOL TRUE)
+else()
+    message(STATUS "xdg-decoration protocol XML not found; building without optional decoration protocol")
+    set(HAS_XDG_DECORATION_PROTOCOL FALSE)
+endif()
+
 target_sources(systemwayland PRIVATE
     "${WL_GENERATED_DIR}/xdg-shell-client-protocol.c"
     "${WL_GENERATED_DIR}/pointer-constraints-unstable-v1-client-protocol.c"
     "${WL_GENERATED_DIR}/relative-pointer-unstable-v1-client-protocol.c"
 )
+
+if(HAS_XDG_DECORATION_PROTOCOL)
+    target_sources(systemwayland PRIVATE "${WL_GENERATED_DIR}/xdg-decoration-unstable-v1-client-protocol.c")
+endif()
 
 target_include_directories(systemwayland PRIVATE "${WL_GENERATED_DIR}")
 

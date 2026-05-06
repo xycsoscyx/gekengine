@@ -33,6 +33,16 @@
 #define GEK_WAYLAND_HAS_RELATIVE_POINTER 0
 #endif
 
+#if __has_include(<xdg-decoration-unstable-v1-client-protocol.h>)
+#include <xdg-decoration-unstable-v1-client-protocol.h>
+#define GEK_WAYLAND_HAS_XDG_DECORATION 1
+#elif __has_include(<wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1-client-protocol.h>)
+#include <wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1-client-protocol.h>
+#define GEK_WAYLAND_HAS_XDG_DECORATION 1
+#else
+#define GEK_WAYLAND_HAS_XDG_DECORATION 0
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -42,6 +52,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <thread>
+#include <unistd.h>
 
 namespace Gek
 {
@@ -264,6 +275,11 @@ namespace Gek
             xdg_toplevel *xdgToplevel = nullptr;
 #endif
 
+#if GEK_WAYLAND_HAS_XDG_DECORATION
+            zxdg_decoration_manager_v1 *decorationManager = nullptr;
+            zxdg_toplevel_decoration_v1 *toplevelDecoration = nullptr;
+#endif
+
 #if GEK_WAYLAND_HAS_POINTER_CONSTRAINTS
             zwp_pointer_constraints_v1 *pointerConstraints = nullptr;
             zwp_locked_pointer_v1 *lockedPointer = nullptr;
@@ -280,6 +296,7 @@ namespace Gek
             bool readMouseMovement = true;
             bool isMinimized = false;
             bool hasReportedInitialSize = false;
+            uint32_t lastPointerButtonSerial = 0;
             Math::Int2 cursorPosition = Math::Int2::Zero;
 
             std::atomic_bool stop = false;
@@ -303,6 +320,20 @@ namespace Gek
                 {
                     zwp_relative_pointer_manager_v1_destroy(relativePointerManager);
                     relativePointerManager = nullptr;
+                }
+#endif
+
+#if GEK_WAYLAND_HAS_XDG_DECORATION
+                if (toplevelDecoration)
+                {
+                    zxdg_toplevel_decoration_v1_destroy(toplevelDecoration);
+                    toplevelDecoration = nullptr;
+                }
+
+                if (decorationManager)
+                {
+                    zxdg_decoration_manager_v1_destroy(decorationManager);
+                    decorationManager = nullptr;
                 }
 #endif
 
@@ -420,6 +451,14 @@ namespace Gek
                 if (std::strcmp(interfaceName, zwp_relative_pointer_manager_v1_interface.name) == 0)
                 {
                     device->relativePointerManager = reinterpret_cast<zwp_relative_pointer_manager_v1 *>(wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, 1));
+                    return;
+                }
+#endif
+
+#if GEK_WAYLAND_HAS_XDG_DECORATION
+                if (std::strcmp(interfaceName, zxdg_decoration_manager_v1_interface.name) == 0)
+                {
+                    device->decorationManager = reinterpret_cast<zxdg_decoration_manager_v1 *>(wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
                     return;
                 }
 #endif
@@ -586,6 +625,7 @@ namespace Gek
                 auto *device = reinterpret_cast<Device *>(data);
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
+                device->onActivate(true);
                 device->onMousePosition(device->cursorPosition.x, device->cursorPosition.y);
             }
 
@@ -611,11 +651,20 @@ namespace Gek
             static void pointerButton(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
             {
                 (void)pointer;
-                (void)serial;
                 (void)time;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                device->lastPointerButtonSerial = serial;
                 auto buttonState = (state == WL_POINTER_BUTTON_STATE_PRESSED);
+
+#if GEK_WAYLAND_HAS_XDG_SHELL
+                // Allow moving undecorated windows via middle-button drag in content area.
+                if (buttonState && button == 0x112 && device->xdgToplevel && device->seat)
+                {
+                    xdg_toplevel_move(device->xdgToplevel, device->seat, serial);
+                }
+#endif
+
                 switch (button)
                 {
                 case 0x110:
@@ -653,8 +702,12 @@ namespace Gek
                 (void)data;
                 (void)keyboard;
                 (void)format;
-                (void)fd;
                 (void)size;
+
+                if (fd >= 0)
+                {
+                    ::close(fd);
+                }
             }
 
             static void keyboardEnter(void *data, wl_keyboard *keyboard, uint32_t serial, wl_surface *surface, wl_array *keys)
@@ -874,7 +927,24 @@ namespace Gek
                     xdg_toplevel_set_title(xdgToplevel, description.windowName.c_str());
                 }
 
+                if (!description.className.empty())
+                {
+                    xdg_toplevel_set_app_id(xdgToplevel, description.className.c_str());
+                }
+
+#if GEK_WAYLAND_HAS_XDG_DECORATION
+                if (decorationManager)
+                {
+                    toplevelDecoration = zxdg_decoration_manager_v1_get_toplevel_decoration(decorationManager, xdgToplevel);
+                    if (toplevelDecoration)
+                    {
+                        zxdg_toplevel_decoration_v1_set_mode(toplevelDecoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+                    }
+                }
+#endif
+
                 xdg_toplevel_set_min_size(xdgToplevel, static_cast<int32_t>(clientWidth), static_cast<int32_t>(clientHeight));
+                xdg_surface_set_window_geometry(xdgSurface, 0, 0, static_cast<int32_t>(clientWidth), static_cast<int32_t>(clientHeight));
 
                 wl_surface_commit(surface);
                 wl_display_roundtrip(display);
@@ -1032,6 +1102,11 @@ namespace Gek
                 if (xdgToplevel)
                 {
                     xdg_toplevel_set_min_size(xdgToplevel, static_cast<int32_t>(clientWidth), static_cast<int32_t>(clientHeight));
+                }
+
+                if (xdgSurface)
+                {
+                    xdg_surface_set_window_geometry(xdgSurface, 0, 0, static_cast<int32_t>(clientWidth), static_cast<int32_t>(clientHeight));
                 }
 #endif
 

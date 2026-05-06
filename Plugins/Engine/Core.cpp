@@ -450,6 +450,8 @@ namespace Gek
                     description.allowResize = true;
                     description.className = "GEK_Engine_Demo";
                     description.windowName = "GEK Engine Demo";
+                    description.initialWidth = 1600;
+                    description.initialHeight = 900;
                     window->create(description);
                 }
 
