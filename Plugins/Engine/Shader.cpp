@@ -323,7 +323,8 @@ namespace Gek
                     description.sampleCount = 1;
                     description.flags = getTextureFlags("target");
                     description.mipMapCount = 1;
-                    finalBuffer = resources->createTexture(description, Plugin::Resources::Flags::Cached);
+                    // Keep internal frame targets resizable; cached resources do not refresh on size changes.
+                    finalBuffer = resources->createTexture(description, 0);
                 }
 
                 auto description = resources->getTextureDescription(finalBuffer);
@@ -380,7 +381,8 @@ namespace Gek
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
-                        resource = resources->createTexture(description, Plugin::Resources::Flags::Cached);
+                        // Allow dynamic recreation when resolution-dependent descriptions change.
+                        resource = resources->createTexture(description, 0);
                     }
 
                     auto description = resources->getTextureDescription(resource);

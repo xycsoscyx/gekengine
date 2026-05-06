@@ -1538,7 +1538,8 @@ float4 main(PixelInput input) : SV_Target
                         description.sampleCount = 1;
                         description.flags = getTextureFlags("target");
                         description.mipMapCount = 1;
-                        alternateHandle = resources->createTexture(description, Plugin::Resources::Flags::Cached);
+                        // This target tracks the frame resolution and must recreate when size changes.
+                        alternateHandle = resources->createTexture(description, 0);
                     }
 
                     uint32_t currentBuffer = 0;
