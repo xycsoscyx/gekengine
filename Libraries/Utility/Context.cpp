@@ -18,11 +18,13 @@ const char modulePostfix[] = "";
 
 #ifdef _WIN32
 #include <Windows.h>
+
 #define LIBRARY HMODULE
+const char *moduleExtension = ".dll";
 #define loadLibrary(PATH) LoadLibraryA(PATH.getString().c_str())
 #define getFunction(HANDLE, FUNCTION) GetProcAddress(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE) FreeLibrary(HANDLE)
-const char *moduleExtension = ".dll";
+
 std::string getLastErrorMessage(DWORD errorCode = GetLastError())
 {
     if (errorCode == 0)
@@ -49,6 +51,7 @@ std::string getLastErrorMessage(DWORD errorCode = GetLastError())
 
     return message;
 }
+
 void outputDebugString(std::string_view message)
 {
     OutputDebugStringA(message.data());
@@ -57,16 +60,19 @@ void outputDebugString(std::string_view message)
 #else
 #include <dlfcn.h>
 #include <errno.h>
+
 #define LIBRARY void *
+const char *moduleExtension = ".so";
 #define loadLibrary(PATH) dlopen(PATH.getString().c_str(), RTLD_LAZY)
 #define getFunction(HANDLE, FUNCTION) dlsym(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE) dlclose(HANDLE)
-const char *moduleExtension = ".so";
-std::string getLastErrorMessage(DWORD errorCode = errno)
+
+std::string getLastErrorMessage(int errorCode = errno)
 {
     const char *errorMessage = strerror(errorCode);
     return errorMessage ? std::string(errorMessage) : std::string();
 }
+
 void outputDebugString(std::string_view message)
 {
     std::cerr << message << std::endl;
