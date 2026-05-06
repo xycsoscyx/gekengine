@@ -46,8 +46,8 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <poll.h>
 #include <stdexcept>
@@ -553,11 +553,11 @@ namespace Gek
                 }
 
                 device->getContext()->log(Context::Debug, "Wayland xdg_toplevel configure: width={}, height={}, applied={}x{}, minimized={}",
-                    width,
-                    height,
-                    device->clientWidth,
-                    device->clientHeight,
-                    device->isMinimized);
+                                          width,
+                                          height,
+                                          device->clientWidth,
+                                          device->clientHeight,
+                                          device->isMinimized);
             }
 
             static void xdgTopLevelClose(void *data, xdg_toplevel *xdgToplevel)
@@ -577,9 +577,9 @@ namespace Gek
                 device->seatCapabilitiesReceived = true;
                 device->seatCapabilityMask = capabilities;
                 device->getContext()->log(Context::Info, "Wayland seat capabilities: pointer={}, keyboard={}, touch={}",
-                    ((capabilities & WL_SEAT_CAPABILITY_POINTER) != 0),
-                    ((capabilities & WL_SEAT_CAPABILITY_KEYBOARD) != 0),
-                    ((capabilities & WL_SEAT_CAPABILITY_TOUCH) != 0));
+                                          ((capabilities & WL_SEAT_CAPABILITY_POINTER) != 0),
+                                          ((capabilities & WL_SEAT_CAPABILITY_KEYBOARD) != 0),
+                                          ((capabilities & WL_SEAT_CAPABILITY_TOUCH) != 0));
 
                 if ((capabilities & WL_SEAT_CAPABILITY_POINTER) != 0)
                 {
@@ -923,8 +923,8 @@ namespace Gek
                     else
                     {
                         getContext()->log(Context::Info, "Wayland seat synchronized: pointer={}, keyboard={}",
-                            ((seatCapabilityMask & WL_SEAT_CAPABILITY_POINTER) != 0),
-                            ((seatCapabilityMask & WL_SEAT_CAPABILITY_KEYBOARD) != 0));
+                                          ((seatCapabilityMask & WL_SEAT_CAPABILITY_POINTER) != 0),
+                                          ((seatCapabilityMask & WL_SEAT_CAPABILITY_KEYBOARD) != 0));
                         traceWaylandEvent("Wayland seat synchronized");
                     }
                 }

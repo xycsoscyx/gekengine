@@ -20,6 +20,7 @@
 #include <mutex>
 #include <optional>
 #include <set>
+#include <system_error>
 #include <utility>
 
 #ifdef _WIN32
@@ -4944,7 +4945,7 @@ namespace Gek
                             if (inFlightFencePending)
                             {
                                 lock.unlock();
-                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
                                 lock.lock();
 
                                 if (waitResult == VK_SUCCESS)
@@ -4953,6 +4954,7 @@ namespace Gek
                                     releaseVersionedConstantBufferSlots();
                                     selectedVersion = selectFreeVersion();
                                 }
+                                // VK_TIMEOUT: leave inFlightFencePending=true, retry next frame
                             }
                         }
 
@@ -5020,7 +5022,7 @@ namespace Gek
                             if (inFlightFencePending)
                             {
                                 lock.unlock();
-                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
                                 lock.lock();
 
                                 if (waitResult == VK_SUCCESS)
@@ -5043,6 +5045,7 @@ namespace Gek
                                         vulkanBuffer->activeVersionIndex = *selectedVersion;
                                     }
                                 }
+                                // VK_TIMEOUT: leave inFlightFencePending=true, retry next frame
                             }
                         }
 
@@ -7349,7 +7352,11 @@ namespace Gek
 
             if (inFlightFencePending)
             {
-                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
+                if (waitResult == VK_TIMEOUT)
+                {
+                    throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan fence wait timeout");
+                }
                 if (waitResult != VK_SUCCESS)
                 {
                     if (!loggedDeviceLost)
@@ -7398,7 +7405,11 @@ namespace Gek
             frameLastDescriptorSet = VK_NULL_HANDLE;
             frameTotalCommandCount = 0;
 
-            VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
+            VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, 10'000'000ULL, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
+            if (acquireResult == VK_TIMEOUT)
+            {
+                throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan acquire timeout");
+            }
             if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
             {
                 recreateSwapChain();
