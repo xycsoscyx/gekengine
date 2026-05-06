@@ -79,9 +79,10 @@ std::string getLastErrorMessage(int errorCode = errno)
     return errorMessage ? std::string(errorMessage) : std::string();
 }
 
-void outputDebugString(std::string_view message)
+void outputDebugString(std::string_view /*message*/)
 {
-    std::cerr << message << std::endl;
+    // No-op on Linux: there is no debugger-attach output sink.
+    // All output goes through the Console sink (stdout/stderr).
 }
 #endif
 
