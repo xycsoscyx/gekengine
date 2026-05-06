@@ -8943,6 +8943,33 @@ namespace Gek
                                          0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
                     activeDepthTexture->currentLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 }
+                else if (needsDepth && (activeDepthImageView == depthImageView) && (depthImage != VK_NULL_HANDLE))
+                {
+                    VkImageAspectFlags depthAspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    if ((depthFormat == VK_FORMAT_D24_UNORM_S8_UINT) || (depthFormat == VK_FORMAT_D32_SFLOAT_S8_UINT))
+                    {
+                        depthAspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                    }
+
+                    VkImageMemoryBarrier depthToAttachment{};
+                    depthToAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    depthToAttachment.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    depthToAttachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    depthToAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToAttachment.image = depthImage;
+                    depthToAttachment.subresourceRange.aspectMask = depthAspectMask;
+                    depthToAttachment.subresourceRange.baseMipLevel = 0;
+                    depthToAttachment.subresourceRange.levelCount = 1;
+                    depthToAttachment.subresourceRange.baseArrayLayer = 0;
+                    depthToAttachment.subresourceRange.layerCount = 1;
+                    depthToAttachment.srcAccessMask = 0;
+                    depthToAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                    vkCmdPipelineBarrier(commandBuffer,
+                                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                         0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
+                }
 
                 std::vector<VkImageView> framebufferAttachmentViews(offscreenImageViews.begin(), offscreenImageViews.begin() + offscreenTargetCount);
                 if (needsDepth && activeDepthImageView != VK_NULL_HANDLE)
