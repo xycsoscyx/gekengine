@@ -16,11 +16,54 @@
 #include "GEK/Utility/String.hpp"
 #include "Passes.hpp"
 #include <format>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
 namespace Gek
 {
+    namespace
+    {
+        FileSystem::Path resolveShaderDataPath(Context *context, std::string_view shaderName)
+        {
+            const FileSystem::Path requestedPath = FileSystem::CreatePath("shaders", shaderName).withExtension(".json");
+            auto shaderPath = context->findDataPath(requestedPath);
+            if (shaderPath.isFile())
+            {
+                return shaderPath;
+            }
+
+            static std::mutex shaderLookupMutex;
+            static std::unordered_map<std::string, FileSystem::Path> shaderLookupMap;
+            static bool shaderLookupReady = false;
+
+            std::lock_guard<std::mutex> lock(shaderLookupMutex);
+            if (!shaderLookupReady)
+            {
+                context->findDataFiles("shaders", [&](FileSystem::Path const &filePath) -> bool
+                                       {
+                    if (!filePath.isFile())
+                    {
+                        return true;
+                    }
+
+                    const std::string lowered = String::GetLower(filePath.getFileName());
+                    shaderLookupMap.try_emplace(lowered, filePath);
+                    return true; }, false, true);
+                shaderLookupReady = true;
+            }
+
+            const std::string lookupKey = String::GetLower(FileSystem::Path(requestedPath).getFileName());
+            auto search = shaderLookupMap.find(lookupKey);
+            if (search != std::end(shaderLookupMap))
+            {
+                return search->second;
+            }
+
+            return FileSystem::Path();
+        }
+    }
+
     namespace Implementation
     {
         GEK_CONTEXT_USER(Shader, Engine::Core *, std::string)
@@ -119,7 +162,14 @@ namespace Gek
 
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
+                auto shaderDataPath = resolveShaderDataPath(getContext(), shaderName);
+                if (!shaderDataPath.isFile())
+                {
+                    getContext()->log(Context::Error, "Shader definition file not found: {}", shaderName);
+                    return;
+                }
+
+                JSON::Object rootNode = JSON::Load(shaderDataPath);
 
                 ShuntingYard shuntingYard;
                 const auto &coreOptionsNode = core->getOption("shaders", shaderName);
