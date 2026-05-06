@@ -113,6 +113,52 @@ namespace Gek
             return normalizedPath.getString();
         }
 
+        bool findTexturePathCaseInsensitive(Context *context, std::string_view textureName, FileSystem::Path &resolvedPath)
+        {
+            static std::mutex textureLookupMutex;
+            static std::unordered_map<std::string, FileSystem::Path> textureLookupMap;
+            static bool textureLookupReady = false;
+
+            std::lock_guard<std::mutex> lock(textureLookupMutex);
+            if (!textureLookupReady)
+            {
+                context->findDataFiles("textures", [&](FileSystem::Path const &filePath) -> bool
+                                       {
+                    if (!filePath.isFile())
+                    {
+                        return true;
+                    }
+
+                    const std::string fileNameKey = String::GetLower(filePath.getFileName());
+                    textureLookupMap.try_emplace(fileNameKey, filePath);
+
+                    const std::string noExtensionKey = String::GetLower(filePath.withoutExtension().getFileName());
+                    textureLookupMap.try_emplace(noExtensionKey, filePath);
+                    return true; }, false, true);
+
+                textureLookupReady = true;
+            }
+
+            const FileSystem::Path requestedPath(textureName);
+            const std::string fileNameKey = String::GetLower(requestedPath.getFileName());
+            auto fileNameSearch = textureLookupMap.find(fileNameKey);
+            if (fileNameSearch != std::end(textureLookupMap))
+            {
+                resolvedPath = fileNameSearch->second;
+                return true;
+            }
+
+            const std::string noExtensionKey = String::GetLower(requestedPath.withoutExtension().getFileName());
+            auto noExtensionSearch = textureLookupMap.find(noExtensionKey);
+            if (noExtensionSearch != std::end(textureLookupMap))
+            {
+                resolvedPath = noExtensionSearch->second;
+                return true;
+            }
+
+            return false;
+        }
+
     } // namespace
 
     namespace Implementation
@@ -1080,6 +1126,31 @@ namespace Gek
                         return resource.second;
                     }
                 }
+
+                FileSystem::Path texturePath;
+                if (findTexturePathCaseInsensitive(getContext(), textureName, texturePath) && texturePath.isFile())
+                {
+                    auto hash = GetHash(textureName);
+                    auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle) -> Render::TexturePtr
+                                                           {
+                        if (shuttingDown.load(std::memory_order_acquire))
+                        {
+                            return nullptr;
+                        }
+
+                        getContext()->log(Context::Info, "Loading texture (case-insensitive match): {}", texturePath.getString());
+                        return videoDevice->loadTexture(texturePath, flags); }, 0, &fallback);
+
+                    if (resource.first)
+                    {
+                        auto description = videoDevice->loadTextureDescription(texturePath);
+                        textureDescriptionMap.insert(std::make_pair(resource.second, description));
+                    }
+
+                    return resource.second;
+                }
+
+                getContext()->log(Context::Warning, "Texture not found: {}", textureName);
 
                 return ResourceHandle();
             }

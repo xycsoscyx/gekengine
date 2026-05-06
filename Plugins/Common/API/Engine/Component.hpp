@@ -14,20 +14,20 @@
 
 #define GEK_COMPONENT(TYPE) struct TYPE : public Plugin::Component::Data
 
-#define GEK_COMPONENT_DATA(TYPE)                  \
-    static std::string_view GetFullName(void)      \
-    {                                              \
-        return std::string_view(#TYPE);            \
-    }                                              \
-                                                   \
-    static std::string_view GetName(void)          \
-    {                                              \
-        return std::string_view(#TYPE);            \
-    }                                              \
-                                                   \
-    static Hash GetIdentifier(void)                \
-    {                                              \
-        return typeid(TYPE).hash_code();           \
+#define GEK_COMPONENT_DATA(TYPE)              \
+    static std::string_view GetFullName(void) \
+    {                                         \
+        return std::string_view(#TYPE);       \
+    }                                         \
+                                              \
+    static std::string_view GetName(void)     \
+    {                                         \
+        return std::string_view(#TYPE);       \
+    }                                         \
+                                              \
+    static Hash GetIdentifier(void)           \
+    {                                         \
+        return typeid(TYPE).hash_code();      \
     }
 
 namespace Gek
