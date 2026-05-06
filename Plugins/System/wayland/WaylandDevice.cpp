@@ -444,6 +444,16 @@ namespace Gek
                 if (std::strcmp(interfaceName, wl_seat_interface.name) == 0)
                 {
                     device->seat = reinterpret_cast<wl_seat *>(wl_registry_bind(registry, name, &wl_seat_interface, std::min(version, 7u)));
+                    if (device->seat)
+                    {
+                        static const wl_seat_listener seatListener = {
+                            seatCapabilities,
+                            seatName,
+                        };
+
+                        // Attach immediately so we never miss the initial wl_seat.capabilities event.
+                        wl_seat_add_listener(device->seat, &seatListener, device);
+                    }
                     return;
                 }
 
@@ -902,14 +912,7 @@ namespace Gek
 
                 if (seat)
                 {
-                    static const wl_seat_listener seatListener = {
-                        seatCapabilities,
-                        seatName,
-                    };
-
-                    wl_seat_add_listener(seat, &seatListener, this);
-
-                    // Seat capability events can be emitted before listener registration.
+                    // Seat listener is registered during wl_registry_bind in registryGlobal().
                     // Perform one sync pass here to guarantee pointer/keyboard objects are created.
                     if (wl_display_roundtrip(display) < 0)
                     {
