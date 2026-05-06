@@ -42,6 +42,49 @@ namespace Gek
             return normalizedPath.getString();
         }
 
+        bool resolveMaterialPath(Context *context, std::string_view materialName, FileSystem::Path &resolvedPath)
+        {
+            auto exactPath = context->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json"));
+            if (exactPath.isFile())
+            {
+                resolvedPath = exactPath;
+                return true;
+            }
+
+            auto materialsPath = context->findDataPath("materials", false);
+            if (!materialsPath.isDirectory())
+            {
+                return false;
+            }
+
+            std::string requested = String::GetLower(FileSystem::CreatePath(materialName).withExtension(".json").getString());
+            String::Replace(requested, "\\", "/");
+
+            bool found = false;
+            context->findDataFiles("materials", [&](FileSystem::Path const &candidate) -> bool
+                                   {
+                if (!candidate.isFile())
+                {
+                    return true;
+                }
+
+                std::string candidatePath = String::GetLower(candidate.getString());
+                String::Replace(candidatePath, "\\", "/");
+
+                if (candidatePath.size() >= requested.size() && candidatePath.substr(candidatePath.size() - requested.size()) == requested)
+                {
+                    resolvedPath = candidate;
+                    found = true;
+                    return false;
+                }
+
+                return true; },
+                                   false,
+                                   true);
+
+            return found;
+        }
+
         JSON::Object buildImplicitMaterialNode(std::string_view materialName)
         {
             JSON::Object materialNode;
@@ -77,7 +120,8 @@ namespace Gek
             {
                 assert(resources);
 
-                auto materialPath = getContext()->findDataPath(FileSystem::CreatePath("materials", this->materialName).withExtension(".json"));
+                FileSystem::Path materialPath;
+                resolveMaterialPath(getContext(), this->materialName, materialPath);
                 JSON::Object materialNode;
                 if (materialPath.isFile())
                 {

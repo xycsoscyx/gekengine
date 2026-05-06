@@ -697,6 +697,7 @@ namespace Gek
                                 if (resourceSearch == std::end(resourceMap))
                                 {
                                     getContext()->log(Context::Error, "Unable to find render target for pass: {}", renderTarget.first);
+                                    continue;
                                 }
 
                                 pass.renderTargetList.push_back(resourceSearch->second);

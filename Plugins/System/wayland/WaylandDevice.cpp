@@ -309,6 +309,7 @@ namespace Gek
             bool seatCapabilitiesReceived = false;
             uint32_t seatCapabilityMask = 0;
             Math::Int2 cursorPosition = Math::Int2::Zero;
+            bool warpWarningLogged = false;
             uint64_t pointerEnterCount = 0;
             uint64_t pointerMotionCount = 0;
             uint64_t pointerButtonCount = 0;
@@ -1280,7 +1281,11 @@ namespace Gek
             void setCursorPosition(Math::Int2 const &position)
             {
                 (void)position;
-                getContext()->log(Context::Debug, "Wayland does not support globally warping the cursor position");
+                if (!warpWarningLogged)
+                {
+                    warpWarningLogged = true;
+                    getContext()->log(Context::Debug, "Wayland does not support globally warping the cursor position");
+                }
             }
 
             void setCursorVisibility(bool isVisible)
