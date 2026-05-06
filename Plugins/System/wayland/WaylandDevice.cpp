@@ -630,6 +630,7 @@ namespace Gek
                                 keyboardLeave,
                                 keyboardKey,
                                 keyboardModifiers,
+                                keyboardRepeatInfo,
                             };
 
                             wl_keyboard_add_listener(device->keyboard, &keyboardListener, device);
@@ -783,6 +784,14 @@ namespace Gek
                 (void)latched;
                 (void)locked;
                 (void)group;
+            }
+
+            static void keyboardRepeatInfo(void *data, wl_keyboard *keyboard, int32_t rate, int32_t delay)
+            {
+                (void)data;
+                (void)keyboard;
+                (void)rate;
+                (void)delay;
             }
 
 #if GEK_WAYLAND_HAS_RELATIVE_POINTER
