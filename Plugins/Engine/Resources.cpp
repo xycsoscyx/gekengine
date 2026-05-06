@@ -370,6 +370,7 @@ namespace Gek
                     if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
+                        const bool hasResource = (ResourceCache<HANDLE, TYPE>::getResource(handle) != nullptr);
                         if (!(flags & Plugin::Resources::Flags::Cached))
                         {
                             auto loadParametersSearch = loadParameters.find(handle);
@@ -388,6 +389,24 @@ namespace Gek
                                     ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
                                     return std::make_pair(true, handle);
                                 }
+                            }
+                        }
+                        else if (!hasResource)
+                        {
+                            // Cached resources are generally immutable, but if initial creation failed
+                            // (e.g. transient zero-sized swap chain target), retry creation on subsequent requests.
+                            loadParameters[handle] = parameters;
+                            if (flags & Plugin::Resources::Flags::Immediate)
+                            {
+                                if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle), fallback))
+                                {
+                                    return std::make_pair(true, handle);
+                                }
+                            }
+                            else
+                            {
+                                ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
+                                return std::make_pair(true, handle);
                             }
                         }
 
