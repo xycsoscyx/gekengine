@@ -1671,6 +1671,35 @@ namespace Gek
             {
                 auto programsPath(getContext()->findDataPath("programs"s, false));
                 auto filePath(programsPath / name);
+
+                // Case-insensitive fallback for Linux (e.g. shader name "solid" vs directory "Solid")
+                if (!filePath.isFile() && programsPath.isDirectory())
+                {
+                    std::string lowerName = String::GetLower(std::string(name));
+                    for (char &c : lowerName)
+                    {
+                        if (c == '\\') { c = '/'; }
+                    }
+
+                    getContext()->findDataFiles("programs"s, [&](FileSystem::Path const &candidate) -> bool
+                    {
+                        std::string candidateStr = String::GetLower(candidate.getString());
+                        for (char &c : candidateStr)
+                        {
+                            if (c == '\\') { c = '/'; }
+                        }
+
+                        if (candidateStr.size() >= lowerName.size() &&
+                            candidateStr.substr(candidateStr.size() - lowerName.size()) == lowerName)
+                        {
+                            filePath = candidate;
+                            return false;
+                        }
+
+                        return true;
+                    }, false, true);
+                }
+
                 auto programDirectory(filePath.getParentPath());
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
