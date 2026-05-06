@@ -197,8 +197,7 @@ namespace Gek
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode, "mipmaps", shuntingYard, 1);
-                        // Filter targets are often resolution-dependent, so avoid persistent cached sizing.
-                        resource = resources->createTexture(description, 0);
+                        resource = resources->createTexture(description, Plugin::Resources::Flags::Cached);
                     }
 
                     auto description = resources->getTextureDescription(resource);
