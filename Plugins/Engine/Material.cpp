@@ -30,7 +30,10 @@ namespace Gek
 
         std::string normalizeMaterialName(std::string_view materialName)
         {
-            FileSystem::Path normalizedPath(materialName);
+            std::string normalizedMaterialPath(materialName);
+            String::Replace(normalizedMaterialPath, "\\", "/");
+
+            FileSystem::Path normalizedPath(normalizedMaterialPath);
             if (String::GetLower(normalizedPath.getExtension()) == ".json")
             {
                 normalizedPath = normalizedPath.withoutExtension();

@@ -1087,6 +1087,9 @@ namespace Gek
                     return fallback;
                 }
 
+                std::string normalizedTextureName(textureName);
+                String::Replace(normalizedTextureName, "\\", "/");
+
                 // iterate over formats in case the texture name has no extension
                 static constexpr std::string_view formatList[] = {
                     "",
@@ -1101,10 +1104,10 @@ namespace Gek
                     ".bmp",
                 };
 
-                auto hash = GetHash(textureName);
+                auto hash = GetHash(normalizedTextureName);
                 for (auto const &format : formatList)
                 {
-                    auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", textureName).withExtension(format)));
+                    auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", normalizedTextureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
                         auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle) -> Render::TexturePtr
@@ -1128,9 +1131,9 @@ namespace Gek
                 }
 
                 FileSystem::Path texturePath;
-                if (findTexturePathCaseInsensitive(getContext(), textureName, texturePath) && texturePath.isFile())
+                if (findTexturePathCaseInsensitive(getContext(), normalizedTextureName, texturePath) && texturePath.isFile())
                 {
-                    auto hash = GetHash(textureName);
+                    auto hash = GetHash(normalizedTextureName);
                     auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle) -> Render::TexturePtr
                                                            {
                         if (shuttingDown.load(std::memory_order_acquire))
@@ -1150,7 +1153,7 @@ namespace Gek
                     return resource.second;
                 }
 
-                getContext()->log(Context::Warning, "Texture not found: {}", textureName);
+                getContext()->log(Context::Warning, "Texture not found: {}", normalizedTextureName);
 
                 return ResourceHandle();
             }
