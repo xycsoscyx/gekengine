@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <poll.h>
@@ -58,6 +59,15 @@ namespace Gek
 {
     namespace Window::Implementation
     {
+        static void traceWaylandEvent(char const *message)
+        {
+            if (message)
+            {
+                std::fprintf(stderr, "%s\n", message);
+                std::fflush(stderr);
+            }
+        }
+
         static Window::Key convertLinuxKey(uint32_t key)
         {
             switch (key)
@@ -299,6 +309,11 @@ namespace Gek
             bool seatCapabilitiesReceived = false;
             uint32_t seatCapabilityMask = 0;
             Math::Int2 cursorPosition = Math::Int2::Zero;
+            uint64_t pointerEnterCount = 0;
+            uint64_t pointerMotionCount = 0;
+            uint64_t pointerButtonCount = 0;
+            uint64_t keyboardKeyCount = 0;
+            std::chrono::steady_clock::time_point lastHeartbeat = std::chrono::steady_clock::now();
 
             std::atomic_bool stop = false;
 
@@ -632,6 +647,7 @@ namespace Gek
                 (void)surface;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                ++device->pointerEnterCount;
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
                 device->getContext()->log(Context::Debug, "Wayland pointer enter: x={}, y={}", device->cursorPosition.x, device->cursorPosition.y);
@@ -653,6 +669,7 @@ namespace Gek
                 (void)time;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                ++device->pointerMotionCount;
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
                 device->onMousePosition(device->cursorPosition.x, device->cursorPosition.y);
@@ -664,6 +681,7 @@ namespace Gek
                 (void)time;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                ++device->pointerButtonCount;
                 auto buttonState = (state == WL_POINTER_BUTTON_STATE_PRESSED);
                 device->getContext()->log(Context::Debug, "Wayland pointer button: serial={}, code=0x{:x}, pressed={}", serial, button, buttonState);
 
@@ -740,6 +758,7 @@ namespace Gek
                 (void)time;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                ++device->keyboardKeyCount;
                 auto keyState = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
                 device->getContext()->log(Context::Debug, "Wayland keyboard key: code={}, pressed={}", key, keyState);
                 device->onKeyPressed(convertLinuxKey(key), keyState);
@@ -906,7 +925,13 @@ namespace Gek
                         getContext()->log(Context::Info, "Wayland seat synchronized: pointer={}, keyboard={}",
                             ((seatCapabilityMask & WL_SEAT_CAPABILITY_POINTER) != 0),
                             ((seatCapabilityMask & WL_SEAT_CAPABILITY_KEYBOARD) != 0));
+                        traceWaylandEvent("Wayland seat synchronized");
                     }
+                }
+                else
+                {
+                    getContext()->log(Context::Warning, "Wayland compositor did not expose wl_seat; input is unavailable");
+                    traceWaylandEvent("Wayland seat unavailable");
                 }
 
                 static const xdg_wm_base_listener wmBaseListener = {
@@ -992,6 +1017,36 @@ namespace Gek
                 uint32_t consecutiveIdleExceptions = 0;
                 while (!stop.load())
                 {
+                    auto now = std::chrono::steady_clock::now();
+                    if ((now - lastHeartbeat) >= std::chrono::seconds(1))
+                    {
+                        lastHeartbeat = now;
+                        getContext()->log(
+                            Context::Warning,
+                            "Wayland heartbeat: seat={}, pointer={}, keyboard={}, enter={}, motion={}, button={}, key={}",
+                            (seat != nullptr),
+                            (pointer != nullptr),
+                            (keyboard != nullptr),
+                            pointerEnterCount,
+                            pointerMotionCount,
+                            pointerButtonCount,
+                            keyboardKeyCount);
+
+                        char heartbeat[256] = {};
+                        std::snprintf(
+                            heartbeat,
+                            sizeof(heartbeat),
+                            "Wayland heartbeat seat=%d pointer=%d keyboard=%d enter=%llu motion=%llu button=%llu key=%llu",
+                            (seat != nullptr) ? 1 : 0,
+                            (pointer != nullptr) ? 1 : 0,
+                            (keyboard != nullptr) ? 1 : 0,
+                            static_cast<unsigned long long>(pointerEnterCount),
+                            static_cast<unsigned long long>(pointerMotionCount),
+                            static_cast<unsigned long long>(pointerButtonCount),
+                            static_cast<unsigned long long>(keyboardKeyCount));
+                        traceWaylandEvent(heartbeat);
+                    }
+
                     if (wl_display_dispatch_pending(display) < 0)
                     {
                         stop.store(true);
