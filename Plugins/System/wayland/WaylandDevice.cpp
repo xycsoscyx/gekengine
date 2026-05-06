@@ -1115,8 +1115,17 @@ namespace Gek
                 }
 
                 uint32_t consecutiveIdleExceptions = 0;
+                uint64_t loopIteration = 0;
                 while (!stop.load())
                 {
+                    ++loopIteration;
+                    if (loopIteration <= 8 || (loopIteration % 600) == 0)
+                    {
+                        char loopMessage[160] = {};
+                        std::snprintf(loopMessage, sizeof(loopMessage), "Wayland loop iteration=%llu", static_cast<unsigned long long>(loopIteration));
+                        traceWaylandEvent(loopMessage);
+                    }
+
                     auto now = std::chrono::steady_clock::now();
                     if ((now - lastHeartbeat) >= std::chrono::seconds(1))
                     {
@@ -1149,6 +1158,8 @@ namespace Gek
 
                     if (wl_display_dispatch_pending(display) < 0)
                     {
+                        getContext()->log(Context::Error, "Wayland dispatch_pending failed");
+                        traceWaylandEvent("Wayland dispatch_pending failed");
                         stop.store(true);
                         break;
                     }
@@ -1158,10 +1169,20 @@ namespace Gek
                     {
                         pollfd descriptor = { displayFD, POLLIN, 0 };
                         auto pollResult = ::poll(&descriptor, 1, 0);
+                        if (pollResult < 0)
+                        {
+                            getContext()->log(Context::Error, "Wayland poll failed");
+                            traceWaylandEvent("Wayland poll failed");
+                            stop.store(true);
+                            break;
+                        }
+
                         if ((pollResult > 0) && (descriptor.revents & POLLIN))
                         {
                             if (wl_display_dispatch(display) < 0)
                             {
+                                getContext()->log(Context::Error, "Wayland dispatch failed");
+                                traceWaylandEvent("Wayland dispatch failed");
                                 stop.store(true);
                                 break;
                             }
@@ -1174,7 +1195,18 @@ namespace Gek
 
                     try
                     {
+                        if (loopIteration <= 8 || (loopIteration % 600) == 0)
+                        {
+                            traceWaylandEvent("Wayland before onIdle");
+                        }
+
                         onIdle();
+
+                        if (loopIteration <= 8 || (loopIteration % 600) == 0)
+                        {
+                            traceWaylandEvent("Wayland after onIdle");
+                        }
+
                         consecutiveIdleExceptions = 0;
                     }
                     catch (std::exception const &exception)
