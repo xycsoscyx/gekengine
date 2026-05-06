@@ -296,7 +296,8 @@ namespace Gek
             bool readMouseMovement = true;
             bool isMinimized = false;
             bool hasReportedInitialSize = false;
-            uint32_t lastPointerButtonSerial = 0;
+            bool seatCapabilitiesReceived = false;
+            uint32_t seatCapabilityMask = 0;
             Math::Int2 cursorPosition = Math::Int2::Zero;
 
             std::atomic_bool stop = false;
@@ -556,6 +557,14 @@ namespace Gek
             static void seatCapabilities(void *data, wl_seat *seat, uint32_t capabilities)
             {
                 auto *device = reinterpret_cast<Device *>(data);
+                (void)seat;
+
+                device->seatCapabilitiesReceived = true;
+                device->seatCapabilityMask = capabilities;
+                device->getContext()->log(Context::Info, "Wayland seat capabilities: pointer={}, keyboard={}, touch={}",
+                    ((capabilities & WL_SEAT_CAPABILITY_POINTER) != 0),
+                    ((capabilities & WL_SEAT_CAPABILITY_KEYBOARD) != 0),
+                    ((capabilities & WL_SEAT_CAPABILITY_TOUCH) != 0));
 
                 if ((capabilities & WL_SEAT_CAPABILITY_POINTER) != 0)
                 {
@@ -625,6 +634,7 @@ namespace Gek
                 auto *device = reinterpret_cast<Device *>(data);
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
+                device->getContext()->log(Context::Debug, "Wayland pointer enter: x={}, y={}", device->cursorPosition.x, device->cursorPosition.y);
                 device->onActivate(true);
                 device->onMousePosition(device->cursorPosition.x, device->cursorPosition.y);
             }
@@ -654,16 +664,8 @@ namespace Gek
                 (void)time;
 
                 auto *device = reinterpret_cast<Device *>(data);
-                device->lastPointerButtonSerial = serial;
                 auto buttonState = (state == WL_POINTER_BUTTON_STATE_PRESSED);
-
-#if GEK_WAYLAND_HAS_XDG_SHELL
-                // Allow moving undecorated windows via middle-button drag in content area.
-                if (buttonState && button == 0x112 && device->xdgToplevel && device->seat)
-                {
-                    xdg_toplevel_move(device->xdgToplevel, device->seat, serial);
-                }
-#endif
+                device->getContext()->log(Context::Debug, "Wayland pointer button: serial={}, code=0x{:x}, pressed={}", serial, button, buttonState);
 
                 switch (button)
                 {
@@ -739,6 +741,7 @@ namespace Gek
 
                 auto *device = reinterpret_cast<Device *>(data);
                 auto keyState = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+                device->getContext()->log(Context::Debug, "Wayland keyboard key: code={}, pressed={}", key, keyState);
                 device->onKeyPressed(convertLinuxKey(key), keyState);
             }
 
@@ -886,6 +889,24 @@ namespace Gek
                     };
 
                     wl_seat_add_listener(seat, &seatListener, this);
+
+                    // Seat capability events can be emitted before listener registration.
+                    // Perform one sync pass here to guarantee pointer/keyboard objects are created.
+                    if (wl_display_roundtrip(display) < 0)
+                    {
+                        throw std::runtime_error("Unable to synchronize Wayland seat capabilities");
+                    }
+
+                    if (!seatCapabilitiesReceived)
+                    {
+                        getContext()->log(Context::Warning, "Wayland seat listener did not receive capabilities after sync");
+                    }
+                    else
+                    {
+                        getContext()->log(Context::Info, "Wayland seat synchronized: pointer={}, keyboard={}",
+                            ((seatCapabilityMask & WL_SEAT_CAPABILITY_POINTER) != 0),
+                            ((seatCapabilityMask & WL_SEAT_CAPABILITY_KEYBOARD) != 0));
+                    }
                 }
 
                 static const xdg_wm_base_listener wmBaseListener = {
