@@ -62,7 +62,7 @@ namespace Gek
 
             return FileSystem::Path();
         }
-    }
+    } // namespace
 
     namespace Implementation
     {

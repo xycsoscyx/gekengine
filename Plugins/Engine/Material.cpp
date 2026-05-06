@@ -78,9 +78,7 @@ namespace Gek
                     return false;
                 }
 
-                return true; },
-                                   false,
-                                   true);
+                return true; }, false, true);
 
             return found;
         }

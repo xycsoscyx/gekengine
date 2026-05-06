@@ -691,6 +691,7 @@ namespace Gek
             bool loggedMissingIndexBuffer = false;
             bool loggedMissingVertexBufferList = false;
             bool loggedInvalidRenderTargetList = false;
+            bool loggedMissingResource = false;
             std::atomic<bool> shuttingDown = false;
 
           public:
@@ -1433,6 +1434,21 @@ namespace Gek
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
+                else if (!loggedMissingResource)
+                {
+                    loggedMissingResource = true;
+                    for (uint32_t i = 0; i < static_cast<uint32_t>(resourceHandleList.size()); ++i)
+                    {
+                        const auto &h = resourceHandleList[i];
+                        if (h && !dynamicCache.getResource(h))
+                        {
+                            getContext()->log(Context::Warning,
+                                "Resources::setResourceList null resource at pixel slot {}: handle={}",
+                                firstStage + i,
+                                static_cast<uint64_t>(h.identifier));
+                        }
+                    }
+                }
             }
 
             ObjectCache<Render::Object> unorderedAccessCache;
@@ -1678,11 +1694,14 @@ namespace Gek
                     std::string lowerName = String::GetLower(std::string(name));
                     for (char &c : lowerName)
                     {
-                        if (c == '\\') { c = '/'; }
+                        if (c == '\\')
+                        {
+                            c = '/';
+                        }
                     }
 
                     getContext()->findDataFiles("programs"s, [&](FileSystem::Path const &candidate) -> bool
-                    {
+                                                {
                         std::string candidateStr = String::GetLower(candidate.getString());
                         for (char &c : candidateStr)
                         {
@@ -1696,8 +1715,7 @@ namespace Gek
                             return false;
                         }
 
-                        return true;
-                    }, false, true);
+                        return true; }, false, true);
                 }
 
                 auto programDirectory(filePath.getParentPath());
