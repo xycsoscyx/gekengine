@@ -74,6 +74,12 @@ target_link_libraries(rendervulkan PUBLIC Math Utility Resources Common)
 find_package(Vulkan REQUIRED)
 target_link_libraries(rendervulkan PRIVATE Vulkan::Vulkan ktx slang stb)
 set_target_properties(rendervulkan PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+if(UNIX AND NOT APPLE)
+    set_target_properties(rendervulkan PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../..:$ORIGIN/../../../lib"
+    )
+endif()
 install(TARGETS rendervulkan
     RUNTIME DESTINATION bin/plugins/render
     LIBRARY DESTINATION bin/plugins/render

@@ -94,6 +94,13 @@ target_sources(systemwayland PRIVATE
 
 target_include_directories(systemwayland PRIVATE "${WL_GENERATED_DIR}")
 
+if(UNIX AND NOT APPLE)
+    set_target_properties(systemwayland PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../..:$ORIGIN/../../../lib"
+    )
+endif()
+
 install(TARGETS systemwayland
     RUNTIME DESTINATION bin/plugins/system
     LIBRARY DESTINATION bin/plugins/system

@@ -63,12 +63,18 @@ void outputDebugString(std::string_view message)
 
 #define LIBRARY void *
 const char *moduleExtension = ".so";
-#define loadLibrary(PATH) dlopen(PATH.getString().c_str(), RTLD_LAZY)
+#define loadLibrary(PATH) dlopen(PATH.getString().c_str(), RTLD_LAZY | RTLD_GLOBAL)
 #define getFunction(HANDLE, FUNCTION) dlsym(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE) dlclose(HANDLE)
 
 std::string getLastErrorMessage(int errorCode = errno)
 {
+    // Use dlerror() for library load errors; fall back to strerror for other errno cases.
+    const char *dlErr = dlerror();
+    if (dlErr)
+    {
+        return std::string(dlErr);
+    }
     const char *errorMessage = strerror(errorCode);
     return errorMessage ? std::string(errorMessage) : std::string();
 }
