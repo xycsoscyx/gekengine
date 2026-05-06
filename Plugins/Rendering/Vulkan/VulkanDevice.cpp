@@ -10,6 +10,7 @@
 #include <cctype>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -7340,6 +7341,15 @@ namespace Gek
 
         bool Device::ensureFrameRecording()
         {
+            static uint64_t frameRecordTraceCounter = 0;
+            ++frameRecordTraceCounter;
+            const bool traceFrameRecord = (frameRecordTraceCounter <= 8) || ((frameRecordTraceCounter % 600) == 0);
+            if (traceFrameRecord)
+            {
+                std::fprintf(stderr, "Vulkan ensureFrameRecording begin %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
+                std::fflush(stderr);
+            }
+
             if (frameRecordingActive)
             {
                 return true;
@@ -7352,7 +7362,20 @@ namespace Gek
 
             if (inFlightFencePending)
             {
+                if (traceFrameRecord)
+                {
+                    std::fprintf(stderr, "Vulkan before vkWaitForFences(inFlight) %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
+                    std::fflush(stderr);
+                }
+
                 const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
+
+                if (traceFrameRecord)
+                {
+                    std::fprintf(stderr, "Vulkan after vkWaitForFences(inFlight) %llu result=%d\n", static_cast<unsigned long long>(frameRecordTraceCounter), static_cast<int>(waitResult));
+                    std::fflush(stderr);
+                }
+
                 if (waitResult == VK_TIMEOUT)
                 {
                     throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan fence wait timeout");
@@ -7405,7 +7428,20 @@ namespace Gek
             frameLastDescriptorSet = VK_NULL_HANDLE;
             frameTotalCommandCount = 0;
 
+            if (traceFrameRecord)
+            {
+                std::fprintf(stderr, "Vulkan before vkAcquireNextImageKHR %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
+                std::fflush(stderr);
+            }
+
             VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, 10'000'000ULL, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
+
+            if (traceFrameRecord)
+            {
+                std::fprintf(stderr, "Vulkan after vkAcquireNextImageKHR %llu result=%d\n", static_cast<unsigned long long>(frameRecordTraceCounter), static_cast<int>(acquireResult));
+                std::fflush(stderr);
+            }
+
             if (acquireResult == VK_TIMEOUT)
             {
                 throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan acquire timeout");
