@@ -7609,11 +7609,6 @@ namespace Gek
                     oldLayout = oldLayoutSearch->second;
                 }
 
-                if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-                {
-                    oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                }
-
                 VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 VkAccessFlags sourceAccess = 0;
                 switch (oldLayout)
@@ -7709,10 +7704,6 @@ namespace Gek
                 }
 
                 VkImageLayout oldLayout = depthTexture->currentLayout;
-                if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-                {
-                    oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                }
 
                 VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 VkAccessFlags sourceAccess = 0;
