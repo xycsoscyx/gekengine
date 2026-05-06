@@ -2576,6 +2576,7 @@ namespace Gek
             std::vector<VkImageView> swapChainImageViews;
             std::vector<VkImageLayout> swapChainImageLayouts;
             VkImage depthImage = VK_NULL_HANDLE;
+            VkImageLayout depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             VkDeviceMemory depthMemory = VK_NULL_HANDLE;
             VkImageView depthImageView = VK_NULL_HANDLE;
             VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
@@ -3603,6 +3604,7 @@ namespace Gek
                     vkDestroyImage(device, depthImage, nullptr);
                     depthImage = VK_NULL_HANDLE;
                 }
+                depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
                 if (depthMemory != VK_NULL_HANDLE)
                 {
@@ -3638,6 +3640,7 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to create depth image");
                 }
+                depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
                 VkMemoryRequirements memRequirements;
                 vkGetImageMemoryRequirements(device, depthImage, &memRequirements);
@@ -7533,15 +7536,34 @@ namespace Gek
 
                 VkImageMemoryBarrier depthToClear{};
                 depthToClear.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                depthToClear.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                depthToClear.oldLayout = depthImageLayout;
                 depthToClear.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 depthToClear.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 depthToClear.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 depthToClear.image = depthImage;
                 depthToClear.subresourceRange = depthRange;
-                depthToClear.srcAccessMask = 0;
+                VkPipelineStageFlags depthSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                switch (depthToClear.oldLayout)
+                {
+                case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+                    depthToClear.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                    depthSourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                    break;
+                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                    depthToClear.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    depthSourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    break;
+                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                    depthToClear.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                    depthSourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                    break;
+                default:
+                    depthToClear.srcAccessMask = 0;
+                    depthSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    break;
+                }
                 depthToClear.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &depthToClear);
+                vkCmdPipelineBarrier(commandBuffer, depthSourceStage, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &depthToClear);
 
                 VkClearDepthStencilValue clearDepthVal{ 1.0f, 0 };
                 vkCmdClearDepthStencilImage(commandBuffer, depthImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearDepthVal, 1, &depthRange);
@@ -7557,6 +7579,7 @@ namespace Gek
                 depthToAttachment.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 depthToAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
                 vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
+                depthImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
 
             frameTransitionSwapChainImage(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -8944,7 +8967,7 @@ namespace Gek
 
                     VkImageMemoryBarrier depthToAttachment{};
                     depthToAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    depthToAttachment.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    depthToAttachment.oldLayout = depthImageLayout;
                     depthToAttachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     depthToAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     depthToAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -8954,12 +8977,32 @@ namespace Gek
                     depthToAttachment.subresourceRange.levelCount = 1;
                     depthToAttachment.subresourceRange.baseArrayLayer = 0;
                     depthToAttachment.subresourceRange.layerCount = 1;
-                    depthToAttachment.srcAccessMask = 0;
+                    VkPipelineStageFlags depthSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    switch (depthToAttachment.oldLayout)
+                    {
+                    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+                        depthToAttachment.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                        depthSourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                        depthToAttachment.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        depthSourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                        depthToAttachment.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        depthSourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                        break;
+                    default:
+                        depthToAttachment.srcAccessMask = 0;
+                        depthSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                        break;
+                    }
                     depthToAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
                     vkCmdPipelineBarrier(commandBuffer,
-                                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                         depthSourceStage,
                                          VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                                          0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
+                    depthImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 }
 
                 std::vector<VkImageView> framebufferAttachmentViews(offscreenImageViews.begin(), offscreenImageViews.begin() + offscreenTargetCount);
