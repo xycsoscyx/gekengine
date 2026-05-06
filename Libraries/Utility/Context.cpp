@@ -18,7 +18,12 @@ const char modulePostfix[] = "";
 
 #ifdef _WIN32
 #include <Windows.h>
-std::string getWindowsLastErrorMessage(DWORD errorCode)
+#define LIBRARY HMODULE
+#define loadLibrary(PATH) LoadLibraryA(PATH.getString().c_str())
+#define getFunction(HANDLE, FUNCTION) GetProcAddress(HANDLE, FUNCTION)
+#define freeLibrary(HANDLE) FreeLibrary(HANDLE)
+const char *moduleExtension = ".dll";
+std::string getLastErrorMessage(DWORD errorCode = GetLastError())
 {
     if (errorCode == 0)
     {
@@ -44,19 +49,28 @@ std::string getWindowsLastErrorMessage(DWORD errorCode)
 
     return message;
 }
-
-#define LIBRARY HMODULE
-#define loadLibrary(PATH) LoadLibraryA(PATH.getString().c_str())
-#define getFunction(HANDLE, FUNCTION) GetProcAddress(HANDLE, FUNCTION)
-#define freeLibrary(HANDLE) FreeLibrary(HANDLE)
-const char *moduleExtension = ".dll";
+void outputDebugString(std::string_view message)
+{
+    OutputDebugStringA(message.data());
+    OutputDebugStringA("\r\n");
+}
 #else
 #include <dlfcn.h>
+#include <errno.h>
 #define LIBRARY void *
 #define loadLibrary(PATH) dlopen(PATH.getString().c_str(), RTLD_LAZY)
 #define getFunction(HANDLE, FUNCTION) dlsym(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE) dlclose(HANDLE)
 const char *moduleExtension = ".so";
+std::string getLastErrorMessage(DWORD errorCode = errno)
+{
+    const char *errorMessage = strerror(errorCode);
+    return errorMessage ? std::string(errorMessage) : std::string();
+}
+void outputDebugString(std::string_view message)
+{
+    std::cerr << message << std::endl;
+}
 #endif
 
 LIBRARY loadPlugin(const Gek::FileSystem::Path &path)
@@ -171,13 +185,8 @@ namespace Gek
             LIBRARY library = loadPlugin(pluginPath.getString());
             if (library)
             {
-#ifdef _WIN32
                 using InitializePlugin = void (*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)>, std::function<void(std::string_view, std::string_view)>);
-                InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress((HMODULE)library, "initializePlugin");
-#else
-                using InitializePlugin = void (*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)>, std::function<void(std::string_view, std::string_view)>);
-                InitializePlugin initializePlugin = (InitializePlugin)dlsym(library, "initializePlugin");
-#endif
+                InitializePlugin initializePlugin = (InitializePlugin)getFunction(library, "initializePlugin");
                 if (initializePlugin)
                 {
                     log(Info, "Initializing Plugin: {}", pluginPath.getFileName());
@@ -199,22 +208,13 @@ namespace Gek
                 }
                 else
                 {
-#ifdef _WIN32
-                    FreeLibrary((HMODULE)library);
-#else
-                    dlclose(library);
-#endif
+                    freeLibrary(library);
                 }
             }
             else
             {
-#ifdef _WIN32
-                DWORD errorCode = GetLastError();
-                std::string errorMessage = getWindowsLastErrorMessage(errorCode);
-                log(Error, "Unable to load plugin: {} (error {}: {})", pluginPath.getString(), errorCode, errorMessage);
-#else
-                log(Error, "Unable to load plugin: {}", pluginPath.getString());
-#endif
+                std::string errorMessage = getLastErrorMessage();
+                log(Error, "Unable to load plugin: {}{}", pluginPath.getString(), errorMessage.empty() ? "" : ", error: " + errorMessage);
             }
         }
 
@@ -287,59 +287,55 @@ namespace Gek
             switch (level)
             {
             case LogLevel::Error:
-#ifdef _WIN32
                 if (outputDebugger)
                 {
-                    OutputDebugStringA(formattedMessage.data());
-                    OutputDebugStringA("\r\n");
+                    outputDebugString(formattedMessage);
                 }
-#endif
+
                 if (outputConsole)
                 {
                     std::cerr << formattedMessage << std::endl;
                 }
+
                 break;
 
             case LogLevel::Warning:
-#ifdef _WIN32
                 if (outputDebugger)
                 {
-                    OutputDebugStringA(formattedMessage.data());
-                    OutputDebugStringA("\r\n");
+                    outputDebugString(formattedMessage);
                 }
-#endif
+
                 if (outputConsole)
                 {
                     std::cerr << formattedMessage << std::endl;
                 }
+
                 break;
 
             case LogLevel::Debug:
-#ifdef _WIN32
                 if (outputDebugger)
                 {
-                    OutputDebugStringA(formattedMessage.data());
-                    OutputDebugStringA("\r\n");
+                    outputDebugString(formattedMessage);
                 }
-#endif
+
                 if (outputConsole)
                 {
                     std::cout << formattedMessage << std::endl;
                 }
+
                 break;
 
             case LogLevel::Info:
-#ifdef _WIN32
                 if (outputDebugger)
                 {
-                    OutputDebugStringA(formattedMessage.data());
-                    OutputDebugStringA("\r\n");
+                    outputDebugString(formattedMessage);
                 }
-#endif
+
                 if (outputConsole)
                 {
                     std::cout << formattedMessage << std::endl;
                 }
+
                 break;
             };
         }
