@@ -233,7 +233,7 @@ namespace Gek
                 else
                 {
                     auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
-                    getContext()->log(Context::Info, "Loading physics model from file: {}", filePath);
+                    getContext()->log(Context::Info, "Loading physics model from file: {}", filePath.getFileName());
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath));
                     if (buffer.size() < sizeof(Header))
                     {
