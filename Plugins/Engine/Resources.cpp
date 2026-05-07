@@ -363,6 +363,14 @@ namespace Gek
 
             std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)> &&load, uint32_t flags, HANDLE *fallback = nullptr)
             {
+                auto primeFallback = [&](HANDLE targetHandle)
+                {
+                    if (fallback)
+                    {
+                        ResourceCache<HANDLE, TYPE>::setResource(targetHandle, TypePtr{}, fallback);
+                    }
+                };
+
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
@@ -386,6 +394,7 @@ namespace Gek
                                 }
                                 else
                                 {
+                                    primeFallback(handle);
                                     ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
                                     return std::make_pair(true, handle);
                                 }
@@ -405,6 +414,7 @@ namespace Gek
                             }
                             else
                             {
+                                primeFallback(handle);
                                 ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
                                 return std::make_pair(true, handle);
                             }
@@ -421,14 +431,15 @@ namespace Gek
                     loadParameters[handle] = parameters;
                     if (flags & Plugin::Resources::Flags::Immediate)
                     {
-                        if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle)))
+                        if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle), fallback))
                         {
                             return std::make_pair(true, handle);
                         }
                     }
                     else
                     {
-                        ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load));
+                        primeFallback(handle);
+                        ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
                         return std::make_pair(true, handle);
                     }
                 }
