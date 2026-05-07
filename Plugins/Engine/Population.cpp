@@ -436,6 +436,7 @@ namespace Gek
             {
                 assert(entity);
 
+                getContext()->log(Context::Info, "Adding component: {}", definition.first);
                 auto componentNameSearch = std::find_if(std::begin(componentTypeNameMap), std::end(componentTypeNameMap), [&definition](auto const &componentPair) -> bool
                                                         { return (definition.first == componentPair.first); });
 
