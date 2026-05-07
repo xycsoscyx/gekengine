@@ -284,7 +284,12 @@ namespace Gek
                                 builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
                             }
                         }
-                        builder.End(true);
+                        builder.End(false); // Note: End(true) triggers coplanar-face merging in Newton's
+                        // ndPolygonSoupBuilder::Optimize(), which uses a fixed ndVector face[256] / faceIndex[256]
+                        // stack buffer. Large flat meshes (e.g. Sponza floors/walls) produce merged polygons
+                        // with >256 vertices, overflowing those arrays. Linux/glibc detects this as a buffer
+                        // overflow; MSVC silently corrupts the stack. Skipping optimization avoids the crash
+                        // while still producing a correct (if slightly less cache-friendly) BVH.
                         shape = new ndShapeStatic_bvh(builder);
                     }
                     else
