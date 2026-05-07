@@ -5943,7 +5943,7 @@ namespace Gek
                 auto texture = std::make_unique<UnorderedTargetViewTexture>(description);
                 texture->device = device;
 
-                const VkFormat imageFormat = GetVkFormat(description.format);
+                VkFormat imageFormat = GetVkFormat(description.format);
                 if (imageFormat == VK_FORMAT_UNDEFINED)
                 {
                     getContext()->log(Gek::Context::Error,
@@ -5982,8 +5982,30 @@ namespace Gek
                 imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
                 imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
                 imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
+
+                if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT))
                 {
+                    getContext()->log(Gek::Context::Warning,
+                                      "Vulkan createRenderTargetTexture: format {} (VkFormat={}) lacks COLOR_ATTACHMENT_BIT for '{}', falling back to R16G16B16A16_FLOAT",
+                                      static_cast<uint32_t>(description.format), static_cast<uint32_t>(imageFormat), description.name);
+                    imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+                    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+                    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT))
+                    {
+                        getContext()->log(Gek::Context::Error,
+                                          "Vulkan createRenderTargetTexture: fallback R16G16B16A16_FLOAT also lacks COLOR_ATTACHMENT_BIT for '{}'",
+                                          description.name);
+                        return nullptr;
+                    }
+                }
+
+                const VkResult createImageResult = vkCreateImage(device, &imageInfo, nullptr, &texture->image);
+                if (createImageResult != VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Error,
+                                      "Vulkan createRenderTargetTexture: vkCreateImage failed with VkResult={} for format {} (VkFormat={}) '{}'",
+                                      static_cast<int32_t>(createImageResult), static_cast<uint32_t>(description.format),
+                                      static_cast<uint32_t>(imageFormat), description.name);
                     return nullptr;
                 }
 
@@ -8919,6 +8941,11 @@ namespace Gek
                     {
                         toColorAttachmentTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                         targetSourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                    }
+                    else if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                    {
+                        toColorAttachmentTarget.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        targetSourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                     }
                     else
                     {

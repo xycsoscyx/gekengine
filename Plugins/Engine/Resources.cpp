@@ -1462,9 +1462,9 @@ namespace Gek
                         if (h && !dynamicCache.getResource(h))
                         {
                             getContext()->log(Context::Warning,
-                                "Resources::setResourceList null resource at pixel slot {}: handle={}",
-                                firstStage + i,
-                                static_cast<uint64_t>(h.identifier));
+                                              "Resources::setResourceList null resource at pixel slot {}: handle={}",
+                                              firstStage + i,
+                                              static_cast<uint64_t>(h.identifier));
                         }
                     }
                 }
