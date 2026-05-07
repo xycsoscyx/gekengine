@@ -450,262 +450,259 @@ namespace Gek
             // concurrency::critical_section criticalSection;
             void addEntity(Plugin::Entity *const entity)
             {
-                getContext()->log(Context::Info, "Adding entity: {}", entity->getId());
+                BodyPtr body;
+                if (entity->hasComponent<Components::Transform>())
                 {
-                    BodyPtr body;
-                    if (entity->hasComponent<Components::Transform>())
+                    // Handle static scene geometry (Model + Scene, no Physical)
+                    if (entity->hasComponents<Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>())
                     {
-                        // Handle static scene geometry (Model + Scene, no Physical)
-                        if (entity->hasComponents<Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>())
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
+                        auto shape = loadShape(modelComponent);
+                        if (shape)
+                        {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
+                            if (newtonWorld)
+                            {
+                                newtonWorld->AddBody(staticBody->getAsNewtonBody());
+                            }
+                            entityBodyMap[entity] = staticBody.release();
+                        }
+                    }
+                    // Handle dynamic/kinematic bodies
+                    else if (entity->hasComponents<Components::Physical>())
+                    {
+                        auto &physicalComponent = entity->getComponent<Components::Physical>();
+                        if (entity->hasComponent<Components::Player>())
+                        {
+                            body = createPlayerBody(core, population, this, entity);
+                        }
+                        else if (entity->hasComponent<Components::Model>())
                         {
                             auto const &modelComponent = entity->getComponent<Components::Model>();
                             auto shape = loadShape(modelComponent);
                             if (shape)
                             {
-                                auto &transformComponent = entity->getComponent<Components::Transform>();
-                                auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
-                                if (newtonWorld)
+                                body = createRigidBody(this, entity);
+                                if (body)
                                 {
-                                    newtonWorld->AddBody(staticBody->getAsNewtonBody());
-                                }
-                                entityBodyMap[entity] = staticBody.release();
-                            }
-                        }
-                        // Handle dynamic/kinematic bodies
-                        else if (entity->hasComponents<Components::Physical>())
-                        {
-                            auto &physicalComponent = entity->getComponent<Components::Physical>();
-                            if (entity->hasComponent<Components::Player>())
-                            {
-                                body = createPlayerBody(core, population, this, entity);
-                            }
-                            else if (entity->hasComponent<Components::Model>())
-                            {
-                                auto const &modelComponent = entity->getComponent<Components::Model>();
-                                auto shape = loadShape(modelComponent);
-                                if (shape)
-                                {
-                                    body = createRigidBody(this, entity);
-                                    if (body)
-                                    {
-                                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
-                                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
-                                    }
+                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
+                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
                                 }
                             }
                         }
                     }
-
-                    if (body)
-                    {
-                        if (newtonWorld)
-                        {
-                            ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                            sharedBody->SetMatrix(transformComponent.getMatrix().data);
-                            newtonWorld->AddBody(sharedBody);
-                        }
-                        entityBodyMap[entity] = body.release();
-                    }
                 }
 
-                void removeEntity(Plugin::Entity *const entity)
+                if (body)
                 {
-                    auto entitySearch = entityBodyMap.find(entity);
-                    if (entitySearch != std::end(entityBodyMap))
+                    if (newtonWorld)
                     {
-                        newtonWorld->RemoveBody(entitySearch->second->getAsNewtonBody());
-                        entityBodyMap.unsafe_erase(entitySearch);
+                        ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
+                        sharedBody->SetMatrix(transformComponent.getMatrix().data);
+                        newtonWorld->AddBody(sharedBody);
                     }
+                    entityBodyMap[entity] = body.release();
                 }
+            }
 
-                // Plugin::Core
-                void onInitialized(void)
+            void removeEntity(Plugin::Entity *const entity)
+            {
+                auto entitySearch = entityBodyMap.find(entity);
+                if (entitySearch != std::end(entityBodyMap))
                 {
-                    core->listProcessors([&](Plugin::Processor *processor) -> void
-                                         {
+                    newtonWorld->RemoveBody(entitySearch->second->getAsNewtonBody());
+                    entityBodyMap.unsafe_erase(entitySearch);
+                }
+            }
+
+            // Plugin::Core
+            void onInitialized(void)
+            {
+                core->listProcessors([&](Plugin::Processor *processor) -> void
+                                     {
                     auto castCheck = dynamic_cast<Edit::Events *>(processor);
                     if (castCheck)
                     {
                         (events = castCheck)->onModified.connect(this, &Processor::onModified);
                     } });
+            }
+
+            void onShutdown(void)
+            {
+                if (events)
+                {
+                    events->onModified.disconnect(this, &Processor::onModified);
                 }
 
-                void onShutdown(void)
+                renderer->onShowUserInterface.disconnect(this, &Processor::onShowUserInterface);
+                population->onReset.disconnect(this, &Processor::onReset);
+                population->onEntityCreated.disconnect(this, &Processor::onEntityCreated);
+                population->onEntityDestroyed.disconnect(this, &Processor::onEntityDestroyed);
+                population->onComponentAdded.disconnect(this, &Processor::onComponentAdded);
+                population->onComponentRemoved.disconnect(this, &Processor::onComponentRemoved);
+                population->onUpdate[50].disconnect(this, &Processor::onUpdate);
+
+                clear();
+            }
+
+            // Plugin::Editor Slots
+            void onModified(Plugin::Entity *const entity, Hash type)
+            {
+                auto bodySearch = entityBodyMap.find(entity);
+                if (bodySearch == std::end(entityBodyMap))
                 {
-                    if (events)
-                    {
-                        events->onModified.disconnect(this, &Processor::onModified);
-                    }
-
-                    renderer->onShowUserInterface.disconnect(this, &Processor::onShowUserInterface);
-                    population->onReset.disconnect(this, &Processor::onReset);
-                    population->onEntityCreated.disconnect(this, &Processor::onEntityCreated);
-                    population->onEntityDestroyed.disconnect(this, &Processor::onEntityDestroyed);
-                    population->onComponentAdded.disconnect(this, &Processor::onComponentAdded);
-                    population->onComponentRemoved.disconnect(this, &Processor::onComponentRemoved);
-                    population->onUpdate[50].disconnect(this, &Processor::onUpdate);
-
-                    clear();
+                    return;
                 }
 
-                // Plugin::Editor Slots
-                void onModified(Plugin::Entity *const entity, Hash type)
+                auto body = bodySearch->second;
+                if (type == Components::Transform::GetIdentifier())
                 {
-                    auto bodySearch = entityBodyMap.find(entity);
-                    if (bodySearch == std::end(entityBodyMap))
+                    auto entitySearch = entityBodyMap.find(entity);
+                    if (entitySearch != std::end(entityBodyMap))
                     {
-                        return;
-                    }
-
-                    auto body = bodySearch->second;
-                    if (type == Components::Transform::GetIdentifier())
-                    {
-                        auto entitySearch = entityBodyMap.find(entity);
-                        if (entitySearch != std::end(entityBodyMap))
-                        {
-                            auto const &transformComponent = entity->getComponent<Components::Transform>();
-                            auto matrix(transformComponent.getScaledMatrix());
-                            body->getAsNewtonBody()->SetMatrix(matrix.data);
-                        }
-                    }
-                    else if (type == Components::Model::GetIdentifier())
-                    {
-                        if (!entity->hasComponent<Components::Physical>())
-                        {
-                            auto const &physicalComponent = entity->getComponent<Components::Physical>();
-                            auto const &modelComponent = entity->getComponent<Components::Model>();
-                            auto shape = loadShape(modelComponent);
-                            body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
-                            body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
-                        }
-                    }
-                    else if (type == Components::Physical::GetIdentifier())
-                    {
-                        if (!entity->hasComponent<Components::Model>())
-                        {
-                            auto const &physicalComponent = entity->getComponent<Components::Physical>();
-                            auto &shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
-                            body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
-                        }
+                        auto const &transformComponent = entity->getComponent<Components::Transform>();
+                        auto matrix(transformComponent.getScaledMatrix());
+                        body->getAsNewtonBody()->SetMatrix(matrix.data);
                     }
                 }
-
-                // Plugin::Core Slots
-                void onShowUserInterface(void)
+                else if (type == Components::Model::GetIdentifier())
                 {
+                    if (!entity->hasComponent<Components::Physical>())
+                    {
+                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
+                        auto shape = loadShape(modelComponent);
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
+                    }
                 }
-
-                // Plugin::Population Slots
-                void onReset(void)
+                else if (type == Components::Physical::GetIdentifier())
                 {
-                    clear();
-                    newtonWorld = new NewtonWorld(this);
-
-                    newtonWorld->Sync();
-                    newtonWorld->SetSubSteps(2);
-                    newtonWorld->SetSolverIterations(1);
-                    newtonWorld->SetThreadCount(4);
-                    // newtonWorld->SelectSolver(m_solverMode);
+                    if (!entity->hasComponent<Components::Model>())
+                    {
+                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                        auto &shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                    }
                 }
+            }
 
-                void onEntityCreated(Plugin::Entity *const entity)
-                {
-                    addEntity(entity);
-                }
+            // Plugin::Core Slots
+            void onShowUserInterface(void)
+            {
+            }
 
-                void onEntityDestroyed(Plugin::Entity *const entity)
+            // Plugin::Population Slots
+            void onReset(void)
+            {
+                clear();
+                newtonWorld = new NewtonWorld(this);
+
+                newtonWorld->Sync();
+                newtonWorld->SetSubSteps(2);
+                newtonWorld->SetSolverIterations(1);
+                newtonWorld->SetThreadCount(4);
+                // newtonWorld->SelectSolver(m_solverMode);
+            }
+
+            void onEntityCreated(Plugin::Entity *const entity)
+            {
+                addEntity(entity);
+            }
+
+            void onEntityDestroyed(Plugin::Entity *const entity)
+            {
+                removeEntity(entity);
+            }
+
+            void onComponentAdded(Plugin::Entity *const entity)
+            {
+                addEntity(entity);
+            }
+
+            void onComponentRemoved(Plugin::Entity *const entity)
+            {
+                if (!entity->hasComponents<Components::Transform, Components::Physical>())
                 {
                     removeEntity(entity);
                 }
+            }
 
-                void onComponentAdded(Plugin::Entity *const entity)
+            void onUpdate(float frameTime)
+            {
+                bool editorActive = core->getOption("editor", "active", false);
+                if (frameTime > 0.0f && !editorActive)
                 {
-                    getContext()->log(Context::Info, "Component added to entity: {}", entity->getId());
-                    addEntity(entity);
-                }
-
-                void onComponentRemoved(Plugin::Entity *const entity)
-                {
-                    if (!entity->hasComponents<Components::Transform, Components::Physical>())
+                    static constexpr float StepTime = (1.0f / 60.0f);
+                    while (frameTime > 0.0f)
                     {
-                        removeEntity(entity);
-                    }
-                }
-
-                void onUpdate(float frameTime)
-                {
-                    bool editorActive = core->getOption("editor", "active", false);
-                    if (frameTime > 0.0f && !editorActive)
-                    {
-                        static constexpr float StepTime = (1.0f / 60.0f);
-                        while (frameTime > 0.0f)
+                        if (newtonWorld)
                         {
-                            if (newtonWorld)
-                            {
-                                newtonWorld->Update(StepTime);
-                                newtonWorld->Sync();
-                            }
-
-                            frameTime -= StepTime;
-                        };
-                    }
-                }
-
-                // Newton::World
-                Math::Float3 getGravity(Math::Float3 const *position)
-                {
-                    const Math::Float3 DefaultGravity(0.0f, -32.174f, 0.0f);
-
-                    auto localGravity = DefaultGravity;
-                    if (position)
-                    {
-                    }
-
-                    return localGravity;
-                }
-
-                uint32_t loadSurface(std::string const &surfaceName)
-                {
-                    uint32_t surfaceIndex = 0;
-
-                    auto hash = GetHash(surfaceName);
-                    auto surfaceSearch = surfaceIndexMap.find(hash);
-                    if (surfaceSearch != std::end(surfaceIndexMap))
-                    {
-                        surfaceIndex = surfaceSearch->second;
-                    }
-                    else
-                    {
-                        surfaceIndexMap[hash] = 0;
-
-                        JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", surfaceName).withExtension(".json")));
-                        auto surfaceNode = materialNode["surface"];
-                        if (surfaceNode.is_object())
-                        {
-                            Surface surface;
-                            surface.ghost = JSON::Value(surfaceNode, "ghost", surface.ghost);
-                            surface.staticFriction = JSON::Value(surfaceNode, "static_friction", surface.staticFriction);
-                            surface.kineticFriction = JSON::Value(surfaceNode, "kinetic_friction", surface.kineticFriction);
-                            surface.elasticity = JSON::Value(surfaceNode, "elasticity", surface.elasticity);
-                            surface.softness = JSON::Value(surfaceNode, "softness", surface.softness);
-
-                            surfaceIndex = static_cast<uint32_t>(surfaceList.size());
-                            surfaceList.push_back(surface);
-                            surfaceIndexMap[hash] = surfaceIndex;
+                            newtonWorld->Update(StepTime);
+                            newtonWorld->Sync();
                         }
-                    }
 
-                    return surfaceIndex;
+                        frameTime -= StepTime;
+                    };
                 }
+            }
 
-                const Surface &getSurface(uint32_t surfaceIndex) const
+            // Newton::World
+            Math::Float3 getGravity(Math::Float3 const *position)
+            {
+                const Math::Float3 DefaultGravity(0.0f, -32.174f, 0.0f);
+
+                auto localGravity = DefaultGravity;
+                if (position)
                 {
-                    static const Surface DefaultSurface;
-                    return (surfaceIndex >= surfaceList.size() ? DefaultSurface : surfaceList[surfaceIndex]);
                 }
-            };
 
-            GEK_REGISTER_CONTEXT_USER(Processor)
-        }; // namespace Physics
-    }; // namespace Gek
+                return localGravity;
+            }
+
+            uint32_t loadSurface(std::string const &surfaceName)
+            {
+                uint32_t surfaceIndex = 0;
+
+                auto hash = GetHash(surfaceName);
+                auto surfaceSearch = surfaceIndexMap.find(hash);
+                if (surfaceSearch != std::end(surfaceIndexMap))
+                {
+                    surfaceIndex = surfaceSearch->second;
+                }
+                else
+                {
+                    surfaceIndexMap[hash] = 0;
+
+                    JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", surfaceName).withExtension(".json")));
+                    auto surfaceNode = materialNode["surface"];
+                    if (surfaceNode.is_object())
+                    {
+                        Surface surface;
+                        surface.ghost = JSON::Value(surfaceNode, "ghost", surface.ghost);
+                        surface.staticFriction = JSON::Value(surfaceNode, "static_friction", surface.staticFriction);
+                        surface.kineticFriction = JSON::Value(surfaceNode, "kinetic_friction", surface.kineticFriction);
+                        surface.elasticity = JSON::Value(surfaceNode, "elasticity", surface.elasticity);
+                        surface.softness = JSON::Value(surfaceNode, "softness", surface.softness);
+
+                        surfaceIndex = static_cast<uint32_t>(surfaceList.size());
+                        surfaceList.push_back(surface);
+                        surfaceIndexMap[hash] = surfaceIndex;
+                    }
+                }
+
+                return surfaceIndex;
+            }
+
+            const Surface &getSurface(uint32_t surfaceIndex) const
+            {
+                static const Surface DefaultSurface;
+                return (surfaceIndex >= surfaceList.size() ? DefaultSurface : surfaceList[surfaceIndex]);
+            }
+        };
+
+        GEK_REGISTER_CONTEXT_USER(Processor)
+    }; // namespace Physics
+}; // namespace Gek
