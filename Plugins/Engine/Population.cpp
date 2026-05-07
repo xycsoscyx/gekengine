@@ -446,7 +446,9 @@ namespace Gek
                     if (componentSearch != std::end(availableComponents))
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
+                        getContext()->log(Context::Info, "Creating component: {}, {}", definition.first, componentNameSearch->second);
                         auto component(componentManager->create());
+                        getContext()->log(Context::Info, "Loading component data: {}, {}", definition.first, componentNameSearch->second);
                         componentManager->load(component.get(), definition.second);
 
                         entity->addComponent(componentManager, std::move(component));
