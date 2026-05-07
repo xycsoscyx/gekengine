@@ -473,6 +473,7 @@ namespace Gek
             {
                 if (addComponentData(static_cast<Entity *>(entity), definition))
                 {
+                    getContext()->log(Context::Info, "Added component to entity: {}, {}", definition.first, entity);
                     onComponentAdded(static_cast<Plugin::Entity *>(entity));
                 }
             }
