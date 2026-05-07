@@ -436,7 +436,7 @@ namespace Gek
             {
                 assert(entity);
 
-                getContext()->log(Context::Info, "Adding component: {}", definition.first);
+                getContext()->log(Context::Info, "Adding component data: {}", definition.first);
                 auto componentNameSearch = std::find_if(std::begin(componentTypeNameMap), std::end(componentTypeNameMap), [&definition](auto const &componentPair) -> bool
                                                         { return (definition.first == componentPair.first); });
 
@@ -446,14 +446,14 @@ namespace Gek
                     if (componentSearch != std::end(availableComponents))
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
-                        getContext()->log(Context::Info, "Creating component: {}, {}", definition.first, componentNameSearch->second);
+                        getContext()->log(Context::Info, "Creating component data: {}, {}", definition.first, componentNameSearch->second);
                         auto component(componentManager->create());
                         getContext()->log(Context::Info, "Loading component data: {}, {}", definition.first, componentNameSearch->second);
                         componentManager->load(component.get(), definition.second);
 
-                        getContext()->log(Context::Info, "Adding component to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
+                        getContext()->log(Context::Info, "Adding component data to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
                         entity->addComponent(componentManager, std::move(component));
-                        getContext()->log(Context::Info, "Added component to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
+                        getContext()->log(Context::Info, "Added component data to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
                         return true;
                     }
                     else

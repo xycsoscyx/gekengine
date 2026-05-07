@@ -450,6 +450,8 @@ namespace Gek
             // concurrency::critical_section criticalSection;
             void addEntity(Plugin::Entity *const entity)
             {
+                getContext()->log(Context::Info, "Adding entity to physics processor: {}", entity);
+
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
                 {
