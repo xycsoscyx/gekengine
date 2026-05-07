@@ -2711,6 +2711,12 @@ namespace Gek
             bool frameRecordingActive = false;
             uint32_t frameImageIndex = 0;
             uint32_t frameTotalCommandCount = 0;
+            uint32_t frameOffscreenDrawCount = 0;
+            uint32_t frameBackbufferDrawCount = 0;
+            uint32_t framePipelineFailCount = 0;
+            uint32_t frameInvalidTargetCount = 0;
+            uint32_t frameEmptyDescriptorCount = 0;
+            uint64_t frameIndex = 0;
             std::vector<VkDescriptorSet> frameDescriptorSets;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
             std::map<std::string, std::pair<VkImage, VkExtent2D>> frameNamedRenderTargetImages;
@@ -7138,6 +7144,23 @@ namespace Gek
                     return;
                 }
 
+                // Per-frame diagnostic summary (first 5 frames, then every 300)
+                if (frameIndex < 5 || (frameIndex % 300) == 0)
+                {
+                    std::fprintf(stderr,
+                                 "VK FRAME %llu: total=%u offscreen=%u backbuf=%u pipelineFail=%u invalidTarget=%u emptyDesc=%u\n",
+                                 static_cast<unsigned long long>(frameIndex),
+                                 frameTotalCommandCount, frameOffscreenDrawCount, frameBackbufferDrawCount,
+                                 framePipelineFailCount, frameInvalidTargetCount, frameEmptyDescriptorCount);
+                    std::fflush(stderr);
+                }
+                ++frameIndex;
+                frameOffscreenDrawCount = 0;
+                frameBackbufferDrawCount = 0;
+                framePipelineFailCount = 0;
+                frameInvalidTargetCount = 0;
+                frameEmptyDescriptorCount = 0;
+
                 ++presentFrameIndex;
                 const uint32_t totalCommandCount = frameTotalCommandCount;
                 getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
@@ -7477,6 +7500,11 @@ namespace Gek
             frameHasLastDescriptor = false;
             frameLastDescriptorSet = VK_NULL_HANDLE;
             frameTotalCommandCount = 0;
+            frameOffscreenDrawCount = 0;
+            frameBackbufferDrawCount = 0;
+            framePipelineFailCount = 0;
+            frameInvalidTargetCount = 0;
+            frameEmptyDescriptorCount = 0;
 
             if (traceFrameRecord)
             {
@@ -8845,6 +8873,17 @@ namespace Gek
 
                 if (!validTargets)
                 {
+                    ++frameInvalidTargetCount;
+                    if (frameInvalidTargetCount <= 3)
+                    {
+                        std::fprintf(stderr,
+                                     "VK invalidTarget: count=%u img0=%p view0=%p fmt0=%d\n",
+                                     offscreenTargetCount,
+                                     static_cast<void *>(offscreenImages[0]),
+                                     static_cast<void *>(offscreenImageViews[0]),
+                                     static_cast<int>(offscreenFormats[0]));
+                        std::fflush(stderr);
+                    }
                     return;
                 }
 
@@ -9156,6 +9195,7 @@ namespace Gek
             VkPipeline pipeline = getOrCreateGraphicsPipeline(*pipelineCommand, activeRenderPass);
             if (pipeline == VK_NULL_HANDLE)
             {
+                ++framePipelineFailCount;
                 endRenderPassForCurrentTarget();
                 return;
             }
@@ -9385,6 +9425,10 @@ namespace Gek
                             frameHasLastDescriptor = true;
                             frameLastDescriptorSet = descriptorSet;
                         }
+                        else
+                        {
+                            ++frameEmptyDescriptorCount;
+                        }
                     }
                     else
                     {
@@ -9401,6 +9445,15 @@ namespace Gek
             else if (drawCommand.vertexCount > 0)
             {
                 vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
+            }
+
+            if (drawToBackBuffer)
+            {
+                ++frameBackbufferDrawCount;
+            }
+            else
+            {
+                ++frameOffscreenDrawCount;
             }
 
             endRenderPassForCurrentTarget();

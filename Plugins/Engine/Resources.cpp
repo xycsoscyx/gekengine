@@ -2152,6 +2152,15 @@ namespace Gek
             {
                 drawPrimitiveValid = true;
                 dispatchValid = true;
+                // Re-enable one-shot warnings every ~300 frames so they fire again
+                // after resources finish async loading (and the problem persists).
+                static uint64_t resourceBlockCounter = 0;
+                if ((++resourceBlockCounter % 300) == 0)
+                {
+                    loggedMissingResource = false;
+                    loggedMissingIndexBuffer = false;
+                    loggedMissingVertexBufferList = false;
+                }
             }
         };
 
