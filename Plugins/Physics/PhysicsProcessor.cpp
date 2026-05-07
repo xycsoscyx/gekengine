@@ -33,17 +33,30 @@ namespace Gek
         {
           private:
             uint8_t *buffer = nullptr;
+            size_t size = 0;
             size_t index = 0;
 
           public:
-            BufferReader(uint8_t *buffer)
-                : buffer(buffer)
+            BufferReader(uint8_t *buffer, size_t size)
+                : buffer(buffer), size(size)
             {
+            }
+
+            template <typename TYPE>
+            bool canRead(uint32_t count = 1) const
+            {
+                size_t readSize = sizeof(TYPE) * static_cast<size_t>(count);
+                return (index + readSize) <= size;
             }
 
             template <typename TYPE>
             TYPE *read(uint32_t count = 1)
             {
+                if (!canRead<TYPE>(count))
+                {
+                    return nullptr;
+                }
+
                 TYPE *data = (TYPE *)(buffer + index);
                 index += (sizeof(TYPE) * count);
                 return data;
@@ -222,20 +235,30 @@ namespace Gek
                     if (buffer.size() < sizeof(Header))
                     {
                         getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
+                        promise.set_value(nullptr);
                         co_return;
                     }
 
-                    BufferReader reader(buffer.data());
+                    BufferReader reader(buffer.data(), buffer.size());
                     Header *header = reader.read<Header>(0);
+                    if (!header)
+                    {
+                        getContext()->log(Context::Error, "Unable to read physics header: {}", modelComponent.name);
+                        promise.set_value(nullptr);
+                        co_return;
+                    }
+
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
                         getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
+                        promise.set_value(nullptr);
                         co_return;
                     }
 
                     if (header->version != 3)
                     {
-                        getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
+                        getContext()->log(Context::Error, "Unsupported model version encountered (requires: 3, has: {}): {}", header->version, modelComponent.name);
+                        promise.set_value(nullptr);
                         co_return;
                     }
 
@@ -243,19 +266,46 @@ namespace Gek
                     {
                         getContext()->log(Context::Info, "Loading convex hull for static scene: {}", modelComponent.name);
                         HullHeader *hullHeader = reader.read<HullHeader>();
+                        if (!hullHeader)
+                        {
+                            getContext()->log(Context::Error, "Unable to read convex hull header: {}", modelComponent.name);
+                            promise.set_value(nullptr);
+                            co_return;
+                        }
+
                         Math::Float3 *points = reader.read<Math::Float3>(hullHeader->pointCount);
+                        if (!points)
+                        {
+                            getContext()->log(Context::Error, "Invalid convex hull point data in physics model: {}", modelComponent.name);
+                            promise.set_value(nullptr);
+                            co_return;
+                        }
+
                         shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
                     }
                     else if (header->type == 2)
                     {
                         getContext()->log(Context::Info, "Loading tree mesh for static scene: {}", modelComponent.name);
                         TreeHeader *treeHeader = reader.read<TreeHeader>();
+                        if (!treeHeader)
+                        {
+                            getContext()->log(Context::Error, "Unable to read tree mesh header: {}", modelComponent.name);
+                            promise.set_value(nullptr);
+                            co_return;
+                        }
 
                         // Read materials
                         std::vector<std::string> materialNames;
                         for (uint32_t i = 0; i < treeHeader->materialCount; ++i)
                         {
                             TreeHeader::Material *mat = reader.read<TreeHeader::Material>();
+                            if (!mat)
+                            {
+                                getContext()->log(Context::Error, "Invalid material data in tree physics model: {}", modelComponent.name);
+                                promise.set_value(nullptr);
+                                co_return;
+                            }
+
                             materialNames.push_back(std::string(mat->name));
                         }
 
@@ -264,26 +314,61 @@ namespace Gek
                         for (uint32_t i = 0; i < treeHeader->meshCount; ++i)
                         {
                             TreeHeader::Mesh *mesh = reader.read<TreeHeader::Mesh>();
+                            if (!mesh)
+                            {
+                                getContext()->log(Context::Error, "Invalid mesh header in tree physics model: {}", modelComponent.name);
+                                promise.set_value(nullptr);
+                                co_return;
+                            }
+
                             meshes.push_back(*mesh);
                         }
+
                         // Read faces and points for all meshes
                         ndPolygonSoupBuilder builder;
                         builder.Begin();
+                        size_t invalidFaceCount = 0;
                         for (auto &mesh : meshes)
                         {
                             TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh.faceCount);
                             Math::Float3 *meshPoints = reader.read<Math::Float3>(mesh.pointCount);
+                            if (!faces || !meshPoints)
+                            {
+                                getContext()->log(Context::Error, "Invalid face/point data in tree physics model: {}", modelComponent.name);
+                                promise.set_value(nullptr);
+                                co_return;
+                            }
+
                             for (uint32_t f = 0; f < mesh.faceCount; ++f)
                             {
+                                int32_t i0 = faces[f].indices[0];
+                                int32_t i1 = faces[f].indices[1];
+                                int32_t i2 = faces[f].indices[2];
+
+                                if (i0 < 0 || i1 < 0 || i2 < 0 ||
+                                    static_cast<uint32_t>(i0) >= mesh.pointCount ||
+                                    static_cast<uint32_t>(i1) >= mesh.pointCount ||
+                                    static_cast<uint32_t>(i2) >= mesh.pointCount)
+                                {
+                                    ++invalidFaceCount;
+                                    continue;
+                                }
+
                                 ndVector verts[3] = {
-                                    ndVector(meshPoints[faces[f].indices[0]].x, meshPoints[faces[f].indices[0]].y, meshPoints[faces[f].indices[0]].z, 0.0f),
-                                    ndVector(meshPoints[faces[f].indices[1]].x, meshPoints[faces[f].indices[1]].y, meshPoints[faces[f].indices[1]].z, 0.0f),
-                                    ndVector(meshPoints[faces[f].indices[2]].x, meshPoints[faces[f].indices[2]].y, meshPoints[faces[f].indices[2]].z, 0.0f)
+                                    ndVector(meshPoints[i0].x, meshPoints[i0].y, meshPoints[i0].z, 0.0f),
+                                    ndVector(meshPoints[i1].x, meshPoints[i1].y, meshPoints[i1].z, 0.0f),
+                                    ndVector(meshPoints[i2].x, meshPoints[i2].y, meshPoints[i2].z, 0.0f)
                                 };
 
                                 builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
                             }
                         }
+
+                        if (invalidFaceCount > 0)
+                        {
+                            getContext()->log(Context::Warning, "Skipped {} invalid faces while loading tree physics model: {}", invalidFaceCount, modelComponent.name);
+                        }
+
                         builder.End(false); // Note: End(true) triggers coplanar-face merging in Newton's
                         // ndPolygonSoupBuilder::Optimize(), which uses a fixed ndVector face[256] / faceIndex[256]
                         // stack buffer. Large flat meshes (e.g. Sponza floors/walls) produce merged polygons
@@ -295,6 +380,7 @@ namespace Gek
                     else
                     {
                         getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
+                        promise.set_value(nullptr);
                         co_return;
                     }
                 }
@@ -303,6 +389,11 @@ namespace Gek
                 {
                     getContext()->log(Context::Info, "Physics shape successfully loaded: {}", modelComponent.name);
                     promise.set_value(shape);
+                }
+                else
+                {
+                    getContext()->log(Context::Error, "Unable to create physics shape: {}", modelComponent.name);
+                    promise.set_value(nullptr);
                 }
             }
 
