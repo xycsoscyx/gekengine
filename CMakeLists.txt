@@ -54,9 +54,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC")
-    # Configure RPATH to embed library search paths in .so files for runtime linking
+    # Configure RPATH to embed library search paths in .so files for runtime linking.
+    # $ORIGIN resolves to the directory containing the .so at runtime, so plugins in
+    # bin/plugins/core/ can find sibling .so files without LD_LIBRARY_PATH.
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-    list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../lib" "$ORIGIN/../plugins/core")
+    list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN" "$ORIGIN/../lib" "$ORIGIN/../plugins/core")
 endif()
 
 include(FetchContent)
