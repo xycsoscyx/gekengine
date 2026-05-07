@@ -13,9 +13,7 @@ namespace Gek
             {
                 SetMatrix(matrix.data);
                 SetCollisionShape(shape);
-                // Static bodies do not need inertia/mass computation.
-                // On Linux this call can trigger deep shape processing for large BVHs
-                // and has been observed to trip runtime overflow checks.
+                SetMassMatrix(0.0f, shape);
                 SetAutoSleep(true);
                 SetNotifyCallback(nullptr); // No callback for static
             }

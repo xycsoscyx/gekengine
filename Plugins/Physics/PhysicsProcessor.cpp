@@ -328,6 +328,9 @@ namespace Gek
                         ndPolygonSoupBuilder builder;
                         builder.Begin();
                         size_t invalidFaceCount = 0;
+                        size_t dbgTotalInputFaces = 0;
+                        size_t dbgTotalInputPoints = 0;
+                        size_t dbgSubmittedFaces = 0;
                         for (auto &mesh : meshes)
                         {
                             TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh.faceCount);
@@ -339,6 +342,8 @@ namespace Gek
                                 co_return;
                             }
 
+                            dbgTotalInputFaces += mesh.faceCount;
+                            dbgTotalInputPoints += mesh.pointCount;
                             for (uint32_t f = 0; f < mesh.faceCount; ++f)
                             {
                                 int32_t i0 = faces[f].indices[0];
@@ -361,6 +366,7 @@ namespace Gek
                                 };
 
                                 builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
+                                ++dbgSubmittedFaces;
                             }
                         }
 
@@ -369,13 +375,33 @@ namespace Gek
                             getContext()->log(Context::Warning, "Skipped {} invalid faces while loading tree physics model: {}", invalidFaceCount, modelComponent.name);
                         }
 
+                        getContext()->log(Context::Info,
+                            "DEBUG [builder pre-End] model={} meshes={} input_faces={} input_pts={} invalid={} submitted={} bld_faces={} bld_idx={} bld_verts={}",
+                            modelComponent.name, meshes.size(),
+                            dbgTotalInputFaces, dbgTotalInputPoints,
+                            invalidFaceCount, dbgSubmittedFaces,
+                            builder.m_faceVertexCount.GetCount(),
+                            builder.m_vertexIndex.GetCount(),
+                            builder.m_vertexPoints.GetCount());
                         builder.End(false); // Note: End(true) triggers coplanar-face merging in Newton's
                         // ndPolygonSoupBuilder::Optimize(), which uses a fixed ndVector face[256] / faceIndex[256]
                         // stack buffer. Large flat meshes (e.g. Sponza floors/walls) produce merged polygons
                         // with >256 vertices, overflowing those arrays. Linux/glibc detects this as a buffer
                         // overflow; MSVC silently corrupts the stack. Skipping optimization avoids the crash
                         // while still producing a correct (if slightly less cache-friendly) BVH.
+                        getContext()->log(Context::Info,
+                            "DEBUG [builder post-End] model={} faces={} idx={} verts={} normals={}",
+                            modelComponent.name,
+                            builder.m_faceVertexCount.GetCount(),
+                            builder.m_vertexIndex.GetCount(),
+                            builder.m_vertexPoints.GetCount(),
+                            builder.m_normalPoints.GetCount());
+                        getContext()->log(Context::Info,
+                            "DEBUG [entering ndShapeStatic_bvh ctor] model={}", modelComponent.name);
                         shape = new ndShapeStatic_bvh(builder);
+                        getContext()->log(Context::Info,
+                            "DEBUG [ndShapeStatic_bvh ctor returned] model={} shape={}",
+                            modelComponent.name, shape != nullptr ? "OK" : "null");
                     }
                     else
                     {
