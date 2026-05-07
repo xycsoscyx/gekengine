@@ -1066,6 +1066,7 @@ namespace Gek
             VkDeviceMemory memory = VK_NULL_HANDLE;
             VkImageView imageView = VK_NULL_HANDLE;
             VkSampler sampler = VK_NULL_HANDLE;
+            VkFormat actualFormat = VK_FORMAT_UNDEFINED;
             VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             bool supportsMipBlit = false;
 
@@ -2200,7 +2201,7 @@ namespace Gek
 
                         command.offscreenImages[targetIndex] = target->image;
                         command.offscreenImageViews[targetIndex] = target->imageView;
-                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenFormats[targetIndex] = (target->actualFormat != VK_FORMAT_UNDEFINED) ? target->actualFormat : GetVkFormat(target->getDescription().format);
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
@@ -2287,7 +2288,7 @@ namespace Gek
 
                         command.offscreenImages[targetIndex] = target->image;
                         command.offscreenImageViews[targetIndex] = target->imageView;
-                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenFormats[targetIndex] = (target->actualFormat != VK_FORMAT_UNDEFINED) ? target->actualFormat : GetVkFormat(target->getDescription().format);
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
@@ -2386,7 +2387,7 @@ namespace Gek
 
                         command.offscreenImages[targetIndex] = target->image;
                         command.offscreenImageViews[targetIndex] = target->imageView;
-                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenFormats[targetIndex] = (target->actualFormat != VK_FORMAT_UNDEFINED) ? target->actualFormat : GetVkFormat(target->getDescription().format);
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
@@ -2485,7 +2486,7 @@ namespace Gek
 
                         command.offscreenImages[targetIndex] = target->image;
                         command.offscreenImageViews[targetIndex] = target->imageView;
-                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenFormats[targetIndex] = (target->actualFormat != VK_FORMAT_UNDEFINED) ? target->actualFormat : GetVkFormat(target->getDescription().format);
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
@@ -5998,6 +5999,8 @@ namespace Gek
                         return nullptr;
                     }
                 }
+
+                texture->actualFormat = imageFormat;
 
                 const VkResult createImageResult = vkCreateImage(device, &imageInfo, nullptr, &texture->image);
                 if (createImageResult != VK_SUCCESS)

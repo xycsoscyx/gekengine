@@ -953,14 +953,14 @@ namespace Gek
                         ImGui::BeginGroup();
                         auto texture = dynamic_cast<Render::Texture*>(object.get());
                         auto const& description = texture->getDescription();
-                        float width = 32.0f;
+                        float width = 128.0f;
                         float ratio = (width / float(description.width));
                         float height = (float(description.height) * ratio);
                         ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 1));
                         ImGui::EndGroup();
 
                         ImGui::SetCursorPosY(start);
-                        ImGui::Indent(40.0f);
+                        ImGui::Indent(150.0f);
                         ImGui::BeginGroup();
                         showResourceValue("Format", "##format", Render::GetFormat(description.format));
                         showResourceValue("Width", "##width", std::to_string(description.width));
