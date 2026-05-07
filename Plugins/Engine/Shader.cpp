@@ -324,12 +324,13 @@ namespace Gek
                 // are retried via DynamicResourceCache::getHandle().
                 auto finalBuffer = resources->createTexture(finalBufferDescription, Plugin::Resources::Flags::Cached);
 
-                auto description = resources->getTextureDescription(finalBuffer);
-                if (description)
+                if (finalBuffer)
                 {
+                    auto description = resources->getTextureDescription(finalBuffer);
+                    auto format = description ? description->format : finalBufferDescription.format;
                     resourceMap["finalBuffer"] = finalBuffer;
                     textureResourceMap["finalBuffer"] = finalBuffer;
-                    resourceSemanticsMap["finalBuffer"] = std::format("Texture2D<{}>", getFormatSemantic(description->format));
+                    resourceSemanticsMap["finalBuffer"] = std::format("Texture2D<{}>", getFormatSemantic(format));
                 }
 
                 for (auto &[key, value] : JSON::Find(rootNode, "textures").items())
