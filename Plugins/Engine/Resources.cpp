@@ -2118,6 +2118,29 @@ namespace Gek
             {
                 assert(videoContext);
 
+                // Render targets are expected to be immediate, but target creation can still
+                // fail transiently (for example during resize/device transitions). Retry creation
+                // using the cached texture description before suppressing the draw.
+                for (auto const &renderTargetHandle : renderTargetHandleList)
+                {
+                    if (!renderTargetHandle)
+                    {
+                        continue;
+                    }
+
+                    auto *resource = dynamicCache.getResource(renderTargetHandle);
+                    if (resource != nullptr)
+                    {
+                        continue;
+                    }
+
+                    auto *description = getTextureDescription(renderTargetHandle);
+                    if (description && (description->flags & Render::Texture::Flags::RenderTarget))
+                    {
+                        createTexture(*description, Plugin::Resources::Flags::Cached);
+                    }
+                }
+
                 if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache, videoDevice->getBackBuffer())))
                 {
                     auto &renderTargetList = renderTargetCache.get();
@@ -2133,11 +2156,28 @@ namespace Gek
                 }
                 else if (!drawPrimitiveValid && !loggedInvalidRenderTargetList)
                 {
+                    uint64_t failedHandleIdentifier = 0;
+                    for (auto const &renderTargetHandle : renderTargetHandleList)
+                    {
+                        if (!renderTargetHandle)
+                        {
+                            continue;
+                        }
+
+                        auto *resource = dynamicCache.getResource(renderTargetHandle);
+                        if ((resource == nullptr) || (dynamic_cast<Render::Target *>(resource) == nullptr))
+                        {
+                            failedHandleIdentifier = renderTargetHandle.identifier;
+                            break;
+                        }
+                    }
+
                     loggedInvalidRenderTargetList = true;
                     getContext()->log(
                         Context::Warning,
-                        "Resources render target list invalid: count={}",
-                        static_cast<uint32_t>(renderTargetHandleList.size()));
+                        "Resources render target list invalid: count={} failedHandle={}",
+                        static_cast<uint32_t>(renderTargetHandleList.size()),
+                        failedHandleIdentifier);
                 }
             }
 

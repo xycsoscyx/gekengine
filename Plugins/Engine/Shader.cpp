@@ -314,17 +314,15 @@ namespace Gek
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
 
-                auto finalBuffer = resources->getResourceHandle("finalBuffer");
-                if (!finalBuffer)
-                {
-                    Render::Texture::Description description(backBufferDescription);
-                    description.name = "finalBuffer";
-                    description.format = Render::Format::R11G11B10_FLOAT;
-                    description.sampleCount = 1;
-                    description.flags = getTextureFlags("target");
-                    description.mipMapCount = 1;
-                    finalBuffer = resources->createTexture(description, Plugin::Resources::Flags::Cached);
-                }
+                Render::Texture::Description finalBufferDescription(backBufferDescription);
+                finalBufferDescription.name = "finalBuffer";
+                finalBufferDescription.format = Render::Format::R11G11B10_FLOAT;
+                finalBufferDescription.sampleCount = 1;
+                finalBufferDescription.flags = getTextureFlags("target");
+                finalBufferDescription.mipMapCount = 1;
+                // Always attempt creation so cached handles with missing resources
+                // are retried via DynamicResourceCache::getHandle().
+                auto finalBuffer = resources->createTexture(finalBufferDescription, Plugin::Resources::Flags::Cached);
 
                 auto description = resources->getTextureDescription(finalBuffer);
                 if (description)
