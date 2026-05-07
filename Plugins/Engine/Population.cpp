@@ -451,6 +451,7 @@ namespace Gek
                         getContext()->log(Context::Info, "Loading component data: {}, {}", definition.first, componentNameSearch->second);
                         componentManager->load(component.get(), definition.second);
 
+                        getContext()->log(Context::Info, "Adding component to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
                         entity->addComponent(componentManager, std::move(component));
                         return true;
                     }
