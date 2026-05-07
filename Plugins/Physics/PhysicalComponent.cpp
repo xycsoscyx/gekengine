@@ -29,6 +29,7 @@ namespace Gek
 
             void load(Components::Physical *const data, JSON::Object const &importData)
             {
+                getContext()->log(Context::Info, "Loading Physical component with {}", importData.dump());
                 data->mass = evaluate(importData, "mass", 0.0f);
             }
 
