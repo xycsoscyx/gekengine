@@ -448,12 +448,16 @@ namespace Gek
                         Plugin::Component *componentManager = componentSearch->second.get();
                         getContext()->log(Context::Info, "Creating component data: {}, {}", definition.first, componentNameSearch->second);
                         auto component(componentManager->create());
+                        fprintf(stderr, "[addComponentData] pre-load: %s\n", definition.first.c_str()); fflush(stderr);
                         getContext()->log(Context::Info, "Loading component data: {}, {}", definition.first, componentNameSearch->second);
                         componentManager->load(component.get(), definition.second);
+                        fprintf(stderr, "[addComponentData] post-load: %s\n", definition.first.c_str()); fflush(stderr);
 
                         getContext()->log(Context::Info, "Adding component data to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
                         entity->addComponent(componentManager, std::move(component));
+                        fprintf(stderr, "[addComponentData] post-entity-addComponent: %s\n", definition.first.c_str()); fflush(stderr);
                         getContext()->log(Context::Info, "Added component data to entity: {}, {}, {}", definition.first, componentNameSearch->second, componentManager->getIdentifier());
+                        fprintf(stderr, "[addComponentData] returning true: %s\n", definition.first.c_str()); fflush(stderr);
                         return true;
                     }
                     else
@@ -473,8 +477,10 @@ namespace Gek
             {
                 if (addComponentData(static_cast<Entity *>(entity), definition))
                 {
-                    getContext()->log(Context::Info, "Added component to entity: {}, {}", definition.first, entity);
+                    fprintf(stderr, "[addComponent] addComponentData returned, pre-onComponentAdded: %s\n", definition.first.c_str()); fflush(stderr);
+                    getContext()->log(Context::Info, "Added component to entity: {}", definition.first);
                     onComponentAdded(static_cast<Plugin::Entity *>(entity));
+                    fprintf(stderr, "[addComponent] onComponentAdded returned: %s\n", definition.first.c_str()); fflush(stderr);
                 }
             }
 
