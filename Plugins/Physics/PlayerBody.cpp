@@ -134,9 +134,12 @@ namespace Gek
                 fprintf(stderr, "[addEntity] Setting up Newton body for player entity %p\n", entity);
                 fflush(stderr);
                 SetNotifyCallback(new NotifyCallback(this, world));
-                fprintf(stderr, "Getting matrix for player entity %p\n", entity);
+                fprintf(stderr, "Getting old matrix for player entity %p\n", entity);
                 fflush(stderr);
-                ndMatrix matrix(transformComponent.getMatrix().data);
+                auto oldMatrix(transformComponent.getMatrix());
+                fprintf(stderr, "Creating new matrix for player entity %p\n", entity);
+                fflush(stderr);
+                ndMatrix matrix(oldMatrix.data);
                 fprintf(stderr, "Setting matrix for player entity %p, matrix: %p\n", entity, &matrix);
                 fflush(stderr);
                 SetMatrix(matrix);

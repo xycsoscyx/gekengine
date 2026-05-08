@@ -195,6 +195,7 @@ namespace Gek
 
         void initializePlugin(const FileSystem::Path &pluginPath)
         {
+            log(Info, "Attempting to load plugin: {}", pluginPath.getString());
             LIBRARY library = loadPlugin(pluginPath.getString());
             if (library)
             {
