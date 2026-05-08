@@ -123,6 +123,7 @@ namespace Gek
                        Plugin::Entity *const entity)
                 : core(core), population(population), entity(entity), currentState(std::make_unique<IdleState>())
             {
+                std::cout << "Creating PlayerBody for entity " << entity << std::endl;
                 auto const &transformComponent = entity->getComponent<Components::Transform>();
                 auto const &physicalComponent = entity->getComponent<Components::Physical>();
                 auto const &playerComponent = entity->getComponent<Components::Player>();
@@ -130,14 +131,21 @@ namespace Gek
                 headingAngle = transformComponent.rotation.getEuler().y;
 
                 // Create Newton kinematic body for player
+                std::cout << "Setting up Newton body for player entity " << entity << std::endl;
                 SetNotifyCallback(new NotifyCallback(this, world));
+                std::cout << "Setting matrix for player entity " << entity << std::endl;
                 SetMatrix(transformComponent.getMatrix().data);
+                std::cout << "Setting mass matrix for player entity " << entity << std::endl;
                 SetMassMatrix(physicalComponent.mass, ndShapeInstance(new ndShapeCapsule(playerComponent.innerRadius, playerComponent.outerRadius, playerComponent.height)));
+                std::cout << "Disabling auto-sleep for player entity " << entity << std::endl;
                 SetAutoSleep(false);
 
+                std::cout << "PlayerBody constructor finished for entity " << entity << std::endl;
                 newtonBody = this;
 
+                std::cout << "Connecting PlayerBody to population signals for entity " << entity << std::endl;
                 population->onAction.connect(this, &PlayerBody::onAction);
+                std::cout << "PlayerBody setup complete for entity " << entity << std::endl;
             }
 
             ~PlayerBody(void)
