@@ -172,7 +172,6 @@ namespace Gek
             ThreadPool loadPool;
 
             tbb::concurrent_unordered_map<Plugin::Entity *, Physics::Body *> entityBodyMap;
-            tbb::concurrent_unordered_map<Hash, std::promise<ndShape *>> shapePromiseMap;
             tbb::concurrent_unordered_map<Hash, std::shared_future<ndShape *>> shapeFutureMap;
 
           public:
@@ -208,7 +207,6 @@ namespace Gek
                     newtonWorld->CleanUp();
 
                     entityBodyMap.clear();
-                    shapePromiseMap.clear();
                     shapeFutureMap.clear();
 
                     delete newtonWorld;
@@ -216,7 +214,7 @@ namespace Gek
                 }
             }
 
-            Task scheduleLoadShape(std::promise<ndShape *> & promise, Components::Model const &modelComponent)
+            Task scheduleLoadShape(std::shared_ptr<std::promise<ndShape *>> promise, Components::Model const &modelComponent)
             {
                 co_await loadPool.schedule();
 
@@ -239,7 +237,7 @@ namespace Gek
                     if (buffer.size() < sizeof(Header))
                     {
                         getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
-                        promise.set_value(nullptr);
+                        promise->set_value(nullptr);
                         co_return;
                     }
 
@@ -248,21 +246,21 @@ namespace Gek
                     if (!header)
                     {
                         getContext()->log(Context::Error, "Unable to read physics header: {}", modelComponent.name);
-                        promise.set_value(nullptr);
+                        promise->set_value(nullptr);
                         co_return;
                     }
 
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
                         getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
-                        promise.set_value(nullptr);
+                        promise->set_value(nullptr);
                         co_return;
                     }
 
                     if (header->version != 3)
                     {
                         getContext()->log(Context::Error, "Unsupported model version encountered (requires: 3, has: {}): {}", header->version, modelComponent.name);
-                        promise.set_value(nullptr);
+                        promise->set_value(nullptr);
                         co_return;
                     }
 
@@ -273,7 +271,7 @@ namespace Gek
                         if (!hullHeader)
                         {
                             getContext()->log(Context::Error, "Unable to read convex hull header: {}", modelComponent.name);
-                            promise.set_value(nullptr);
+                            promise->set_value(nullptr);
                             co_return;
                         }
 
@@ -281,7 +279,7 @@ namespace Gek
                         if (!points)
                         {
                             getContext()->log(Context::Error, "Invalid convex hull point data in physics model: {}", modelComponent.name);
-                            promise.set_value(nullptr);
+                            promise->set_value(nullptr);
                             co_return;
                         }
 
@@ -294,7 +292,7 @@ namespace Gek
                         if (!treeHeader)
                         {
                             getContext()->log(Context::Error, "Unable to read tree mesh header: {}", modelComponent.name);
-                            promise.set_value(nullptr);
+                            promise->set_value(nullptr);
                             co_return;
                         }
 
@@ -306,7 +304,7 @@ namespace Gek
                             if (!mat)
                             {
                                 getContext()->log(Context::Error, "Invalid material data in tree physics model: {}", modelComponent.name);
-                                promise.set_value(nullptr);
+                                promise->set_value(nullptr);
                                 co_return;
                             }
 
@@ -321,7 +319,7 @@ namespace Gek
                             if (!mesh)
                             {
                                 getContext()->log(Context::Error, "Invalid mesh header in tree physics model: {}", modelComponent.name);
-                                promise.set_value(nullptr);
+                                promise->set_value(nullptr);
                                 co_return;
                             }
 
@@ -331,9 +329,10 @@ namespace Gek
                         // Collect all valid triangles into a flat list first, then split into
                         // chunks. Newton's CalculateAdjacent calls ForAllSectors with the full
                         // scene AABB, which uses an ndFixSizeArray<..., 512> traversal stack.
-                        // For a balanced BVH with N leaves the peak stack depth is ~N/2, so
-                        // we cap each BVH chunk at 512 faces (peak stack ≤ 256).
-                        static constexpr uint32_t MaxFacesPerChunk = 512;
+                        // Newton uses fixed-size traversal stacks of 512 entries in several
+                        // paths, with push logic that can write one past end at exactly 512.
+                        // Keep a generous margin below that limit.
+                        static constexpr uint32_t MaxFacesPerChunk = 240;
 
                         struct Triangle { ndVector v[3]; };
                         std::vector<Triangle> allTriangles;
@@ -346,7 +345,7 @@ namespace Gek
                             if (!faces || !meshPoints)
                             {
                                 getContext()->log(Context::Error, "Invalid face/point data in tree physics model: {}", modelComponent.name);
-                                promise.set_value(nullptr);
+                                promise->set_value(nullptr);
                                 co_return;
                             }
 
@@ -379,6 +378,13 @@ namespace Gek
                         }
 
                         uint32_t totalFaces = static_cast<uint32_t>(allTriangles.size());
+                        if (totalFaces == 0)
+                        {
+                            getContext()->log(Context::Error, "No valid faces in tree physics model: {}", modelComponent.name);
+                            promise->set_value(nullptr);
+                            co_return;
+                        }
+
                         uint32_t chunkCount = (totalFaces + MaxFacesPerChunk - 1) / MaxFacesPerChunk;
                         getContext()->log(Context::Info, "Building BVH for {}: {} faces in {} chunk(s) of max {}", modelComponent.name, totalFaces, chunkCount, MaxFacesPerChunk);
 
@@ -407,7 +413,7 @@ namespace Gek
                     else
                     {
                         getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
-                        promise.set_value(nullptr);
+                        promise->set_value(nullptr);
                         co_return;
                     }
                 }
@@ -415,24 +421,30 @@ namespace Gek
                 if (shape)
                 {
                     getContext()->log(Context::Info, "Physics shape successfully loaded: {}", modelComponent.name);
-                    promise.set_value(shape);
+                    // AddRef once here so the cache holds a permanent reference.
+                    // ndShape starts with refCount=0; the ndShapeInstance copy constructor
+                    // deep-copies ndShapeCompound and Releases the original, which would
+                    // drop refCount back to 0 and delete the shape after the first use.
+                    // Holding a permanent ref prevents that and keeps the cached pointer valid.
+                    shape->AddRef();
+                    promise->set_value(shape);
                 }
                 else
                 {
                     getContext()->log(Context::Error, "Unable to create physics shape: {}", modelComponent.name);
-                    promise.set_value(nullptr);
+                    promise->set_value(nullptr);
                 }
             }
 
             ndShape *loadShape(Components::Model const &modelComponent)
             {
                 auto hash = GetHash(modelComponent.name);
-                auto shapeInsert = shapePromiseMap.insert(std::make_pair(hash, std::promise<ndShape *>()));
+                auto promise = std::make_shared<std::promise<ndShape *>>();
+                auto future = promise->get_future().share();
+                auto shapeInsert = shapeFutureMap.insert(std::make_pair(hash, future));
                 if (shapeInsert.second)
                 {
                     fprintf(stderr, "[loadShape] scheduling NEW shape: %s\n", modelComponent.name.c_str()); fflush(stderr);
-                    auto &promise = shapeInsert.first->second;
-                    shapeFutureMap.insert(std::make_pair(hash, promise.get_future()));
                     scheduleLoadShape(promise, modelComponent);
                 }
                 else
@@ -440,16 +452,11 @@ namespace Gek
                     fprintf(stderr, "[loadShape] reusing CACHED future: %s\n", modelComponent.name.c_str()); fflush(stderr);
                 }
 
-                auto shapeFuture = shapeFutureMap.find(hash);
-                if (shapeFuture != std::end(shapeFutureMap))
-                {
-                    fprintf(stderr, "[loadShape] calling .get() for: %s\n", modelComponent.name.c_str()); fflush(stderr);
-                    ndShape *shape = shapeFuture->second.get();
-                    fprintf(stderr, "[loadShape] .get() returned shape=%s for: %s\n", shape ? "OK" : "null", modelComponent.name.c_str()); fflush(stderr);
-                    return shape;
-                }
-
-                return nullptr;
+                auto shapeFuture = shapeInsert.first->second;
+                fprintf(stderr, "[loadShape] calling .get() for: %s\n", modelComponent.name.c_str()); fflush(stderr);
+                ndShape *shape = shapeFuture.get();
+                fprintf(stderr, "[loadShape] .get() returned shape=%s for: %s\n", shape ? "OK" : "null", modelComponent.name.c_str()); fflush(stderr);
+                return shape;
             }
 
             // concurrency::critical_section criticalSection;
