@@ -432,15 +432,22 @@ namespace Gek
                 auto shapeInsert = shapePromiseMap.insert(std::make_pair(hash, std::promise<ndShape *>()));
                 if (shapeInsert.second)
                 {
+                    fprintf(stderr, "[loadShape] scheduling NEW shape: %s\n", modelComponent.name.c_str()); fflush(stderr);
                     auto &promise = shapeInsert.first->second;
                     shapeFutureMap.insert(std::make_pair(hash, promise.get_future()));
                     scheduleLoadShape(promise, modelComponent);
+                }
+                else
+                {
+                    fprintf(stderr, "[loadShape] reusing CACHED future: %s\n", modelComponent.name.c_str()); fflush(stderr);
                 }
 
                 auto shapeFuture = shapeFutureMap.find(hash);
                 if (shapeFuture != std::end(shapeFutureMap))
                 {
+                    fprintf(stderr, "[loadShape] calling .get() for: %s\n", modelComponent.name.c_str()); fflush(stderr);
                     ndShape *shape = shapeFuture->second.get();
+                    fprintf(stderr, "[loadShape] .get() returned shape=%s for: %s\n", shape ? "OK" : "null", modelComponent.name.c_str()); fflush(stderr);
                     return shape;
                 }
 
@@ -450,7 +457,12 @@ namespace Gek
             // concurrency::critical_section criticalSection;
             void addEntity(Plugin::Entity *const entity)
             {
-                getContext()->log(Context::Info, "Adding entity to physics processor: {}", entity);
+                getContext()->log(Context::Info, "Adding entity to physics processor");
+                fprintf(stderr, "[addEntity] ENTRY hasTransform=%d hasModel=%d hasScene=%d hasPhysical=%d\n",
+                    (int)entity->hasComponent<Components::Transform>(),
+                    (int)entity->hasComponent<Components::Model>(),
+                    (int)entity->hasComponent<Components::Scene>(),
+                    (int)entity->hasComponent<Components::Physical>()); fflush(stderr);
 
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
@@ -459,39 +471,58 @@ namespace Gek
                     if (entity->hasComponents<Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>())
                     {
                         auto const &modelComponent = entity->getComponent<Components::Model>();
+                        fprintf(stderr, "[addEntity] static-branch: loadShape(%s)\n", modelComponent.name.c_str()); fflush(stderr);
                         auto shape = loadShape(modelComponent);
+                        fprintf(stderr, "[addEntity] static-branch: loadShape returned shape=%s\n", shape ? "OK" : "null"); fflush(stderr);
                         if (shape)
                         {
                             auto &transformComponent = entity->getComponent<Components::Transform>();
+                            fprintf(stderr, "[addEntity] static-branch: creating StaticBody\n"); fflush(stderr);
                             auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
+                            fprintf(stderr, "[addEntity] static-branch: StaticBody created\n"); fflush(stderr);
                             if (newtonWorld)
                             {
+                                fprintf(stderr, "[addEntity] static-branch: AddBody\n"); fflush(stderr);
                                 newtonWorld->AddBody(staticBody->getAsNewtonBody());
+                                fprintf(stderr, "[addEntity] static-branch: AddBody done\n"); fflush(stderr);
                             }
                             entityBodyMap[entity] = staticBody.release();
+                            fprintf(stderr, "[addEntity] static-branch: done\n"); fflush(stderr);
                         }
                     }
                     // Handle dynamic/kinematic bodies
                     else if (entity->hasComponents<Components::Physical>())
                     {
+                        fprintf(stderr, "[addEntity] physical-branch entered\n"); fflush(stderr);
                         auto &physicalComponent = entity->getComponent<Components::Physical>();
                         if (entity->hasComponent<Components::Player>())
                         {
+                            fprintf(stderr, "[addEntity] physical-branch: createPlayerBody\n"); fflush(stderr);
                             body = createPlayerBody(core, population, this, entity);
+                            fprintf(stderr, "[addEntity] physical-branch: createPlayerBody done\n"); fflush(stderr);
                         }
                         else if (entity->hasComponent<Components::Model>())
                         {
                             auto const &modelComponent = entity->getComponent<Components::Model>();
+                            fprintf(stderr, "[addEntity] physical-branch: loadShape(%s)\n", modelComponent.name.c_str()); fflush(stderr);
                             auto shape = loadShape(modelComponent);
+                            fprintf(stderr, "[addEntity] physical-branch: loadShape returned shape=%s\n", shape ? "OK" : "null"); fflush(stderr);
                             if (shape)
                             {
+                                fprintf(stderr, "[addEntity] physical-branch: createRigidBody\n"); fflush(stderr);
                                 body = createRigidBody(this, entity);
+                                fprintf(stderr, "[addEntity] physical-branch: createRigidBody done body=%s\n", body ? "OK" : "null"); fflush(stderr);
                                 if (body)
                                 {
                                     body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
                                     body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
+                                    fprintf(stderr, "[addEntity] physical-branch: SetMassMatrix done\n"); fflush(stderr);
                                 }
                             }
+                        }
+                        else
+                        {
+                            fprintf(stderr, "[addEntity] physical-branch: no Model component\n"); fflush(stderr);
                         }
                     }
                 }
@@ -503,10 +534,13 @@ namespace Gek
                         ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
                         auto &transformComponent = entity->getComponent<Components::Transform>();
                         sharedBody->SetMatrix(transformComponent.getMatrix().data);
+                        fprintf(stderr, "[addEntity] dynamic AddBody\n"); fflush(stderr);
                         newtonWorld->AddBody(sharedBody);
+                        fprintf(stderr, "[addEntity] dynamic AddBody done\n"); fflush(stderr);
                     }
                     entityBodyMap[entity] = body.release();
                 }
+                fprintf(stderr, "[addEntity] EXIT\n"); fflush(stderr);
             }
 
             void removeEntity(Plugin::Entity *const entity)
