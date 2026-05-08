@@ -18,6 +18,7 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
 #include <dCollision/ndContactNotify.h>
+#include <dCollision/ndShapeCompound.h>
 #include <future>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
@@ -327,13 +328,17 @@ namespace Gek
                             meshes.push_back(*mesh);
                         }
 
-                        // Read faces and points for all meshes
-                        ndPolygonSoupBuilder builder;
-                        builder.Begin();
+                        // Collect all valid triangles into a flat list first, then split into
+                        // chunks. Newton's CalculateAdjacent calls ForAllSectors with the full
+                        // scene AABB, which uses an ndFixSizeArray<..., 512> traversal stack.
+                        // For a balanced BVH with N leaves the peak stack depth is ~N/2, so
+                        // we cap each BVH chunk at 512 faces (peak stack ≤ 256).
+                        static constexpr uint32_t MaxFacesPerChunk = 512;
+
+                        struct Triangle { ndVector v[3]; };
+                        std::vector<Triangle> allTriangles;
                         size_t invalidFaceCount = 0;
-                        size_t dbgTotalInputFaces = 0;
-                        size_t dbgTotalInputPoints = 0;
-                        size_t dbgSubmittedFaces = 0;
+
                         for (auto &mesh : meshes)
                         {
                             TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh.faceCount);
@@ -345,8 +350,6 @@ namespace Gek
                                 co_return;
                             }
 
-                            dbgTotalInputFaces += mesh.faceCount;
-                            dbgTotalInputPoints += mesh.pointCount;
                             for (uint32_t f = 0; f < mesh.faceCount; ++f)
                             {
                                 int32_t i0 = faces[f].indices[0];
@@ -362,14 +365,11 @@ namespace Gek
                                     continue;
                                 }
 
-                                ndVector verts[3] = {
-                                    ndVector(meshPoints[i0].x, meshPoints[i0].y, meshPoints[i0].z, 0.0f),
-                                    ndVector(meshPoints[i1].x, meshPoints[i1].y, meshPoints[i1].z, 0.0f),
-                                    ndVector(meshPoints[i2].x, meshPoints[i2].y, meshPoints[i2].z, 0.0f)
-                                };
-
-                                builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
-                                ++dbgSubmittedFaces;
+                                Triangle tri;
+                                tri.v[0] = ndVector(meshPoints[i0].x, meshPoints[i0].y, meshPoints[i0].z, 0.0f);
+                                tri.v[1] = ndVector(meshPoints[i1].x, meshPoints[i1].y, meshPoints[i1].z, 0.0f);
+                                tri.v[2] = ndVector(meshPoints[i2].x, meshPoints[i2].y, meshPoints[i2].z, 0.0f);
+                                allTriangles.push_back(tri);
                             }
                         }
 
@@ -378,33 +378,31 @@ namespace Gek
                             getContext()->log(Context::Warning, "Skipped {} invalid faces while loading tree physics model: {}", invalidFaceCount, modelComponent.name);
                         }
 
-                        getContext()->log(Context::Info,
-                                          "DEBUG [builder pre-End] model={} meshes={} input_faces={} input_pts={} invalid={} submitted={} bld_faces={} bld_idx={} bld_verts={}",
-                                          modelComponent.name, meshes.size(),
-                                          dbgTotalInputFaces, dbgTotalInputPoints,
-                                          invalidFaceCount, dbgSubmittedFaces,
-                                          builder.m_faceVertexCount.GetCount(),
-                                          builder.m_vertexIndex.GetCount(),
-                                          builder.m_vertexPoints.GetCount());
-                        builder.End(false); // Note: End(true) triggers coplanar-face merging in Newton's
-                        // ndPolygonSoupBuilder::Optimize(), which uses a fixed ndVector face[256] / faceIndex[256]
-                        // stack buffer. Large flat meshes (e.g. Sponza floors/walls) produce merged polygons
-                        // with >256 vertices, overflowing those arrays. Linux/glibc detects this as a buffer
-                        // overflow; MSVC silently corrupts the stack. Skipping optimization avoids the crash
-                        // while still producing a correct (if slightly less cache-friendly) BVH.
-                        getContext()->log(Context::Info,
-                                          "DEBUG [builder post-End] model={} faces={} idx={} verts={} normals={}",
-                                          modelComponent.name,
-                                          builder.m_faceVertexCount.GetCount(),
-                                          builder.m_vertexIndex.GetCount(),
-                                          builder.m_vertexPoints.GetCount(),
-                                          builder.m_normalPoints.GetCount());
-                        getContext()->log(Context::Info,
-                                          "DEBUG [entering ndShapeStatic_bvh ctor] model={}", modelComponent.name);
-                        shape = new ndShapeStatic_bvh(builder);
-                        getContext()->log(Context::Info,
-                                          "DEBUG [ndShapeStatic_bvh ctor returned] model={} shape={}",
-                                          modelComponent.name, shape != nullptr ? "OK" : "null");
+                        uint32_t totalFaces = static_cast<uint32_t>(allTriangles.size());
+                        uint32_t chunkCount = (totalFaces + MaxFacesPerChunk - 1) / MaxFacesPerChunk;
+                        getContext()->log(Context::Info, "Building BVH for {}: {} faces in {} chunk(s) of max {}", modelComponent.name, totalFaces, chunkCount, MaxFacesPerChunk);
+
+                        auto* compound = new ndShapeCompound();
+                        compound->BeginAddRemove();
+
+                        for (uint32_t chunk = 0; chunk < chunkCount; ++chunk)
+                        {
+                            uint32_t start = chunk * MaxFacesPerChunk;
+                            uint32_t end   = std::min(start + MaxFacesPerChunk, totalFaces);
+
+                            ndPolygonSoupBuilder builder;
+                            builder.Begin();
+                            for (uint32_t f = start; f < end; ++f)
+                            {
+                                builder.AddFace(&allTriangles[f].v[0].m_x, sizeof(ndVector), 3, 0);
+                            }
+                            builder.End(false);
+
+                            compound->AddCollision(new ndShapeInstance(new ndShapeStatic_bvh(builder)));
+                        }
+
+                        compound->EndAddRemove();
+                        shape = compound;
                     }
                     else
                     {
