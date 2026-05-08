@@ -10,6 +10,13 @@ FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 # against it. Building Newton as shared DLLs hides private symbols and
 # causes unresolved externals when a plugin inherits internal classes.
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+# Enforce 32-byte alignment on Newton classes (ndMatrix, ndVector, etc.) to ensure
+# consistent struct layout across compiler boundaries. Without this, MSVC uses default
+# alignment resulting in ndMatrix being 80 bytes instead of 64, causing misalignment
+# when GEK's 64-byte matrices are cast/copied to/from Newton's types.
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+
 FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
