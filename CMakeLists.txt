@@ -57,8 +57,11 @@ if(NOT MSVC)
     # Configure RPATH to embed library search paths in .so files for runtime linking.
     # $ORIGIN resolves to the directory containing the .so at runtime, so plugins in
     # bin/plugins/core/ can find sibling .so files without LD_LIBRARY_PATH.
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-    list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN" "$ORIGIN/../lib" "$ORIGIN/../plugins/core")
+    set(CMAKE_BUILD_RPATH "$ORIGIN" "$ORIGIN/../lib" "$ORIGIN/../plugins/core")
+    set(CMAKE_INSTALL_RPATH "$ORIGIN" "$ORIGIN/../lib" "$ORIGIN/../plugins/core")
 endif()
 
 include(FetchContent)
