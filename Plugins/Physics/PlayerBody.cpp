@@ -131,23 +131,31 @@ namespace Gek
                 headingAngle = transformComponent.rotation.getEuler().y;
 
                 // Create Newton kinematic body for player
-                std::cout << "Setting up Newton body for player entity " << entity << std::endl;
+                fprintf(stderr, "[addEntity] Setting up Newton body for player entity %p\n", entity);
+                fflush(stderr);
                 SetNotifyCallback(new NotifyCallback(this, world));
-                std::cout << "Getting matrix for player entity " << entity << std::endl;
+                fprintf(stderr, "Getting matrix for player entity %p\n", entity);
+                fflush(stderr);
                 auto matrix(transformComponent.getMatrix().data);
-                std::cout << "Setting matrix for player entity " << entity << std::endl;
+                fprintf(stderr, "Setting matrix for player entity %p\n", entity);
+                fflush(stderr);
                 SetMatrix(matrix);
-                std::cout << "Setting mass matrix for player entity " << entity << std::endl;
+                fprintf(stderr, "Setting mass matrix for player entity %p\n", entity);
+                fflush(stderr);
                 SetMassMatrix(physicalComponent.mass, ndShapeInstance(new ndShapeCapsule(playerComponent.innerRadius, playerComponent.outerRadius, playerComponent.height)));
-                std::cout << "Disabling auto-sleep for player entity " << entity << std::endl;
+                fprintf(stderr, "Disabling auto-sleep for player entity %p\n", entity);
+                fflush(stderr);
                 SetAutoSleep(false);
 
-                std::cout << "PlayerBody constructor finished for entity " << entity << std::endl;
+                fprintf(stderr, "PlayerBody constructor finished for entity %p\n", entity);
+                fflush(stderr);
                 newtonBody = this;
 
-                std::cout << "Connecting PlayerBody to population signals for entity " << entity << std::endl;
+                fprintf(stderr, "Connecting PlayerBody to population signals for entity %p\n", entity);
+                fflush(stderr);
                 population->onAction.connect(this, &PlayerBody::onAction);
-                std::cout << "PlayerBody setup complete for entity " << entity << std::endl;
+                fprintf(stderr, "PlayerBody setup complete for entity %p\n", entity);
+                fflush(stderr);
             }
 
             ~PlayerBody(void)
