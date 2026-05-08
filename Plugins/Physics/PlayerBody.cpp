@@ -137,7 +137,7 @@ namespace Gek
                 fprintf(stderr, "Getting matrix for player entity %p\n", entity);
                 fflush(stderr);
                 ndMatrix matrix(transformComponent.getMatrix().data);
-                fprintf(stderr, "Setting matrix for player entity %p\n", entity);
+                fprintf(stderr, "Setting matrix for player entity %p, matrix: %p\n", entity, &matrix);
                 fflush(stderr);
                 SetMatrix(matrix);
                 fprintf(stderr, "Setting mass matrix for player entity %p\n", entity);
