@@ -136,7 +136,7 @@ namespace Gek
                 SetNotifyCallback(new NotifyCallback(this, world));
                 fprintf(stderr, "Getting matrix for player entity %p\n", entity);
                 fflush(stderr);
-                auto matrix(transformComponent.getMatrix().data);
+                ndMatrix matrix(transformComponent.getMatrix().data);
                 fprintf(stderr, "Setting matrix for player entity %p\n", entity);
                 fflush(stderr);
                 SetMatrix(matrix);
