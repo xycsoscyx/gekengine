@@ -134,7 +134,7 @@ namespace Gek
                 std::cout << "Setting up Newton body for player entity " << entity << std::endl;
                 SetNotifyCallback(new NotifyCallback(this, world));
                 std::cout << "Setting matrix for player entity " << entity << std::endl;
-                SetMatrix(transformComponent.getMatrix().data);
+                SetMatrix(ndMatrix(transformComponent.getMatrix().data));
                 std::cout << "Setting mass matrix for player entity " << entity << std::endl;
                 SetMassMatrix(physicalComponent.mass, ndShapeInstance(new ndShapeCapsule(playerComponent.innerRadius, playerComponent.outerRadius, playerComponent.height)));
                 std::cout << "Disabling auto-sleep for player entity " << entity << std::endl;
