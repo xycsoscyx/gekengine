@@ -10,8 +10,7 @@ FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 # against it. Building Newton as shared DLLs hides private symbols and
 # causes unresolved externals when a plugin inherits internal classes.
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-target_compile_definitions(ndNewton PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+target_compile_definitions(newton PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")

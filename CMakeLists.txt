@@ -42,6 +42,7 @@ if(NOT WIN32)
     set(CMAKE_USE_WIN32_THREADS_INIT 0)
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
+    add_compile_options(-mstackrealign) # Useful if mixing unaligned code
 endif()
 
 #add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
