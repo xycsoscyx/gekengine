@@ -34,12 +34,16 @@ if(MSVC)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
+    # On MSVC, Newton's D_GCC_NEWTON_CLASS_ALIGN_32 is empty even when
+    # D_NEWTON_ENFORCE_CLASS_ALIGNMENT is set (Newton bug), so override with __declspec.
+    add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_32=__declspec(align(32)))
+    add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_16=__declspec(align(16)))
 endif()
 
-# --- Newton alignment workaround: force correct macro for all dependencies (including Newton)
+# Enable Newton's class alignment enforcement globally for all platforms.
+# On GCC/Clang, Newton already maps D_GCC_NEWTON_CLASS_ALIGN_32 to __attribute__((aligned(32)))
+# when this is defined; on MSVC the macros above override it with __declspec(align(32)).
 add_definitions(-DD_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_32=__declspec(align(32)))
-add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_16=__declspec(align(16)))
 
 if(NOT WIN32)
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
