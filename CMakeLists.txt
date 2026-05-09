@@ -34,10 +34,6 @@ if(MSVC)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
-    # On MSVC, Newton's D_GCC_NEWTON_CLASS_ALIGN_32 is empty even when
-    # D_NEWTON_ENFORCE_CLASS_ALIGNMENT is set (Newton bug), so override with __declspec.
-    add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_32=__declspec(align(32)))
-    add_definitions(-DD_GCC_NEWTON_CLASS_ALIGN_16=__declspec(align(16)))
 endif()
 
 # Enable Newton's class alignment enforcement globally for all platforms.
