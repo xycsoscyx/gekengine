@@ -11,7 +11,7 @@ FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 # causes unresolved externals when a plugin inherits internal classes.
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-add_definitions(-DD_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
