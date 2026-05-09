@@ -117,7 +117,7 @@ FetchContent_Declare(stb
 )
 FetchContent_GetProperties(stb)
 if(NOT stb_POPULATED)
-    FetchContent_Populate(stb)
+    FetchContent_MakeAvailable(stb)
 endif()
 
 FetchContent_Declare(bc7enc_rdo
@@ -126,7 +126,7 @@ FetchContent_Declare(bc7enc_rdo
 )
 FetchContent_GetProperties(bc7enc_rdo)
 if(NOT bc7enc_rdo_POPULATED)
-    FetchContent_Populate(bc7enc_rdo)
+    FetchContent_MakeAvailable(bc7enc_rdo)
 endif()
 
 FetchContent_Declare(bcdec
@@ -135,7 +135,7 @@ FetchContent_Declare(bcdec
 )
 FetchContent_GetProperties(bcdec)
 if(NOT bcdec_POPULATED)
-    FetchContent_Populate(bcdec)
+    FetchContent_MakeAvailable(bcdec)
 endif()
 
 add_library(stb INTERFACE)
