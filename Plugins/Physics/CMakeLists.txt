@@ -3,24 +3,19 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-# 1. Set variables that Newton's CMakeLists.txt expects
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# 2. Add the alignment definition to the current directory scope.
-# When MakeAvailable calls add_subdirectory, Newton will inherit this.
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
-# 3. Declare the dependency
 FetchContent_Declare(
-    newton
-    GIT_REPOSITORY "https://github.com"
-    GIT_TAG master
-    SOURCE_SUBDIR newton-4.00
-)
+	newton
+	OVERRIDE_FIND_PACKAGE
+	GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git
+	GIT_TAG master
+	SOURCE_SUBDIR newton-4.00
+	OVERRIDE_FIND_PACKAGE)
 
-# 4. Use the modern 'intended' command
-# This handles the download, configuration, and build setup in one step.
 FetchContent_MakeAvailable(newton)
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
