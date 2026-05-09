@@ -6,7 +6,7 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+add_compile_definitions(-UD_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_Declare(
 	newton
