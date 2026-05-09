@@ -36,9 +36,6 @@ if(MSVC)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
 endif()
 
-# Enable Newton's class alignment enforcement globally for all platforms.
-# On GCC/Clang, Newton already maps D_GCC_NEWTON_CLASS_ALIGN_32 to __attribute__((aligned(32)))
-# when this is defined; on MSVC the macros above override it with __declspec(align(32)).
 add_definitions(-DD_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 if(NOT WIN32)
