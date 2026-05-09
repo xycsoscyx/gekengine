@@ -3,25 +3,21 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
+# 1. Set Newton configuration
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Set this BEFORE MakeAvailable so the subproject inherits it
+# 2. Force the alignment flag into the directory scope BEFORE fetching
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
+# 3. Standard FetchContent
 FetchContent_Declare(
     newton 
-    GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git 
+    GIT_REPOSITORY https://github.com 
     GIT_TAG master 
     SOURCE_SUBDIR newton-4.00
 )
-
 FetchContent_MakeAvailable(newton)
-
-# Now that the targets exist, apply the definition
-set_property(TARGET ndNewton APPEND PROPERTY COMPILE_DEFINITIONS "D_NEWTON_ENFORCE_CLASS_ALIGNMENT")
-# You may also need to apply it to the core math library if ndNewton depends on it
-set_property(TARGET ndCore APPEND PROPERTY COMPILE_DEFINITIONS "D_NEWTON_ENFORCE_CLASS_ALIGNMENT")
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
