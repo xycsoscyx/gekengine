@@ -117,7 +117,7 @@ FetchContent_Declare(stb
 )
 FetchContent_GetProperties(stb)
 if(NOT stb_POPULATED)
-    FetchContent_MakeAvailable(stb)
+    FetchContent_Populate(stb)
 endif()
 
 FetchContent_Declare(bc7enc_rdo
@@ -126,7 +126,7 @@ FetchContent_Declare(bc7enc_rdo
 )
 FetchContent_GetProperties(bc7enc_rdo)
 if(NOT bc7enc_rdo_POPULATED)
-    FetchContent_MakeAvailable(bc7enc_rdo)
+    FetchContent_Populate(bc7enc_rdo)
 endif()
 
 FetchContent_Declare(bcdec
@@ -135,19 +135,13 @@ FetchContent_Declare(bcdec
 )
 FetchContent_GetProperties(bcdec)
 if(NOT bcdec_POPULATED)
-    FetchContent_MakeAvailable(bcdec)
+    FetchContent_Populate(bcdec)
 endif()
 
-if(NOT TARGET stb)
-    add_library(stb INTERFACE)
-endif()
-
+add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
-if(NOT TARGET bcdec)
-    add_library(bcdec INTERFACE)
-endif()
-
+add_library(bcdec INTERFACE)
 target_include_directories(bcdec INTERFACE ${bcdec_SOURCE_DIR})
 
 if(GEK_BUILD_TESTS)
