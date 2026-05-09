@@ -11,18 +11,7 @@ FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 # causes unresolved externals when a plugin inherits internal classes.
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Enforce 32-byte alignment on Newton classes (ndMatrix, ndVector, etc.) to ensure
-# consistent struct layout across compiler boundaries. Without this, MSVC uses default
-# alignment resulting in ndMatrix being 80 bytes instead of 64, causing misalignment
-# when GEK's 64-byte matrices are cast/copied to/from Newton's types.
-# 
-# Newton has a macro bug where D_GCC_NEWTON_CLASS_ALIGN_32 is empty on MSVC, so we
-# override it at compile time to ensure alignment works correctly.
-add_compile_definitions(
-	D_NEWTON_ENFORCE_CLASS_ALIGNMENT
-	$<$<CXX_COMPILER_ID:MSVC>:D_GCC_NEWTON_CLASS_ALIGN_32=__declspec(align(32))>
-	$<$<CXX_COMPILER_ID:MSVC>:D_GCC_NEWTON_CLASS_ALIGN_16=__declspec(align(16))>
-)
+add_definitions(-DD_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
