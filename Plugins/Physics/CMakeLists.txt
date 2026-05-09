@@ -3,16 +3,15 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-include(FetchContent)
-
-# 1. Force the alignment flag globally so Newton sees it during its own build
-add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-
-# 2. Set Newton build options
+# 1. Set variables that Newton's CMakeLists.txt expects
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# 3. Clean Declare (Fixed URL parsing)
+# 2. Add the alignment definition to the current directory scope.
+# When MakeAvailable calls add_subdirectory, Newton will inherit this.
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+
+# 3. Declare the dependency
 FetchContent_Declare(
     newton
     GIT_REPOSITORY "https://github.com"
@@ -20,9 +19,9 @@ FetchContent_Declare(
     SOURCE_SUBDIR newton-4.00
 )
 
-# 4. Populate
+# 4. Use the modern 'intended' command
+# This handles the download, configuration, and build setup in one step.
 FetchContent_MakeAvailable(newton)
-
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
