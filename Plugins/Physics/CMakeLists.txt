@@ -3,25 +3,26 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-# Set Newton options in the CACHE so they are passed into the subproject
+include(FetchContent)
+
+# 1. Force the alignment flag globally so Newton sees it during its own build
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+
+# 2. Set Newton build options
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Use a CACHE variable for the definition if the subproject supports it, 
-# otherwise use CMAKE_CXX_FLAGS for a "brute force" inherited approach
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DD_NEWTON_ENFORCE_CLASS_ALIGNMENT")
-
-include(FetchContent)
+# 3. Clean Declare (Fixed URL parsing)
 FetchContent_Declare(
-    newton 
-    GIT_REPOSITORY https://github.com 
-    GIT_TAG master 
+    newton
+    GIT_REPOSITORY "https://github.com"
+    GIT_TAG master
     SOURCE_SUBDIR newton-4.00
 )
 
-# If it still fails, check the detailed log: 
-# build/_deps/newton-subbuild/newton-populate-prefix/src/newton-populate-stamp/newton-populate-build-*.log
+# 4. Populate
 FetchContent_MakeAvailable(newton)
+
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
