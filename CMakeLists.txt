@@ -138,10 +138,16 @@ if(NOT bcdec_POPULATED)
     FetchContent_MakeAvailable(bcdec)
 endif()
 
-add_library(stb INTERFACE)
+if(NOT TARGET stb)
+    add_library(stb INTERFACE)
+endif()
+
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
-add_library(bcdec INTERFACE)
+if(NOT TARGET bcdec)
+    add_library(bcdec INTERFACE)
+endif()
+
 target_include_directories(bcdec INTERFACE ${bcdec_SOURCE_DIR})
 
 if(GEK_BUILD_TESTS)
