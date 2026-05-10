@@ -10,8 +10,6 @@ set(NEWTON_SIMD_SET "avx" CACHE STRING "" FORCE)
 
 add_compile_definitions(D_NEWTON_USE_AVX)
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-add_compile_definitions(D_GCC_NEWTON_CLASS_ALIGN_32=__attribute__((aligned(16))))
-add_compile_definitions(D_MSV_NEWTON_CLASS_ALIGN_32=)
 
 FetchContent_Declare(
 	newton
@@ -23,13 +21,18 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(newton)
 
-# Targeted application to avoid messing with Newton's internal macro logic
-set(NEWTON_TARGETS ndCore ndNewton) # add other targets if needed
-foreach(TGT ${NEWTON_TARGETS})
-    if(TARGET ${TGT})
-        target_compile_definitions(${TGT} PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-    endif()
-endforeach()
+# 3. Targeted Fix: Apply only to the core libraries to avoid shell errors in dBrain
+if(TARGET ndCore)
+    target_compile_definitions(ndCore PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+endif()
+if(TARGET ndNewton)
+    target_compile_definitions(ndNewton PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+endif()
+
+# 4. Force 16-byte alignment (prevents 96-byte padding on Linux)
+if(UNIX)
+    add_compile_options(-msse4.1) 
+endif()
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
