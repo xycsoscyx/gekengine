@@ -30,6 +30,10 @@ endif()
 
 FetchContent_MakeAvailable(newton)
 
+if(TARGET ndCore AND TARGET TBB::tbb)
+    target_link_libraries(ndCore PUBLIC TBB::tbb)
+endif()
+
 # 3. Targeted Fix: Apply only to the core libraries to avoid shell errors in dBrain
 if(TARGET ndCore)
     target_compile_definitions(ndCore PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
