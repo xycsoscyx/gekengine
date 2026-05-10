@@ -10,6 +10,7 @@ set(NEWTON_SIMD_SET "avx" CACHE STRING "" FORCE)
 
 add_compile_definitions(D_NEWTON_USE_AVX)
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DD_NEWTON_ENFORCE_CLASS_ALIGNMENT")
 
 FetchContent_Declare(
 	newton
