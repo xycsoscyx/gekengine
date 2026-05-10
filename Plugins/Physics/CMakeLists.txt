@@ -6,20 +6,6 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# 1. Force Newton's internal AVX option OFF in the cache
-set(D_NEWTON_USE_AVX2 OFF CACHE BOOL "" FORCE)
-
-# 2. You must also remove -march=haswell if you are setting it, 
-# or force a lower architecture for the Newton targets.
-# If you don't need AVX2 features, just use:
-if(UNIX)
-    add_compile_options(-msse4.1 -fPIC)
-    # Remove march=haswell if it's in your CMAKE_CXX_FLAGS
-endif()
-
-# 3. Keep your enforcement flag
-add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-
 FetchContent_Declare(
 	newton
 	OVERRIDE_FIND_PACKAGE
@@ -27,6 +13,20 @@ FetchContent_Declare(
 	GIT_TAG master
 	SOURCE_SUBDIR newton-4.00
 	OVERRIDE_FIND_PACKAGE)
+
+# 1. Force the internal Newton AVX options OFF in the cache
+# This stops Newton's headers from choosing 32-byte alignment logic
+set(D_NEWTON_USE_AVX2 OFF CACHE BOOL "" FORCE)
+set(D_NEWTON_USE_AVX OFF CACHE BOOL "" FORCE)
+
+# 2. Set the enforcement flag
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+
+# 3. For the Physics plugin/subproject, you must ensure -march=haswell 
+# isn't overriding the alignment. Force SSE4.1 which uses 16-byte alignment.
+if(UNIX)
+    add_compile_options(-msse4.1 -fPIC)
+endif()
 
 FetchContent_MakeAvailable(newton)
 
