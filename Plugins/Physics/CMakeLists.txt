@@ -6,11 +6,13 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-set(NEWTON_SIMD_SET "avx" CACHE STRING "" FORCE)
+set(D_NEWTON_ENFORCE_CLASS_ALIGNMENT ON CACHE BOOL "Force alignment" FORCE)
 
-add_compile_definitions(D_NEWTON_USE_AVX)
-add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DD_NEWTON_ENFORCE_CLASS_ALIGNMENT")
+
+if(UNIX)
+    add_compile_options(-msse4.1 -fPIC)
+endif()
 
 FetchContent_Declare(
 	newton
