@@ -6,13 +6,19 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-set(D_NEWTON_ENFORCE_CLASS_ALIGNMENT ON CACHE BOOL "Force alignment" FORCE)
+# 1. Force Newton's internal AVX option OFF in the cache
+set(D_NEWTON_USE_AVX2 OFF CACHE BOOL "" FORCE)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DD_NEWTON_ENFORCE_CLASS_ALIGNMENT")
-
+# 2. You must also remove -march=haswell if you are setting it, 
+# or force a lower architecture for the Newton targets.
+# If you don't need AVX2 features, just use:
 if(UNIX)
     add_compile_options(-msse4.1 -fPIC)
+    # Remove march=haswell if it's in your CMAKE_CXX_FLAGS
 endif()
+
+# 3. Keep your enforcement flag
+add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_Declare(
 	newton
