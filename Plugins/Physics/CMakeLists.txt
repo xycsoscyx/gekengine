@@ -23,6 +23,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(newton)
 
+# Targeted application to avoid messing with Newton's internal macro logic
+set(NEWTON_TARGETS ndCore ndNewton) # add other targets if needed
+foreach(TGT ${NEWTON_TARGETS})
+    if(TARGET ${TGT})
+        target_compile_definitions(${TGT} PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
+    endif()
+endforeach()
+
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
