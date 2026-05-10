@@ -6,14 +6,8 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# 1. Allow AVX instructions so the code actually compiles
 set(NEWTON_SIMD_SET "avx" CACHE STRING "" FORCE)
 
-# 2. Re-enable AVX so ndBigVector works
-remove_all_compile_options(-mno-avx -mno-avx2) 
-
-# 3. THE "MAGIC" PART: Force the alignment to 16 even when using AVX.
-# This makes the matrix 64 bytes (4 rows * 16 bytes) instead of 96.
 add_compile_definitions(D_NEWTON_USE_AVX)
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 add_compile_definitions(D_GCC_NEWTON_CLASS_ALIGN_32=__attribute__((aligned(16))))
