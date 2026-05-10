@@ -13,6 +13,8 @@ set(NEWTON_SIMD_SET "sse4.2" CACHE STRING "" FORCE)
 add_compile_definitions(D_NEWTON_USE_SSE4.2)
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
+add_compile_options(-mno-avx -mno-avx2)
+
 FetchContent_Declare(
 	newton
 	OVERRIDE_FIND_PACKAGE
