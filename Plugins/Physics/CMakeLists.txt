@@ -6,13 +6,11 @@ project(${ProjectID})
 set(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Force the same SIMD level for everything
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
-    add_compile_options(-mavx2)
-    add_compile_definitions(D_NEWTON_USE_AVX)
-endif()
+# Disable AVX-specific paths in Newton
+set(NEWTON_SIMD_SET "sse4.2" CACHE STRING "" FORCE) 
 
-# Also ensure alignment is enforced consistently
+# Ensure the enforcement macro doesn't trigger 32-byte paths
+add_compile_definitions(D_NEWTON_USE_SSE4.2)
 add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
 
 FetchContent_Declare(
