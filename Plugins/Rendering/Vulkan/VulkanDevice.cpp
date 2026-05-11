@@ -7144,16 +7144,6 @@ namespace Gek
                     return;
                 }
 
-                // Per-frame diagnostic summary (first 5 frames, then every 300)
-                if (frameIndex < 5 || (frameIndex % 300) == 0)
-                {
-                    std::fprintf(stderr,
-                                 "VK FRAME %llu: total=%u offscreen=%u backbuf=%u pipelineFail=%u invalidTarget=%u emptyDesc=%u\n",
-                                 static_cast<unsigned long long>(frameIndex),
-                                 frameTotalCommandCount, frameOffscreenDrawCount, frameBackbufferDrawCount,
-                                 framePipelineFailCount, frameInvalidTargetCount, frameEmptyDescriptorCount);
-                    std::fflush(stderr);
-                }
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
@@ -7415,12 +7405,6 @@ namespace Gek
             static uint64_t frameRecordTraceCounter = 0;
             ++frameRecordTraceCounter;
             const bool traceFrameRecord = (frameRecordTraceCounter <= 8) || ((frameRecordTraceCounter % 600) == 0);
-            if (traceFrameRecord)
-            {
-                std::fprintf(stderr, "Vulkan ensureFrameRecording begin %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
-                std::fflush(stderr);
-            }
-
             if (frameRecordingActive)
             {
                 return true;
@@ -7433,26 +7417,14 @@ namespace Gek
 
             if (inFlightFencePending)
             {
-                if (traceFrameRecord)
-                {
-                    std::fprintf(stderr, "Vulkan before vkWaitForFences(inFlight) %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
-                    std::fflush(stderr);
-                }
-
                 // Use a 2-second timeout to survive FIFO V-SYNC periods (16.7ms at 60Hz) and slow frames.
                 // The old 10ms timeout was shorter than one V-SYNC period, causing constant spurious timeouts.
                 const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 2'000'000'000ULL);
-
-                if (traceFrameRecord)
-                {
-                    std::fprintf(stderr, "Vulkan after vkWaitForFences(inFlight) %llu result=%d\n", static_cast<unsigned long long>(frameRecordTraceCounter), static_cast<int>(waitResult));
-                    std::fflush(stderr);
-                }
-
                 if (waitResult == VK_TIMEOUT)
                 {
                     throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan fence wait timeout");
                 }
+
                 if (waitResult != VK_SUCCESS)
                 {
                     if (!loggedDeviceLost)
@@ -7462,6 +7434,7 @@ namespace Gek
                                           "Vulkan device lost during vkWaitForFences: result={}",
                                           static_cast<int32_t>(waitResult));
                     }
+
                     deviceLost = true;
                     return false;
                 }
@@ -7506,21 +7479,8 @@ namespace Gek
             frameInvalidTargetCount = 0;
             frameEmptyDescriptorCount = 0;
 
-            if (traceFrameRecord)
-            {
-                std::fprintf(stderr, "Vulkan before vkAcquireNextImageKHR %llu\n", static_cast<unsigned long long>(frameRecordTraceCounter));
-                std::fflush(stderr);
-            }
-
             // Use a 2-second timeout; on FIFO swapchains images may not be available for a full V-SYNC period.
             VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, 2'000'000'000ULL, imageAvailableSemaphore, VK_NULL_HANDLE, &frameImageIndex);
-
-            if (traceFrameRecord)
-            {
-                std::fprintf(stderr, "Vulkan after vkAcquireNextImageKHR %llu result=%d\n", static_cast<unsigned long long>(frameRecordTraceCounter), static_cast<int>(acquireResult));
-                std::fflush(stderr);
-            }
-
             if (acquireResult == VK_TIMEOUT)
             {
                 throw std::system_error(std::make_error_code(std::errc::device_or_resource_busy), "Vulkan acquire timeout");
@@ -7539,6 +7499,7 @@ namespace Gek
                                       "Vulkan device lost during vkAcquireNextImageKHR: result={}",
                                       static_cast<int32_t>(acquireResult));
                 }
+
                 deviceLost = true;
                 return false;
             }
@@ -8874,16 +8835,6 @@ namespace Gek
                 if (!validTargets)
                 {
                     ++frameInvalidTargetCount;
-                    if (frameInvalidTargetCount <= 3)
-                    {
-                        std::fprintf(stderr,
-                                     "VK invalidTarget: count=%u img0=%p view0=%p fmt0=%d\n",
-                                     offscreenTargetCount,
-                                     static_cast<void *>(offscreenImages[0]),
-                                     static_cast<void *>(offscreenImageViews[0]),
-                                     static_cast<int>(offscreenFormats[0]));
-                        std::fflush(stderr);
-                    }
                     return;
                 }
 

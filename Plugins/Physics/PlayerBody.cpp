@@ -5,6 +5,7 @@
 #include "GEK/Math/Common.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Physics/Base.hpp"
+#include "GEK/Physics/MatrixUtil.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include <algorithm>
@@ -131,34 +132,15 @@ namespace Gek
                 headingAngle = transformComponent.rotation.getEuler().y;
 
                 // Create Newton kinematic body for player
-                fprintf(stderr, "[addEntity] Setting up Newton body for player entity %p\n", entity);
-                fflush(stderr);
                 SetNotifyCallback(new NotifyCallback(this, world));
-                fprintf(stderr, "Getting old matrix for player entity %p, sizeof(Float4x4): %zu\n", entity, sizeof(Math::Float4x4));
-                fflush(stderr);
-                auto oldMatrix(transformComponent.getMatrix());
-                fprintf(stderr, "Creating new matrix for player entity %p, sizeof(ndMatrix): %zu\n", entity, sizeof(ndMatrix));
-                fflush(stderr);
-                ndMatrix matrix(oldMatrix.r.x.data, oldMatrix.r.y.data, oldMatrix.r.z.data, oldMatrix.r.w.data);
-                fprintf(stderr, "Setting matrix for player entity %p, matrix: %p\n", entity, &matrix);
-                fflush(stderr);
-                SetMatrix(matrix);
-                fprintf(stderr, "Setting mass matrix for player entity %p\n", entity);
-                fflush(stderr);
+                auto matrix(transformComponent.getMatrix());
+                SetMatrix(MakeNewtonMatrix(matrix));
                 SetMassMatrix(physicalComponent.mass, ndShapeInstance(new ndShapeCapsule(playerComponent.innerRadius, playerComponent.outerRadius, playerComponent.height)));
-                fprintf(stderr, "Disabling auto-sleep for player entity %p\n", entity);
-                fflush(stderr);
                 SetAutoSleep(false);
 
-                fprintf(stderr, "PlayerBody constructor finished for entity %p\n", entity);
-                fflush(stderr);
                 newtonBody = this;
 
-                fprintf(stderr, "Connecting PlayerBody to population signals for entity %p\n", entity);
-                fflush(stderr);
                 population->onAction.connect(this, &PlayerBody::onAction);
-                fprintf(stderr, "PlayerBody setup complete for entity %p\n", entity);
-                fflush(stderr);
             }
 
             ~PlayerBody(void)

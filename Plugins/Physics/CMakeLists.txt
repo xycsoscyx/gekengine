@@ -14,38 +14,7 @@ FetchContent_Declare(
 	SOURCE_SUBDIR newton-4.00
 	OVERRIDE_FIND_PACKAGE)
 
-# 1. Force the internal Newton AVX options OFF in the cache
-# This stops Newton's headers from choosing 32-byte alignment logic
-set(D_NEWTON_USE_AVX2 OFF CACHE BOOL "" FORCE)
-set(D_NEWTON_USE_AVX OFF CACHE BOOL "" FORCE)
-
-# 2. Set the enforcement flag
-add_compile_definitions(D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-
-# 3. For the Physics plugin/subproject, you must ensure -march=haswell 
-# isn't overriding the alignment. Force SSE4.1 which uses 16-byte alignment.
-if(UNIX)
-    add_compile_options(-msse4.1 -fPIC)
-endif()
-
 FetchContent_MakeAvailable(newton)
-
-if(TARGET ndCore AND TARGET TBB::tbb)
-    target_link_libraries(ndCore PUBLIC TBB::tbb)
-endif()
-
-# 3. Targeted Fix: Apply only to the core libraries to avoid shell errors in dBrain
-if(TARGET ndCore)
-    target_compile_definitions(ndCore PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-endif()
-if(TARGET ndNewton)
-    target_compile_definitions(ndNewton PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
-endif()
-
-# 4. Force 16-byte alignment (prevents 96-byte padding on Linux)
-if(UNIX)
-    add_compile_options(-msse4.1) 
-endif()
 
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")

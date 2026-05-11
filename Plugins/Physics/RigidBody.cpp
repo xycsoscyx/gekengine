@@ -3,6 +3,7 @@
 #include "GEK/Math/Common.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Physics/Base.hpp"
+#include "GEK/Physics/MatrixUtil.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 
@@ -67,7 +68,7 @@ namespace Gek
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 auto matrix(transformComponent.getMatrix());
-                SetMatrix(matrix.data);
+                SetMatrix(MakeNewtonMatrix(matrix));
                 SetAutoSleep(false);
             }
 

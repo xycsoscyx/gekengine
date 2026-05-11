@@ -1,5 +1,6 @@
 #pragma once
 #include "GEK/Physics/Base.hpp"
+#include "GEK/Physics/MatrixUtil.hpp"
 #include <dCollision/ndBodyKinematic.h>
 
 namespace Gek
@@ -11,7 +12,7 @@ namespace Gek
           public:
             StaticBody(const Math::Float4x4 &matrix, ndShapeInstance shape)
             {
-                SetMatrix(matrix.data);
+                SetMatrix(MakeNewtonMatrix(matrix));
                 SetCollisionShape(shape);
                 SetMassMatrix(0.0f, shape);
                 SetAutoSleep(true);

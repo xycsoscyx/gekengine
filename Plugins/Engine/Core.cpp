@@ -727,14 +727,6 @@ namespace Gek
 
             void onWindowIdle(void)
             {
-                static uint64_t idleTraceCounter = 0;
-                ++idleTraceCounter;
-                if (idleTraceCounter <= 8 || (idleTraceCounter % 600) == 0)
-                {
-                    std::fprintf(stderr, "Core onWindowIdle begin %llu\n", static_cast<unsigned long long>(idleTraceCounter));
-                    std::fflush(stderr);
-                }
-
                 timer.update();
 
                 if (pendingPopulationLoad && population)
@@ -777,19 +769,7 @@ namespace Gek
                     const float updateFrameTime = (enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
                     if (population)
                     {
-                        if (idleTraceCounter <= 8 || (idleTraceCounter % 600) == 0)
-                        {
-                            std::fprintf(stderr, "Core before population->update %llu\n", static_cast<unsigned long long>(idleTraceCounter));
-                            std::fflush(stderr);
-                        }
-
                         population->update(updateFrameTime);
-
-                        if (idleTraceCounter <= 8 || (idleTraceCounter % 600) == 0)
-                        {
-                            std::fprintf(stderr, "Core after population->update %llu\n", static_cast<unsigned long long>(idleTraceCounter));
-                            std::fflush(stderr);
-                        }
                     }
 
                     if (!enableInterfaceControl && !loadingPopulation)
@@ -814,12 +794,6 @@ namespace Gek
                             population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
                         }
                     }
-                }
-
-                if (idleTraceCounter <= 8 || (idleTraceCounter % 600) == 0)
-                {
-                    std::fprintf(stderr, "Core onWindowIdle end %llu\n", static_cast<unsigned long long>(idleTraceCounter));
-                    std::fflush(stderr);
                 }
             }
 
