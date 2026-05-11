@@ -105,7 +105,9 @@ FetchContent_MakeAvailable(nlohmann_json)
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(mikktspace)
 
-SET(TBB_TEST OFF CACHE BOOL "" FORCE)
+set(TBB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(TBB_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(oneTBB)
 
