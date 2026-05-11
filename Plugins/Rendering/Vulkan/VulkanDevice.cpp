@@ -7392,19 +7392,16 @@ namespace Gek
             }
 
             const VkImageLayout trackedLayout = layoutSearch->second;
-            // Return the actual tracked layout for render targets. If it's TRANSFER_DST_OPTIMAL (e.g., after a clear),
-            // descriptors will correctly reflect that, and a barrier will be issued to transition it when needed.
-            // For most cases, render targets will be in COLOR_ATTACHMENT_OPTIMAL or SHADER_READ_ONLY_OPTIMAL.
-            // GENERAL layout can be used directly for compute/sampling without transitions.
-            if (trackedLayout == VK_IMAGE_LAYOUT_GENERAL || 
-                trackedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
-                trackedLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
-                trackedLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+            // Sampled-image descriptors must use a sampleable layout.
+            // Keep GENERAL for UAV/read-write interop; otherwise use SHADER_READ_ONLY.
+            if (trackedLayout == VK_IMAGE_LAYOUT_GENERAL ||
+                trackedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             {
                 return trackedLayout;
             }
 
-            // For any other layout, conservatively return SHADER_READ_ONLY (e.g., if layout tracking is unclear)
+            // For non-sampleable tracked layouts (COLOR_ATTACHMENT/TRANSFER_DST/etc),
+            // descriptor layout remains SHADER_READ_ONLY and explicit barriers perform transitions.
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
@@ -9050,7 +9047,6 @@ namespace Gek
             }
 
 
-
             VkRenderPassBeginInfo renderPassBeginInfo{};
             renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassBeginInfo.renderPass = activeRenderPass;
@@ -9099,17 +9095,29 @@ namespace Gek
                         // Transition render target to SHADER_READ_ONLY for sampling.
                         // Handle both COLOR_ATTACHMENT_OPTIMAL (rendered to) and TRANSFER_DST_OPTIMAL (cleared).
                         VkImageLayout expectedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        if (transitionedToColorAttachment[targetIndex] != 0)
+                        auto layoutSearch = offscreenImageLayouts.find(offscreenImages[targetIndex]);
+                        if (layoutSearch != std::end(offscreenImageLayouts))
+                        {
+                            expectedLayout = layoutSearch->second;
+                        }
+
+                        if (expectedLayout == VK_IMAGE_LAYOUT_UNDEFINED && transitionedToColorAttachment[targetIndex] != 0)
                         {
                             expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                         }
-                        else
+
+                        if (expectedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                         {
-                            // Check if this target was cleared (in TRANSFER_DST)
-                            auto layoutSearch = offscreenImageLayouts.find(offscreenImages[targetIndex]);
-                            if (layoutSearch != std::end(offscreenImageLayouts) && layoutSearch->second == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            continue;
+                        }
+
+                        if (expectedLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
+                            expectedLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+                            expectedLayout != VK_IMAGE_LAYOUT_GENERAL)
+                        {
+                            if (transitionedToColorAttachment[targetIndex] != 0)
                             {
-                                expectedLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                             }
                             else
                             {
@@ -9134,12 +9142,16 @@ namespace Gek
                         switch (expectedLayout)
                         {
                         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-                            toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                            toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                             srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
                             break;
                         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
                             toShaderReadTarget.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                             srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                            break;
+                        case VK_IMAGE_LAYOUT_GENERAL:
+                            toShaderReadTarget.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                            srcStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
                             break;
                         default:
                             toShaderReadTarget.srcAccessMask = 0;
@@ -9149,7 +9161,7 @@ namespace Gek
                         toShaderReadTarget.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                         vkCmdPipelineBarrier(commandBuffer,
                                              srcStage,
-                                             VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                              0, 0, nullptr, 0, nullptr, 1, &toShaderReadTarget);
 
                         offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
