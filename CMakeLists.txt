@@ -105,11 +105,22 @@ FetchContent_MakeAvailable(nlohmann_json)
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(mikktspace)
 
-set(TBB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
-set(TBB_BUILD_STATIC ON CACHE BOOL "" FORCE)
+# oneTBB respects BUILD_SHARED_LIBS (not TBB_BUILD_SHARED/TBB_BUILD_STATIC which it ignores).
+# Force static so libtbb.so is not required at runtime on Linux.
+get_property(_tbb_bsl_set CACHE BUILD_SHARED_LIBS PROPERTY VALUE SET)
+if(_tbb_bsl_set)
+    get_property(_tbb_bsl_saved CACHE BUILD_SHARED_LIBS PROPERTY VALUE)
+endif()
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(oneTBB)
+# Restore BUILD_SHARED_LIBS to its previous state
+if(_tbb_bsl_set)
+    set(BUILD_SHARED_LIBS ${_tbb_bsl_saved} CACHE BOOL "" FORCE)
+else()
+    unset(BUILD_SHARED_LIBS CACHE)
+endif()
 
 FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(wink)
