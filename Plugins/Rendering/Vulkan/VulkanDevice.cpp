@@ -7392,11 +7392,19 @@ namespace Gek
             }
 
             const VkImageLayout trackedLayout = layoutSearch->second;
-            if (trackedLayout == VK_IMAGE_LAYOUT_GENERAL)
+            // Return the actual tracked layout for render targets. If it's TRANSFER_DST_OPTIMAL (e.g., after a clear),
+            // descriptors will correctly reflect that, and a barrier will be issued to transition it when needed.
+            // For most cases, render targets will be in COLOR_ATTACHMENT_OPTIMAL or SHADER_READ_ONLY_OPTIMAL.
+            // GENERAL layout can be used directly for compute/sampling without transitions.
+            if (trackedLayout == VK_IMAGE_LAYOUT_GENERAL || 
+                trackedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
+                trackedLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
+                trackedLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             {
-                return VK_IMAGE_LAYOUT_GENERAL;
+                return trackedLayout;
             }
 
+            // For any other layout, conservatively return SHADER_READ_ONLY (e.g., if layout tracking is unclear)
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
@@ -9041,63 +9049,7 @@ namespace Gek
                 }
             }
 
-            // Transition any offscreen render targets used as pixel resources from non-samplable layouts to SHADER_READ_ONLY_OPTIMAL.
-            // This handles the case where a render target was cleared (leaving it in TRANSFER_DST_OPTIMAL) and is subsequently
-            // sampled as a shader resource before being used as a render target output again.
-            for (VkImageView resourceView : drawCommand.pixelResourceImageViews)
-            {
-                if (resourceView == VK_NULL_HANDLE)
-                {
-                    continue;
-                }
-                auto viewSearch = frameOffscreenViewLookup.find(resourceView);
-                if (viewSearch == std::end(frameOffscreenViewLookup))
-                {
-                    continue;
-                }
-                VkImage resourceImage = viewSearch->second.first;
-                auto layoutSearch = offscreenImageLayouts.find(resourceImage);
-                if (layoutSearch == std::end(offscreenImageLayouts))
-                {
-                    continue;
-                }
-                const VkImageLayout trackedLayout = layoutSearch->second;
-                if (trackedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || trackedLayout == VK_IMAGE_LAYOUT_GENERAL)
-                {
-                    continue;
-                }
-                VkImageMemoryBarrier toShaderRead{};
-                toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                toShaderRead.oldLayout = trackedLayout;
-                toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toShaderRead.image = resourceImage;
-                toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                toShaderRead.subresourceRange.baseMipLevel = 0;
-                toShaderRead.subresourceRange.levelCount = 1;
-                toShaderRead.subresourceRange.baseArrayLayer = 0;
-                toShaderRead.subresourceRange.layerCount = 1;
-                VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                switch (trackedLayout)
-                {
-                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-                    toShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                    break;
-                case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-                    toShaderRead.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                    break;
-                default:
-                    toShaderRead.srcAccessMask = 0;
-                    srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                    break;
-                }
-                toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                vkCmdPipelineBarrier(commandBuffer, srcStage, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &toShaderRead);
-                offscreenImageLayouts[resourceImage] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
+
 
             VkRenderPassBeginInfo renderPassBeginInfo{};
             renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -9139,14 +9091,35 @@ namespace Gek
                 {
                     for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
                     {
-                        if (offscreenImages[targetIndex] == VK_NULL_HANDLE || transitionedToColorAttachment[targetIndex] == 0)
+                        if (offscreenImages[targetIndex] == VK_NULL_HANDLE)
                         {
                             continue;
                         }
 
+                        // Transition render target to SHADER_READ_ONLY for sampling.
+                        // Handle both COLOR_ATTACHMENT_OPTIMAL (rendered to) and TRANSFER_DST_OPTIMAL (cleared).
+                        VkImageLayout expectedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                        if (transitionedToColorAttachment[targetIndex] != 0)
+                        {
+                            expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                        }
+                        else
+                        {
+                            // Check if this target was cleared (in TRANSFER_DST)
+                            auto layoutSearch = offscreenImageLayouts.find(offscreenImages[targetIndex]);
+                            if (layoutSearch != std::end(offscreenImageLayouts) && layoutSearch->second == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            {
+                                expectedLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+
                         VkImageMemoryBarrier toShaderReadTarget{};
                         toShaderReadTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toShaderReadTarget.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                        toShaderReadTarget.oldLayout = expectedLayout;
                         toShaderReadTarget.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                         toShaderReadTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                         toShaderReadTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -9156,10 +9129,26 @@ namespace Gek
                         toShaderReadTarget.subresourceRange.levelCount = 1;
                         toShaderReadTarget.subresourceRange.baseArrayLayer = 0;
                         toShaderReadTarget.subresourceRange.layerCount = 1;
-                        toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+                        VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                        switch (expectedLayout)
+                        {
+                        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                            toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                            srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                            break;
+                        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                            toShaderReadTarget.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                            break;
+                        default:
+                            toShaderReadTarget.srcAccessMask = 0;
+                            srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            break;
+                        }
                         toShaderReadTarget.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                         vkCmdPipelineBarrier(commandBuffer,
-                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                             srcStage,
                                              VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                                              0, 0, nullptr, 0, nullptr, 1, &toShaderReadTarget);
 
