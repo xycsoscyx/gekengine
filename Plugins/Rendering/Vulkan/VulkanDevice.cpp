@@ -2054,6 +2054,8 @@ namespace Gek
                         return;
                     }
 
+                    ++pipelineDevice->frameRenderTargetBindCount;
+
                     for (auto *renderTarget : renderTargetList)
                     {
                         if (!renderTarget || renderTarget == pipelineDevice->backBuffer.get())
@@ -2071,6 +2073,11 @@ namespace Gek
                         {
                             currentRenderTargetList[currentRenderTargetCount++] = targetTexture;
                         }
+                    }
+
+                    if (currentRenderTargetCount > 0)
+                    {
+                        ++pipelineDevice->frameOffscreenTargetBindCount;
                     }
 
                     currentRenderTarget = (currentRenderTargetCount > 0) ? currentRenderTargetList[0] : nullptr;
@@ -2717,6 +2724,8 @@ namespace Gek
             uint32_t framePipelineFailCount = 0;
             uint32_t frameInvalidTargetCount = 0;
             uint32_t frameEmptyDescriptorCount = 0;
+            uint32_t frameRenderTargetBindCount = 0;
+            uint32_t frameOffscreenTargetBindCount = 0;
             uint64_t frameIndex = 0;
             std::vector<VkDescriptorSet> frameDescriptorSets;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
@@ -7159,6 +7168,8 @@ namespace Gek
                 const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
                 const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
                 const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
+                const uint32_t frameRenderTargetBindCountSnapshot = frameRenderTargetBindCount;
+                const uint32_t frameOffscreenTargetBindCountSnapshot = frameOffscreenTargetBindCount;
 
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
@@ -7166,6 +7177,8 @@ namespace Gek
                 framePipelineFailCount = 0;
                 frameInvalidTargetCount = 0;
                 frameEmptyDescriptorCount = 0;
+                frameRenderTargetBindCount = 0;
+                frameOffscreenTargetBindCount = 0;
 
                 ++presentFrameIndex;
                 const uint32_t totalCommandCount = frameTotalCommandCount;
@@ -7189,6 +7202,8 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.rtBindCalls", static_cast<double>(frameRenderTargetBindCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.rtOffscreenBindCalls", static_cast<double>(frameOffscreenTargetBindCountSnapshot));
                 getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
                 const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
@@ -7199,17 +7214,18 @@ namespace Gek
                     (presentFrameIndex <= 8) ||
                     ((presentFrameIndex % 120) == 0) ||
                     (framePipelineFailCountSnapshot > 0) ||
-                    (frameInvalidTargetCountSnapshot > 0) ||
-                    (frameOffscreenDrawCountSnapshot == 0);
+                    (frameInvalidTargetCountSnapshot > 0);
                 if (shouldLogFrameSummary)
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} offscreenDraws={} backbufferDraws={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameOffscreenDrawCountSnapshot,
                         frameBackbufferDrawCountSnapshot,
+                        frameRenderTargetBindCountSnapshot,
+                        frameOffscreenTargetBindCountSnapshot,
                         framePipelineFailCountSnapshot,
                         frameInvalidTargetCountSnapshot,
                         frameEmptyDescriptorCountSnapshot);

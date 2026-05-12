@@ -2184,40 +2184,44 @@ namespace Gek
                     }
                 }
 
-                // Do not substitute backbuffer for missing render targets.
-                // Scene passes must bind their declared offscreen targets; falling back to
-                // backbuffer hides binding failures and breaks Vulkan offscreen composition.
-                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache)))
+                // Resolve render targets explicitly so null slots are ignored while unresolved
+                // non-null handles still invalidate the draw block.
+                uint64_t failedHandleIdentifier = 0;
+                std::vector<Render::Target *> resolvedRenderTargets;
+                resolvedRenderTargets.reserve(renderTargetHandleList.size());
+                for (auto const &renderTargetHandle : renderTargetHandleList)
                 {
-                    auto &renderTargetList = renderTargetCache.get();
-                    const uint32_t renderTargetCount = renderTargetList.size();
+                    if (!renderTargetHandle)
+                    {
+                        continue;
+                    }
+
+                    auto *resource = dynamicCache.getResource(renderTargetHandle);
+                    auto *renderTarget = (resource ? dynamic_cast<Render::Target *>(resource) : nullptr);
+                    if (!renderTarget)
+                    {
+                        failedHandleIdentifier = renderTargetHandle.identifier;
+                        drawPrimitiveValid = false;
+                        break;
+                    }
+
+                    resolvedRenderTargets.push_back(renderTarget);
+                }
+
+                if (drawPrimitiveValid && !resolvedRenderTargets.empty())
+                {
+                    const uint32_t renderTargetCount = static_cast<uint32_t>(resolvedRenderTargets.size());
                     viewPortCache.resize(renderTargetCount);
                     for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
                     {
-                        viewPortCache[renderTarget] = renderTargetList[renderTarget]->getViewPort();
+                        viewPortCache[renderTarget] = resolvedRenderTargets[renderTarget]->getViewPort();
                     }
 
-                    videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? getResource(*depthBuffer) : nullptr));
+                    videoContext->setRenderTargetList(resolvedRenderTargets, (depthBuffer ? getResource(*depthBuffer) : nullptr));
                     videoContext->setViewportList(viewPortCache);
                 }
                 else if (!drawPrimitiveValid && !loggedInvalidRenderTargetList)
                 {
-                    uint64_t failedHandleIdentifier = 0;
-                    for (auto const &renderTargetHandle : renderTargetHandleList)
-                    {
-                        if (!renderTargetHandle)
-                        {
-                            continue;
-                        }
-
-                        auto *resource = dynamicCache.getResource(renderTargetHandle);
-                        if ((resource == nullptr) || (dynamic_cast<Render::Target *>(resource) == nullptr))
-                        {
-                            failedHandleIdentifier = renderTargetHandle.identifier;
-                            break;
-                        }
-                    }
-
                     loggedInvalidRenderTargetList = true;
                     getContext()->log(
                         Context::Warning,
