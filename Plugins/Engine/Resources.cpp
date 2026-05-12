@@ -2075,8 +2075,9 @@ namespace Gek
                         loggedMissingMaterial = true;
                         getContext()->log(
                             Context::Warning,
-                            "Resources material missing: handle={} passHash={}",
+                            "Resources material missing: handle={} pass='{}' passHash={}",
                             static_cast<uint64_t>(handle.identifier),
+                            pass->getName(),
                             pass->getMaterialHash());
                     }
 
@@ -2094,8 +2095,9 @@ namespace Gek
                         loggedMissingMaterialData = true;
                         getContext()->log(
                             Context::Warning,
-                            "Resources material data missing: material='{}' passHash={} firstResourceStage={}",
+                            "Resources material data missing: material='{}' pass='{}' passHash={} firstResourceStage={} (likely shader/material key mismatch or case mismatch in shader JSON)",
                             material->getName(),
+                            pass->getName(),
                             pass->getMaterialHash(),
                             pass->getFirstResourceStage());
                     }

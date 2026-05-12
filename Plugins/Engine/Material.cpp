@@ -42,8 +42,13 @@ namespace Gek
             return normalizedPath.getString();
         }
 
-        bool resolveMaterialPath(Context *context, std::string_view materialName, FileSystem::Path &resolvedPath)
+        bool resolveMaterialPath(Context *context, std::string_view materialName, FileSystem::Path &resolvedPath, bool *usedCaseInsensitiveMatch = nullptr)
         {
+            if (usedCaseInsensitiveMatch)
+            {
+                *usedCaseInsensitiveMatch = false;
+            }
+
             auto exactPath = context->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json"));
             if (exactPath.isFile())
             {
@@ -74,6 +79,10 @@ namespace Gek
                 if (candidatePath.size() >= requested.size() && candidatePath.substr(candidatePath.size() - requested.size()) == requested)
                 {
                     resolvedPath = candidate;
+                    if (usedCaseInsensitiveMatch)
+                    {
+                        *usedCaseInsensitiveMatch = true;
+                    }
                     found = true;
                     return false;
                 }
@@ -119,10 +128,19 @@ namespace Gek
                 assert(resources);
 
                 FileSystem::Path materialPath;
-                resolveMaterialPath(getContext(), this->materialName, materialPath);
+                bool usedCaseInsensitiveMatch = false;
+                resolveMaterialPath(getContext(), this->materialName, materialPath, &usedCaseInsensitiveMatch);
                 JSON::Object materialNode;
                 if (materialPath.isFile())
                 {
+                    if (usedCaseInsensitiveMatch)
+                    {
+                        getContext()->log(Context::Warning,
+                                          "Material definition '{}' resolved case-insensitively to '{}'",
+                                          this->materialName,
+                                          materialPath.getString());
+                    }
+
                     materialNode = JSON::Load(materialPath);
                 }
                 else
@@ -182,7 +200,10 @@ namespace Gek
                 }
                 else
                 {
-                    getContext()->log(Context::Error, "Shader {} missing for material {}", shaderName, materialName);
+                    getContext()->log(Context::Error,
+                                      "Shader {} missing for material {}",
+                                      shaderName,
+                                      this->materialName);
                 }
             }
 
