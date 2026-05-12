@@ -2184,7 +2184,10 @@ namespace Gek
                     }
                 }
 
-                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache, videoDevice->getBackBuffer())))
+                // Do not substitute backbuffer for missing render targets.
+                // Scene passes must bind their declared offscreen targets; falling back to
+                // backbuffer hides binding failures and breaks Vulkan offscreen composition.
+                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache)))
                 {
                     auto &renderTargetList = renderTargetCache.get();
                     const uint32_t renderTargetCount = renderTargetList.size();
