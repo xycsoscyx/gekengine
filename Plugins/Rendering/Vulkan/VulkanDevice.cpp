@@ -2184,6 +2184,62 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
+
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
+
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
+
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
+
                     std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
@@ -2702,6 +2758,10 @@ namespace Gek
             uint32_t frameOffscreenDrawCount = 0;
             uint32_t frameBackbufferDrawCount = 0;
             uint32_t frameOffscreenCommandCount = 0;
+            uint32_t frameCapturedDrawCommandCount = 0;
+            uint32_t frameCapturedOffscreenDrawCommandCount = 0;
+            uint32_t frameCapturedBackbufferDrawCommandCount = 0;
+            uint32_t frameCapturedBackbufferAfterOffscreenBindCount = 0;
             uint32_t framePipelineFailCount = 0;
             uint32_t frameInvalidTargetCount = 0;
             uint32_t frameEmptyDescriptorCount = 0;
@@ -7150,6 +7210,10 @@ namespace Gek
                 const uint32_t frameOffscreenDrawCountSnapshot = frameOffscreenDrawCount;
                 const uint32_t frameBackbufferDrawCountSnapshot = frameBackbufferDrawCount;
                 const uint32_t frameOffscreenCommandCountSnapshot = frameOffscreenCommandCount;
+                const uint32_t frameCapturedDrawCommandCountSnapshot = frameCapturedDrawCommandCount;
+                const uint32_t frameCapturedOffscreenDrawCommandCountSnapshot = frameCapturedOffscreenDrawCommandCount;
+                const uint32_t frameCapturedBackbufferDrawCommandCountSnapshot = frameCapturedBackbufferDrawCommandCount;
+                const uint32_t frameCapturedBackbufferAfterOffscreenBindCountSnapshot = frameCapturedBackbufferAfterOffscreenBindCount;
                 const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
                 const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
                 const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
@@ -7163,6 +7227,10 @@ namespace Gek
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
                 frameOffscreenCommandCount = 0;
+                frameCapturedDrawCommandCount = 0;
+                frameCapturedOffscreenDrawCommandCount = 0;
+                frameCapturedBackbufferDrawCommandCount = 0;
+                frameCapturedBackbufferAfterOffscreenBindCount = 0;
                 framePipelineFailCount = 0;
                 frameInvalidTargetCount = 0;
                 frameEmptyDescriptorCount = 0;
@@ -7192,6 +7260,10 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.offscreenDraws", static_cast<double>(frameOffscreenDrawCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.backbufferDraws", static_cast<double>(frameBackbufferDrawCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.offscreenCommands", static_cast<double>(frameOffscreenCommandCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedDrawCommands", static_cast<double>(frameCapturedDrawCommandCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedOffscreenDrawCommands", static_cast<double>(frameCapturedOffscreenDrawCommandCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedBackbufferDrawCommands", static_cast<double>(frameCapturedBackbufferDrawCommandCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedBackbufferAfterOffscreenBind", static_cast<double>(frameCapturedBackbufferAfterOffscreenBindCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
@@ -7215,9 +7287,13 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
+                        frameCapturedDrawCommandCountSnapshot,
+                        frameCapturedOffscreenDrawCommandCountSnapshot,
+                        frameCapturedBackbufferDrawCommandCountSnapshot,
+                        frameCapturedBackbufferAfterOffscreenBindCountSnapshot,
                         frameOffscreenCommandCountSnapshot,
                         frameOffscreenDrawCountSnapshot,
                         frameBackbufferDrawCountSnapshot,
