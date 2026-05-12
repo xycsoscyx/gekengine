@@ -2721,11 +2721,15 @@ namespace Gek
             uint32_t frameTotalCommandCount = 0;
             uint32_t frameOffscreenDrawCount = 0;
             uint32_t frameBackbufferDrawCount = 0;
+            uint32_t frameOffscreenCommandCount = 0;
             uint32_t framePipelineFailCount = 0;
             uint32_t frameInvalidTargetCount = 0;
             uint32_t frameEmptyDescriptorCount = 0;
             uint32_t frameRenderTargetBindCount = 0;
             uint32_t frameOffscreenTargetBindCount = 0;
+            uint32_t frameOffscreenSkippedNoTargetCount = 0;
+            uint32_t frameOffscreenSkippedNullRenderPassCount = 0;
+            uint32_t frameOffscreenSkippedNullFramebufferCount = 0;
             uint64_t frameIndex = 0;
             std::vector<VkDescriptorSet> frameDescriptorSets;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
@@ -7165,20 +7169,28 @@ namespace Gek
 
                 const uint32_t frameOffscreenDrawCountSnapshot = frameOffscreenDrawCount;
                 const uint32_t frameBackbufferDrawCountSnapshot = frameBackbufferDrawCount;
+                const uint32_t frameOffscreenCommandCountSnapshot = frameOffscreenCommandCount;
                 const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
                 const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
                 const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
                 const uint32_t frameRenderTargetBindCountSnapshot = frameRenderTargetBindCount;
                 const uint32_t frameOffscreenTargetBindCountSnapshot = frameOffscreenTargetBindCount;
+                const uint32_t frameOffscreenSkippedNoTargetCountSnapshot = frameOffscreenSkippedNoTargetCount;
+                const uint32_t frameOffscreenSkippedNullRenderPassCountSnapshot = frameOffscreenSkippedNullRenderPassCount;
+                const uint32_t frameOffscreenSkippedNullFramebufferCountSnapshot = frameOffscreenSkippedNullFramebufferCount;
 
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
+                frameOffscreenCommandCount = 0;
                 framePipelineFailCount = 0;
                 frameInvalidTargetCount = 0;
                 frameEmptyDescriptorCount = 0;
                 frameRenderTargetBindCount = 0;
                 frameOffscreenTargetBindCount = 0;
+                frameOffscreenSkippedNoTargetCount = 0;
+                frameOffscreenSkippedNullRenderPassCount = 0;
+                frameOffscreenSkippedNullFramebufferCount = 0;
 
                 ++presentFrameIndex;
                 const uint32_t totalCommandCount = frameTotalCommandCount;
@@ -7199,11 +7211,15 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.presentCpuMs", presentCpuMs);
                 getContext()->setRuntimeMetric("vulkan.offscreenDraws", static_cast<double>(frameOffscreenDrawCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.backbufferDraws", static_cast<double>(frameBackbufferDrawCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.offscreenCommands", static_cast<double>(frameOffscreenCommandCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.rtBindCalls", static_cast<double>(frameRenderTargetBindCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.rtOffscreenBindCalls", static_cast<double>(frameOffscreenTargetBindCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.offscreenSkipNoTargets", static_cast<double>(frameOffscreenSkippedNoTargetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.offscreenSkipNullRenderPass", static_cast<double>(frameOffscreenSkippedNullRenderPassCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.offscreenSkipNullFramebuffer", static_cast<double>(frameOffscreenSkippedNullFramebufferCountSnapshot));
                 getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
                 const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
@@ -7219,13 +7235,17 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
+                        frameOffscreenCommandCountSnapshot,
                         frameOffscreenDrawCountSnapshot,
                         frameBackbufferDrawCountSnapshot,
                         frameRenderTargetBindCountSnapshot,
                         frameOffscreenTargetBindCountSnapshot,
+                        frameOffscreenSkippedNoTargetCountSnapshot,
+                        frameOffscreenSkippedNullRenderPassCountSnapshot,
+                        frameOffscreenSkippedNullFramebufferCountSnapshot,
                         framePipelineFailCountSnapshot,
                         frameInvalidTargetCountSnapshot,
                         frameEmptyDescriptorCountSnapshot);
@@ -8914,6 +8934,10 @@ namespace Gek
             // Graphics draw command
 
             const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
+            if (!drawToBackBuffer)
+            {
+                ++frameOffscreenCommandCount;
+            }
             if (!drawToBackBuffer && drawCommand.renderTarget)
             {
                 const auto &targetDescription = drawCommand.renderTarget->getDescription();
@@ -8965,6 +8989,7 @@ namespace Gek
             {
                 if (offscreenTargetCount == 0)
                 {
+                    ++frameOffscreenSkippedNoTargetCount;
                     if (!loggedOffscreenTargetCountZero)
                     {
                         loggedOffscreenTargetCountZero = true;
@@ -9047,6 +9072,7 @@ namespace Gek
                 activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats, needsDepth ? offscreenDepthFormat : VK_FORMAT_UNDEFINED);
                 if (activeRenderPass == VK_NULL_HANDLE)
                 {
+                    ++frameOffscreenSkippedNullRenderPassCount;
                     if (!loggedOffscreenRenderPassNull)
                     {
                         loggedOffscreenRenderPassNull = true;
@@ -9234,6 +9260,7 @@ namespace Gek
                 activeFramebuffer = getOrCreateOffscreenFramebuffer(activeRenderPass, framebufferAttachmentViews, activeExtent);
                 if (activeFramebuffer == VK_NULL_HANDLE)
                 {
+                    ++frameOffscreenSkippedNullFramebufferCount;
                     if (!loggedOffscreenFramebufferNull)
                     {
                         loggedOffscreenFramebufferNull = true;
