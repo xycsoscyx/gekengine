@@ -714,6 +714,14 @@ namespace Gek
             uint64_t drawCallAttemptCount = 0;
             uint64_t drawCallSubmittedCount = 0;
             uint64_t drawCallSuppressedCount = 0;
+            uint64_t drawSuppressedMissingMaterialCount = 0;
+            uint64_t drawSuppressedMissingMaterialDataCount = 0;
+            uint64_t drawSuppressedMissingVisualCount = 0;
+            uint64_t drawSuppressedMissingProgramCount = 0;
+            uint64_t drawSuppressedMissingIndexBufferCount = 0;
+            uint64_t drawSuppressedMissingVertexBufferCount = 0;
+            uint64_t drawSuppressedInvalidRenderTargetCount = 0;
+            uint64_t lastSuppressedLogCount = 0;
             bool loggedMissingMaterial = false;
             bool loggedMissingMaterialData = false;
             bool loggedMissingVisual = false;
@@ -770,6 +778,38 @@ namespace Gek
                 getContext()->setRuntimeMetric("resources.drawAttempts", static_cast<double>(drawCallAttemptCount));
                 getContext()->setRuntimeMetric("resources.drawSubmitted", static_cast<double>(drawCallSubmittedCount));
                 getContext()->setRuntimeMetric("resources.drawSuppressed", static_cast<double>(drawCallSuppressedCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingMaterial", static_cast<double>(drawSuppressedMissingMaterialCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingMaterialData", static_cast<double>(drawSuppressedMissingMaterialDataCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingVisual", static_cast<double>(drawSuppressedMissingVisualCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingProgram", static_cast<double>(drawSuppressedMissingProgramCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingIndexBuffer", static_cast<double>(drawSuppressedMissingIndexBufferCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingVertexBuffer", static_cast<double>(drawSuppressedMissingVertexBufferCount));
+                getContext()->setRuntimeMetric("resources.suppressedInvalidRenderTarget", static_cast<double>(drawSuppressedInvalidRenderTargetCount));
+
+                static uint64_t resourceSummaryFrame = 0;
+                ++resourceSummaryFrame;
+                const bool suppressionIncreased = (drawCallSuppressedCount != lastSuppressedLogCount);
+                const bool shouldLogSummary =
+                    (resourceSummaryFrame <= 8) ||
+                    ((resourceSummaryFrame % 120) == 0) ||
+                    suppressionIncreased;
+                if (shouldLogSummary)
+                {
+                    getContext()->log(
+                        Context::Debug,
+                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={}",
+                        drawCallAttemptCount,
+                        drawCallSubmittedCount,
+                        drawCallSuppressedCount,
+                        drawSuppressedMissingMaterialCount,
+                        drawSuppressedMissingMaterialDataCount,
+                        drawSuppressedMissingVisualCount,
+                        drawSuppressedMissingProgramCount,
+                        drawSuppressedMissingIndexBufferCount,
+                        drawSuppressedMissingVertexBufferCount,
+                        drawSuppressedInvalidRenderTargetCount);
+                    lastSuppressedLogCount = drawCallSuppressedCount;
+                }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
@@ -1400,6 +1440,7 @@ namespace Gek
                     }
                     else if (!loggedMissingIndexBuffer)
                     {
+                        ++drawSuppressedMissingIndexBufferCount;
                         loggedMissingIndexBuffer = true;
                         getContext()->log(
                             Context::Warning,
@@ -1426,6 +1467,7 @@ namespace Gek
                 else
                 {
                     drawPrimitiveValid = false;
+                    ++drawSuppressedMissingVertexBufferCount;
 
                     // Keep the draw block alive even if VB resources are missing for this call.
                     videoContext->clearVertexBufferList(static_cast<uint32_t>(resourceHandleList.size()), firstSlot);
@@ -2026,6 +2068,7 @@ namespace Gek
                 if (!material)
                 {
                     drawPrimitiveValid = false;
+                    ++drawSuppressedMissingMaterialCount;
 
                     if (!loggedMissingMaterial)
                     {
@@ -2044,6 +2087,7 @@ namespace Gek
                 if (!data)
                 {
                     drawPrimitiveValid = false;
+                    ++drawSuppressedMissingMaterialDataCount;
 
                     if (!loggedMissingMaterialData)
                     {
@@ -2078,13 +2122,17 @@ namespace Gek
                     {
                         visual->enable(videoContext);
                     }
-                    else if (!loggedMissingVisual)
+                    else
                     {
-                        loggedMissingVisual = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources visual missing: handle={}",
-                            static_cast<uint64_t>(handle.identifier));
+                        ++drawSuppressedMissingVisualCount;
+                        if (!loggedMissingVisual)
+                        {
+                            loggedMissingVisual = true;
+                            getContext()->log(
+                                Context::Warning,
+                                "Resources visual missing: handle={}",
+                                static_cast<uint64_t>(handle.identifier));
+                        }
                     }
                 }
             }
@@ -2145,6 +2193,7 @@ namespace Gek
                     }
                     else if (!loggedMissingProgram)
                     {
+                        ++drawSuppressedMissingProgramCount;
                         loggedMissingProgram = true;
                         getContext()->log(
                             Context::Warning,
@@ -2202,6 +2251,7 @@ namespace Gek
                     {
                         failedHandleIdentifier = renderTargetHandle.identifier;
                         drawPrimitiveValid = false;
+                        ++drawSuppressedInvalidRenderTargetCount;
                         break;
                     }
 
