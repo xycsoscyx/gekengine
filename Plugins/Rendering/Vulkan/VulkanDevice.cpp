@@ -7380,13 +7380,23 @@ namespace Gek
                 return;
             }
 
-            auto sourceViewSearch = frameOffscreenViewLookup.find(imageView);
-            if (sourceViewSearch == std::end(frameOffscreenViewLookup))
+            VkImage image = VK_NULL_HANDLE;
+
+            auto frameViewSearch = frameOffscreenViewLookup.find(imageView);
+            if (frameViewSearch != std::end(frameOffscreenViewLookup))
             {
-                return;
+                image = frameViewSearch->second.first;
+            }
+            else
+            {
+                std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                auto persistentViewSearch = persistentImageViewLookup.find(imageView);
+                if (persistentViewSearch != std::end(persistentImageViewLookup))
+                {
+                    image = persistentViewSearch->second.first;
+                }
             }
 
-            const VkImage image = sourceViewSearch->second.first;
             if (image == VK_NULL_HANDLE)
             {
                 return;
