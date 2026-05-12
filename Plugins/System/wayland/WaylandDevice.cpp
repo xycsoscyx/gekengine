@@ -53,6 +53,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <thread>
+#include <unordered_map>
 #include <unistd.h>
 
 namespace Gek
@@ -278,6 +279,9 @@ namespace Gek
             wl_pointer *pointer = nullptr;
             wl_keyboard *keyboard = nullptr;
             wl_surface *surface = nullptr;
+            std::unordered_map<wl_output *, uint32_t> outputScaleMap;
+            uint32_t effectiveBufferScale = 1;
+            uint32_t appliedBufferScale = 0;
 
 #if GEK_WAYLAND_HAS_XDG_SHELL
             xdg_wm_base *wmBase = nullptr;
@@ -414,6 +418,15 @@ namespace Gek
                     compositor = nullptr;
                 }
 
+                for (auto &scalePair : outputScaleMap)
+                {
+                    if (scalePair.first)
+                    {
+                        wl_output_destroy(scalePair.first);
+                    }
+                }
+                outputScaleMap.clear();
+
                 if (registry)
                 {
                     wl_registry_destroy(registry);
@@ -435,6 +448,29 @@ namespace Gek
                 if (std::strcmp(interfaceName, wl_compositor_interface.name) == 0)
                 {
                     device->compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, name, &wl_compositor_interface, std::min(version, 6u)));
+                    return;
+                }
+
+                if (std::strcmp(interfaceName, wl_output_interface.name) == 0)
+                {
+                    auto *output = reinterpret_cast<wl_output *>(wl_registry_bind(registry, name, &wl_output_interface, std::min(version, 4u)));
+                    if (output)
+                    {
+                        device->outputScaleMap[output] = 1;
+
+                        static const wl_output_listener outputListener = {
+                            outputGeometry,
+                            outputMode,
+#if defined(WL_OUTPUT_DONE_SINCE_VERSION)
+                            outputDone,
+#endif
+#if defined(WL_OUTPUT_SCALE_SINCE_VERSION)
+                            outputScale,
+#endif
+                        };
+
+                        wl_output_add_listener(output, &outputListener, device);
+                    }
                     return;
                 }
 
@@ -494,6 +530,113 @@ namespace Gek
                 (void)name;
             }
 
+            static void outputGeometry(void *data,
+                                       wl_output *output,
+                                       int32_t x,
+                                       int32_t y,
+                                       int32_t physicalWidth,
+                                       int32_t physicalHeight,
+                                       int32_t subpixel,
+                                       const char *make,
+                                       const char *model,
+                                       int32_t transform)
+            {
+                (void)data;
+                (void)output;
+                (void)x;
+                (void)y;
+                (void)physicalWidth;
+                (void)physicalHeight;
+                (void)subpixel;
+                (void)make;
+                (void)model;
+                (void)transform;
+            }
+
+            static void outputMode(void *data, wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh)
+            {
+                (void)data;
+                (void)output;
+                (void)flags;
+                (void)width;
+                (void)height;
+                (void)refresh;
+            }
+
+#if defined(WL_OUTPUT_DONE_SINCE_VERSION)
+            static void outputDone(void *data, wl_output *output)
+            {
+                (void)data;
+                (void)output;
+            }
+#endif
+
+#if defined(WL_OUTPUT_SCALE_SINCE_VERSION)
+            static void outputScale(void *data, wl_output *output, int32_t factor)
+            {
+                auto *device = reinterpret_cast<Device *>(data);
+                if (!device || !output)
+                {
+                    return;
+                }
+
+                auto outputSearch = device->outputScaleMap.find(output);
+                if (outputSearch == device->outputScaleMap.end())
+                {
+                    return;
+                }
+
+                outputSearch->second = static_cast<uint32_t>(std::max<int32_t>(factor, 1));
+                device->updateEffectiveBufferScale(true);
+            }
+#endif
+
+            void applySurfaceBufferScale(void)
+            {
+                if (!surface)
+                {
+                    return;
+                }
+
+                const uint32_t targetScale = std::max<uint32_t>(effectiveBufferScale, 1u);
+                if (appliedBufferScale == targetScale)
+                {
+                    return;
+                }
+
+                wl_surface_set_buffer_scale(surface, static_cast<int32_t>(targetScale));
+                appliedBufferScale = targetScale;
+                getContext()->log(Context::Debug, "Wayland buffer scale applied: {}", targetScale);
+            }
+
+            void updateEffectiveBufferScale(bool notifySizeChanged)
+            {
+                uint32_t targetScale = 1;
+                for (auto const &scalePair : outputScaleMap)
+                {
+                    targetScale = std::max<uint32_t>(targetScale, std::max<uint32_t>(scalePair.second, 1u));
+                }
+
+                if (targetScale == effectiveBufferScale)
+                {
+                    return;
+                }
+
+                effectiveBufferScale = targetScale;
+                getContext()->log(Context::Info, "Wayland output scale updated: {}", effectiveBufferScale);
+
+                if (surface)
+                {
+                    applySurfaceBufferScale();
+                    wl_surface_commit(surface);
+                }
+
+                if (notifySizeChanged)
+                {
+                    onSizeChanged(isMinimized);
+                }
+            }
+
 #if GEK_WAYLAND_HAS_XDG_SHELL
             static void wmBasePing(void *data, xdg_wm_base *wmBase, uint32_t serial)
             {
@@ -515,6 +658,7 @@ namespace Gek
 
                 if (device->surface)
                 {
+                    device->applySurfaceBufferScale();
                     wl_surface_commit(device->surface);
                 }
             }
@@ -1027,6 +1171,8 @@ namespace Gek
                 {
                     throw std::runtime_error("Unable to create Wayland surface");
                 }
+
+                applySurfaceBufferScale();
 
                 xdgSurface = xdg_wm_base_get_xdg_surface(wmBase, surface);
                 if (!xdgSurface)
