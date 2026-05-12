@@ -1464,18 +1464,50 @@ namespace Gek
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
-                else if (!loggedMissingResource)
+                else if (valid)
                 {
-                    loggedMissingResource = true;
+                    // Keep draw/dispatch alive while async resources stream in by binding
+                    // safe fallback resources for missing handles.
+                    std::vector<Render::Object *> fallbackResourceList;
+                    fallbackResourceList.resize(resourceHandleList.size(), videoDevice->getBackBuffer());
+
+                    bool hadMissingResource = false;
                     for (uint32_t i = 0; i < static_cast<uint32_t>(resourceHandleList.size()); ++i)
                     {
                         const auto &h = resourceHandleList[i];
-                        if (h && !dynamicCache.getResource(h))
+                        if (!h)
                         {
-                            getContext()->log(Context::Warning,
-                                              "Resources::setResourceList null resource at pixel slot {}: handle={}",
-                                              firstStage + i,
-                                              static_cast<uint64_t>(h.identifier));
+                            fallbackResourceList[i] = videoDevice->getBackBuffer();
+                            continue;
+                        }
+
+                        auto *resource = dynamicCache.getResource(h);
+                        if (resource)
+                        {
+                            fallbackResourceList[i] = resource;
+                        }
+                        else
+                        {
+                            hadMissingResource = true;
+                            fallbackResourceList[i] = videoDevice->getBackBuffer();
+                        }
+                    }
+
+                    videoPipeline->setResourceList(fallbackResourceList, firstStage);
+
+                    if (hadMissingResource && !loggedMissingResource)
+                    {
+                        loggedMissingResource = true;
+                        for (uint32_t i = 0; i < static_cast<uint32_t>(resourceHandleList.size()); ++i)
+                        {
+                            const auto &h = resourceHandleList[i];
+                            if (h && !dynamicCache.getResource(h))
+                            {
+                                getContext()->log(Context::Warning,
+                                                  "Resources::setResourceList null resource at pixel slot {}: handle={} (using fallback)",
+                                                  firstStage + i,
+                                                  static_cast<uint64_t>(h.identifier));
+                            }
                         }
                     }
                 }
