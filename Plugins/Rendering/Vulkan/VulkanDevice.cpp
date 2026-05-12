@@ -2215,11 +2215,6 @@ namespace Gek
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                     }
 
-                    if (isDeferredContext)
-                    {
-                        return; // deferred contexts temporarily disabled
-                    }
-
                     pipelineDevice->recordCommand(command);
                     ++pipelineDevice->frameTotalCommandCount;
                 }
@@ -2300,11 +2295,6 @@ namespace Gek
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                    }
-
-                    if (isDeferredContext)
-                    {
-                        return; // deferred contexts temporarily disabled
                     }
 
                     pipelineDevice->recordCommand(command);
@@ -2401,11 +2391,6 @@ namespace Gek
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                     }
 
-                    if (isDeferredContext)
-                    {
-                        return; // deferred contexts temporarily disabled
-                    }
-
                     pipelineDevice->recordCommand(command);
                     ++pipelineDevice->frameTotalCommandCount;
                 }
@@ -2498,11 +2483,6 @@ namespace Gek
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
                         pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                    }
-
-                    if (isDeferredContext)
-                    {
-                        return; // deferred contexts temporarily disabled
                     }
 
                     pipelineDevice->recordCommand(command);
@@ -7273,11 +7253,6 @@ namespace Gek
                 command.mipmapLevels = std::max(texture->getDescription().mipMapCount, 1u);
             }
 
-            if (sourceContext->isDeferredContext)
-            {
-                return; // deferred contexts temporarily disabled
-            }
-
             recordCommand(command);
             ++frameTotalCommandCount;
         }
@@ -7304,11 +7279,6 @@ namespace Gek
             command.computeUnorderedAccessImageViews = sourceContext->currentComputeUnorderedAccessImageViews;
             command.computeUnorderedAccessBuffers = sourceContext->currentComputeUnorderedAccessBuffers;
 
-            if (sourceContext && sourceContext->isDeferredContext)
-            {
-                return; // deferred contexts temporarily disabled
-            }
-
             recordCommand(command);
             ++frameTotalCommandCount;
         }
@@ -7324,11 +7294,6 @@ namespace Gek
             command.commandType = Device::DrawCommand::Type::CopyResource;
             command.copyDestination = destination;
             command.copySource = source;
-
-            if (sourceContext && sourceContext->isDeferredContext)
-            {
-                return; // deferred contexts temporarily disabled
-            }
 
             recordCommand(command);
             ++frameTotalCommandCount;
@@ -7354,11 +7319,6 @@ namespace Gek
             command.clearDepthValue = clearDepth;
             command.clearStencilValue = clearStencil;
 
-            if (sourceContext && sourceContext->isDeferredContext)
-            {
-                return; // deferred contexts temporarily disabled
-            }
-
             recordCommand(command);
             ++frameTotalCommandCount;
         }
@@ -7383,11 +7343,6 @@ namespace Gek
             command.clearRenderTargetColor.float32[1] = clearColor.g;
             command.clearRenderTargetColor.float32[2] = clearColor.b;
             command.clearRenderTargetColor.float32[3] = clearColor.a;
-
-            if (sourceContext && sourceContext->isDeferredContext)
-            {
-                return; // deferred contexts temporarily disabled
-            }
 
             recordCommand(command);
             ++frameTotalCommandCount;
