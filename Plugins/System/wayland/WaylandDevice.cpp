@@ -53,8 +53,8 @@
 #include <stdexcept>
 #include <system_error>
 #include <thread>
-#include <unordered_map>
 #include <unistd.h>
+#include <unordered_map>
 
 namespace Gek
 {
@@ -668,6 +668,7 @@ namespace Gek
                 (void)xdgToplevel;
                 auto *device = reinterpret_cast<Device *>(data);
 
+                bool activated = false;
                 bool minimized = false;
                 if (states && states->data && states->size >= sizeof(uint32_t))
                 {
@@ -677,7 +678,7 @@ namespace Gek
                     {
                         if (stateList[index] == XDG_TOPLEVEL_STATE_ACTIVATED)
                         {
-                            device->onActivate(true);
+                            activated = true;
                         }
 
                         if (stateList[index] == XDG_TOPLEVEL_STATE_SUSPENDED)
@@ -702,6 +703,18 @@ namespace Gek
                     device->isMinimized = minimized;
                     device->onSizeChanged(device->isMinimized);
                 }
+
+                if (activated)
+                {
+                    device->onActivate(true);
+                }
+
+                device->getContext()->log(Context::Debug,
+                                          "Wayland xdg_toplevel state: activated={} minimized={} size={}x{}",
+                                          activated,
+                                          device->isMinimized,
+                                          device->clientWidth,
+                                          device->clientHeight);
 
                 device->getContext()->log(Context::Debug, "Wayland xdg_toplevel configure: width={}, height={}, applied={}x{}, minimized={}",
                                           width,
@@ -832,6 +845,7 @@ namespace Gek
                 auto *device = reinterpret_cast<Device *>(data);
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
+                device->getContext()->log(Context::Debug, "Wayland pointer enter: position={}x{}", device->cursorPosition.x, device->cursorPosition.y);
                 device->onActivate(true);
                 device->onMousePosition(device->cursorPosition.x, device->cursorPosition.y);
             }
@@ -966,6 +980,7 @@ namespace Gek
                 (void)keys;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                device->getContext()->log(Context::Debug, "Wayland keyboard enter");
                 device->onActivate(true);
             }
 
@@ -976,6 +991,7 @@ namespace Gek
                 (void)surface;
 
                 auto *device = reinterpret_cast<Device *>(data);
+                device->getContext()->log(Context::Debug, "Wayland keyboard leave");
                 device->onActivate(false);
             }
 
@@ -1412,6 +1428,7 @@ namespace Gek
                     wl_surface_commit(surface);
                 }
 
+                getContext()->log(Context::Debug, "Wayland resize applied: minimized={} size={}x{}", isMinimized, clientWidth, clientHeight);
                 onSizeChanged(isMinimized);
             }
         };

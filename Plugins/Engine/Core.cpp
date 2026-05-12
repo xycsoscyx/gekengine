@@ -797,11 +797,24 @@ namespace Gek
 
             void onWindowActivate(bool isActive)
             {
+                if (windowActive != isActive)
+                {
+                    getContext()->log(Gek::Context::Debug,
+                                      "Core windowActive transition: {} -> {}",
+                                      windowActive,
+                                      isActive);
+                }
                 windowActive = isActive;
             }
 
             void onWindowSizeChanged(bool isMinimized)
             {
+                getContext()->log(Gek::Context::Debug,
+                                  "Core window size state: minimized={} active={} interfaceControl={} loadingPopulation={}",
+                                  isMinimized,
+                                  windowActive,
+                                  enableInterfaceControl,
+                                  loadingPopulation);
                 if (renderDevice && !isMinimized)
                 {
                     renderDevice->handleResize();

@@ -1659,6 +1659,24 @@ float4 main(PixelInput input) : SV_Target
                 getContext()->setRuntimeMetric("visualizer.forwardDrawDispatches", static_cast<double>(forwardDrawDispatchCount));
                 getContext()->setRuntimeMetric("visualizer.deferredDrawDispatches", static_cast<double>(deferredDrawDispatchCount));
 
+                const bool shouldLogVisualizerSummary =
+                    (renderFrameCounter <= 8) ||
+                    ((renderFrameCounter % 120) == 0) ||
+                    (processedCameras == 0 && queuedDrawCalls > 0);
+                if (shouldLogVisualizerSummary)
+                {
+                    getContext()->log(
+                        Gek::Context::Debug,
+                        "Visualizer frame summary: frame={} processedCameras={} queuedDrawCalls={} forwardPasses={} deferredPasses={} forwardDrawDispatches={} deferredDrawDispatches={}",
+                        renderFrameCounter,
+                        processedCameras,
+                        queuedDrawCalls,
+                        forwardPassCount,
+                        deferredPassCount,
+                        forwardDrawDispatchCount,
+                        deferredDrawDispatchCount);
+                }
+
                 renderDevice->present(true);
                 if (reloadRequired)
                 {
