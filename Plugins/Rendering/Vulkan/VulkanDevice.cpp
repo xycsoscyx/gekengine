@@ -1256,6 +1256,7 @@ namespace Gek
             void enqueueClearDepthStencilCommand(Context * sourceContext, Render::Object * depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil);
             void enqueueCopyResourceCommand(Context * sourceContext, Render::Object * destination, Render::Object * source);
             void frameTransitionSwapChainImage(VkImageLayout newLayout, VkAccessFlags dstAccessMask, VkPipelineStageFlags dstStageMask);
+            void ensureSampledLayoutForView(VkImageView imageView, VkPipelineStageFlags dstStageMask);
             VkImageLayout getSampledImageLayoutForView(VkImageView imageView) const;
             bool ensureFrameRecording();
             void recordCommand(DrawCommand & drawCommand);
@@ -7372,6 +7373,82 @@ namespace Gek
             swapChainImageLayouts[frameImageIndex] = newLayout;
         }
 
+        void Device::ensureSampledLayoutForView(VkImageView imageView, VkPipelineStageFlags dstStageMask)
+        {
+            if (imageView == VK_NULL_HANDLE)
+            {
+                return;
+            }
+
+            auto sourceViewSearch = frameOffscreenViewLookup.find(imageView);
+            if (sourceViewSearch == std::end(frameOffscreenViewLookup))
+            {
+                return;
+            }
+
+            const VkImage image = sourceViewSearch->second.first;
+            if (image == VK_NULL_HANDLE)
+            {
+                return;
+            }
+
+            auto layoutSearch = offscreenImageLayouts.find(image);
+            if (layoutSearch == std::end(offscreenImageLayouts))
+            {
+                return;
+            }
+
+            const VkImageLayout oldLayout = layoutSearch->second;
+            if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || oldLayout == VK_IMAGE_LAYOUT_GENERAL)
+            {
+                return;
+            }
+
+            VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            VkAccessFlags srcAccess = 0;
+            switch (oldLayout)
+            {
+            case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                srcAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                break;
+            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                srcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+                break;
+            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                srcAccess = VK_ACCESS_TRANSFER_READ_BIT;
+                break;
+            default:
+                srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                srcAccess = 0;
+                break;
+            }
+
+            VkImageMemoryBarrier toShaderRead{};
+            toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            toShaderRead.oldLayout = oldLayout;
+            toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            toShaderRead.image = image;
+            toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            toShaderRead.subresourceRange.baseMipLevel = 0;
+            toShaderRead.subresourceRange.levelCount = 1;
+            toShaderRead.subresourceRange.baseArrayLayer = 0;
+            toShaderRead.subresourceRange.layerCount = 1;
+            toShaderRead.srcAccessMask = srcAccess;
+            toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            vkCmdPipelineBarrier(commandBuffer,
+                                 srcStage,
+                                 dstStageMask,
+                                 0, 0, nullptr, 0, nullptr, 1, &toShaderRead);
+
+            offscreenImageLayouts[image] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+
         VkImageLayout Device::getSampledImageLayoutForView(VkImageView imageView) const
         {
             if (imageView == VK_NULL_HANDLE)
@@ -8652,6 +8729,8 @@ namespace Gek
 
                     if (drawCommand.computeResourceImageViews[resourceSlot] != VK_NULL_HANDLE)
                     {
+                        ensureSampledLayoutForView(drawCommand.computeResourceImageViews[resourceSlot], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
                         auto &resourceImageInfo = imageInfos[imageInfoCount++];
                         resourceImageInfo.imageLayout = getSampledImageLayoutForView(drawCommand.computeResourceImageViews[resourceSlot]);
                         resourceImageInfo.imageView = drawCommand.computeResourceImageViews[resourceSlot];
@@ -9349,6 +9428,8 @@ namespace Gek
 
                             if (imageView != VK_NULL_HANDLE)
                             {
+                                ensureSampledLayoutForView(imageView, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
                                 auto &sampledImageInfo = sampledImageInfos[sampledImageInfoCount++];
                                 sampledImageInfo.imageLayout = getSampledImageLayoutForView(imageView);
                                 sampledImageInfo.imageView = imageView;
