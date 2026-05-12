@@ -9166,6 +9166,16 @@ namespace Gek
             renderPassBeginInfo.clearValueCount = clearValueCount;
             renderPassBeginInfo.pClearValues = clearValues.data();
 
+            // Sampled-image layout transitions must happen outside an active render pass.
+            for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+            {
+                VkImageView sampledImageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                if (sampledImageView != VK_NULL_HANDLE)
+                {
+                    ensureSampledLayoutForView(sampledImageView, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                }
+            }
+
             vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             auto endRenderPassForCurrentTarget = [&]()
@@ -9438,8 +9448,6 @@ namespace Gek
 
                             if (imageView != VK_NULL_HANDLE)
                             {
-                                ensureSampledLayoutForView(imageView, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
                                 auto &sampledImageInfo = sampledImageInfos[sampledImageInfoCount++];
                                 sampledImageInfo.imageLayout = getSampledImageLayoutForView(imageView);
                                 sampledImageInfo.imageView = imageView;
