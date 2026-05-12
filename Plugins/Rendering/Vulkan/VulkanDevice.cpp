@@ -2739,6 +2739,14 @@ namespace Gek
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
             bool deviceLost = false;
             bool loggedDeviceLost = false;
+            bool loggedOffscreenTargetCountZero = false;
+            bool loggedOffscreenInvalidTargets = false;
+            bool loggedOffscreenRenderPassNull = false;
+            bool loggedOffscreenFramebufferNull = false;
+            bool loggedCollapsedScissor = false;
+            bool loggedGraphicsPipelineNull = false;
+            bool loggedOffscreenToColorTransition = false;
+            bool loggedOffscreenToShaderReadTransition = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
 
@@ -3803,7 +3811,8 @@ namespace Gek
                     VkAttachmentDescription colorAttachment{};
                     colorAttachment.format = formats[attachmentIndex];
                     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    // Offscreen scene passes expect deterministic contents each draw pass.
+                    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -3823,7 +3832,7 @@ namespace Gek
                 {
                     depthAttachment.format = depthAttachmentFormat;
                     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -7145,6 +7154,12 @@ namespace Gek
                     return;
                 }
 
+                const uint32_t frameOffscreenDrawCountSnapshot = frameOffscreenDrawCount;
+                const uint32_t frameBackbufferDrawCountSnapshot = frameBackbufferDrawCount;
+                const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
+                const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
+                const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
+
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
@@ -7169,11 +7184,36 @@ namespace Gek
                 getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", 0.0);
                 getContext()->setRuntimeMetric("vulkan.submitCpuMs", submitCpuMs);
                 getContext()->setRuntimeMetric("vulkan.presentCpuMs", presentCpuMs);
+                getContext()->setRuntimeMetric("vulkan.offscreenDraws", static_cast<double>(frameOffscreenDrawCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.backbufferDraws", static_cast<double>(frameBackbufferDrawCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
                 getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
                 const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
                 getContext()->setRuntimeMetric("vulkan.deferredContextQueues", 0.0);
                 getContext()->setRuntimeMetric("vulkan.deferredCommandLists", 0.0);
+
+                const bool shouldLogFrameSummary =
+                    (presentFrameIndex <= 8) ||
+                    ((presentFrameIndex % 120) == 0) ||
+                    (framePipelineFailCountSnapshot > 0) ||
+                    (frameInvalidTargetCountSnapshot > 0) ||
+                    (frameOffscreenDrawCountSnapshot == 0);
+                if (shouldLogFrameSummary)
+                {
+                    getContext()->log(
+                        Gek::Context::Info,
+                        "Vulkan frame summary: frame={} commands={} offscreenDraws={} backbufferDraws={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        presentFrameIndex,
+                        totalCommandCount,
+                        frameOffscreenDrawCountSnapshot,
+                        frameBackbufferDrawCountSnapshot,
+                        framePipelineFailCountSnapshot,
+                        frameInvalidTargetCountSnapshot,
+                        frameEmptyDescriptorCountSnapshot);
+                }
             }
         };
         void Device::enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture)
@@ -8909,6 +8949,16 @@ namespace Gek
             {
                 if (offscreenTargetCount == 0)
                 {
+                    if (!loggedOffscreenTargetCountZero)
+                    {
+                        loggedOffscreenTargetCountZero = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan offscreen draw skipped: offscreenTargetCount=0 hasOffscreenTarget={} renderTargetPtr={} frame={}",
+                            drawCommand.hasOffscreenTarget ? 1 : 0,
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(drawCommand.renderTarget)),
+                            presentFrameIndex);
+                    }
                     return;
                 }
 
@@ -8929,6 +8979,20 @@ namespace Gek
                 if (!validTargets)
                 {
                     ++frameInvalidTargetCount;
+                    if (!loggedOffscreenInvalidTargets)
+                    {
+                        loggedOffscreenInvalidTargets = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan offscreen draw skipped: invalid targets count={} firstImage={} firstView={} firstFormat={} extent0={}x{} frame={}",
+                            offscreenTargetCount,
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(offscreenImages[0])),
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(offscreenImageViews[0])),
+                            static_cast<int32_t>(offscreenFormats[0]),
+                            drawCommand.offscreenExtents[0].width,
+                            drawCommand.offscreenExtents[0].height,
+                            presentFrameIndex);
+                    }
                     return;
                 }
 
@@ -8967,6 +9031,17 @@ namespace Gek
                 activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats, needsDepth ? offscreenDepthFormat : VK_FORMAT_UNDEFINED);
                 if (activeRenderPass == VK_NULL_HANDLE)
                 {
+                    if (!loggedOffscreenRenderPassNull)
+                    {
+                        loggedOffscreenRenderPassNull = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan offscreen draw skipped: renderPass=null targetCount={} depthEnabled={} depthFormat={} frame={}",
+                            offscreenTargetCount,
+                            needsDepth ? 1 : 0,
+                            static_cast<int32_t>(offscreenDepthFormat),
+                            presentFrameIndex);
+                    }
                     return;
                 }
 
@@ -9043,6 +9118,18 @@ namespace Gek
                     vkCmdPipelineBarrier(commandBuffer,
                                          targetSourceStage, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                          0, 0, nullptr, 0, nullptr, 1, &toColorAttachmentTarget);
+
+                    if (!loggedOffscreenToColorTransition)
+                    {
+                        loggedOffscreenToColorTransition = true;
+                        getContext()->log(
+                            Gek::Context::Info,
+                            "Vulkan offscreen transition: image={} oldLayout={} newLayout={} frame={}",
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(offscreenImages[targetIndex])),
+                            static_cast<int32_t>(toColorAttachmentTarget.oldLayout),
+                            static_cast<int32_t>(toColorAttachmentTarget.newLayout),
+                            presentFrameIndex);
+                    }
 
                     offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                     transitionedToColorAttachment[targetIndex] = 1;
@@ -9131,6 +9218,18 @@ namespace Gek
                 activeFramebuffer = getOrCreateOffscreenFramebuffer(activeRenderPass, framebufferAttachmentViews, activeExtent);
                 if (activeFramebuffer == VK_NULL_HANDLE)
                 {
+                    if (!loggedOffscreenFramebufferNull)
+                    {
+                        loggedOffscreenFramebufferNull = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan offscreen draw skipped: framebuffer=null targetCount={} extent={}x{} depthAttachment={} frame={}",
+                            offscreenTargetCount,
+                            activeExtent.width,
+                            activeExtent.height,
+                            activeRenderPassHasDepth ? 1 : 0,
+                            presentFrameIndex);
+                    }
                     return;
                 }
             }
@@ -9263,6 +9362,18 @@ namespace Gek
                                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                              0, 0, nullptr, 0, nullptr, 1, &toShaderReadTarget);
 
+                        if (!loggedOffscreenToShaderReadTransition)
+                        {
+                            loggedOffscreenToShaderReadTransition = true;
+                            getContext()->log(
+                                Gek::Context::Info,
+                                "Vulkan offscreen transition: image={} oldLayout={} newLayout={} frame={}",
+                                static_cast<uint64_t>(reinterpret_cast<uintptr_t>(offscreenImages[targetIndex])),
+                                static_cast<int32_t>(toShaderReadTarget.oldLayout),
+                                static_cast<int32_t>(toShaderReadTarget.newLayout),
+                                presentFrameIndex);
+                        }
+
                         offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     }
 
@@ -9305,6 +9416,18 @@ namespace Gek
             if (pipeline == VK_NULL_HANDLE)
             {
                 ++framePipelineFailCount;
+                if (!loggedGraphicsPipelineNull)
+                {
+                    loggedGraphicsPipelineNull = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan draw skipped: graphics pipeline null drawToBackBuffer={} primitive={} vertexProgram={} pixelProgram={} frame={}",
+                        drawToBackBuffer ? 1 : 0,
+                        static_cast<uint32_t>(pipelineCommand->primitiveType),
+                        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(pipelineCommand->vertexProgram)),
+                        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(pipelineCommand->pixelProgram)),
+                        presentFrameIndex);
+                }
                 endRenderPassForCurrentTarget();
                 return;
             }
@@ -9346,6 +9469,20 @@ namespace Gek
 
                 if (right <= left || bottom <= top)
                 {
+                    if (!loggedCollapsedScissor)
+                    {
+                        loggedCollapsedScissor = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan draw skipped: collapsed scissor requested={}x{} at ({}, {}) clamped extent={}x{} frame={}",
+                            drawCommand.scissor.extent.width,
+                            drawCommand.scissor.extent.height,
+                            drawCommand.scissor.offset.x,
+                            drawCommand.scissor.offset.y,
+                            activeExtent.width,
+                            activeExtent.height,
+                            presentFrameIndex);
+                    }
                     endRenderPassForCurrentTarget();
                     return;
                 }
