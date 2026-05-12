@@ -740,45 +740,41 @@ namespace Gek
                     loadingPopulation = false;
                 }
 
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (windowActive)
+                float frameTime = static_cast<float>(timer.getUpdateTime());
+                if (std::isfinite(frameTime) && frameTime > 0.0f)
                 {
-                    float frameTime = static_cast<float>(timer.getUpdateTime());
-                    if (std::isfinite(frameTime) && frameTime > 0.0f)
+                    const double frameTimeMs = static_cast<double>(frameTime) * 1000.0;
+                    const double fpsInstant = std::clamp(1.0 / static_cast<double>(frameTime), 0.0, 10000.0);
+                    constexpr double FpsSmoothingAlpha = 0.1;
+                    if (!runtimeFpsSmoothedInitialized)
                     {
-                        const double frameTimeMs = static_cast<double>(frameTime) * 1000.0;
-                        const double fpsInstant = std::clamp(1.0 / static_cast<double>(frameTime), 0.0, 10000.0);
-                        constexpr double FpsSmoothingAlpha = 0.1;
-                        if (!runtimeFpsSmoothedInitialized)
-                        {
-                            runtimeFpsSmoothed = fpsInstant;
-                            runtimeFpsSmoothedInitialized = true;
-                        }
-                        else
-                        {
-                            runtimeFpsSmoothed += ((fpsInstant - runtimeFpsSmoothed) * FpsSmoothingAlpha);
-                        }
-
-                        getContext()->setRuntimeMetric("render.frameTimeMs", frameTimeMs);
-                        getContext()->setRuntimeMetric("render.fpsInstant", fpsInstant);
-                        getContext()->setRuntimeMetric("render.fpsSmoothed", runtimeFpsSmoothed);
+                        runtimeFpsSmoothed = fpsInstant;
+                        runtimeFpsSmoothedInitialized = true;
+                    }
+                    else
+                    {
+                        runtimeFpsSmoothed += ((fpsInstant - runtimeFpsSmoothed) * FpsSmoothingAlpha);
                     }
 
-                    modeChangeTimer -= frameTime;
+                    getContext()->setRuntimeMetric("render.frameTimeMs", frameTimeMs);
+                    getContext()->setRuntimeMetric("render.fpsInstant", fpsInstant);
+                    getContext()->setRuntimeMetric("render.fpsSmoothed", runtimeFpsSmoothed);
+                }
 
-                    const float updateFrameTime = (enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
-                    if (population)
-                    {
-                        population->update(updateFrameTime);
-                    }
+                modeChangeTimer -= frameTime;
 
-                    if (!enableInterfaceControl && !loadingPopulation)
-                    {
-                        auto rectangle = window->getScreenRectangle();
-                        window->setCursorPosition(Math::Int2(
-                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-                    }
+                const float updateFrameTime = (!windowActive || enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
+                if (population)
+                {
+                    population->update(updateFrameTime);
+                }
+
+                if (windowActive && !enableInterfaceControl && !loadingPopulation)
+                {
+                    auto rectangle = window->getScreenRectangle();
+                    window->setCursorPosition(Math::Int2(
+                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                        int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
 
                     int32_t xMovement = pendingMouseXMovement.exchange(0, std::memory_order_acq_rel);
                     int32_t yMovement = pendingMouseYMovement.exchange(0, std::memory_order_acq_rel);
@@ -786,14 +782,16 @@ namespace Gek
                     xMovement = std::clamp(xMovement, -MaxAppliedMouseDeltaPerFrame, MaxAppliedMouseDeltaPerFrame);
                     yMovement = std::clamp(yMovement, -MaxAppliedMouseDeltaPerFrame, MaxAppliedMouseDeltaPerFrame);
 
-                    if (!enableInterfaceControl && !loadingPopulation && population)
+                    if (population && (xMovement || yMovement))
                     {
-                        if (xMovement || yMovement)
-                        {
-                            population->action(Plugin::Population::Action("turn", xMovement * mouseSensitivity));
-                            population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
-                        }
+                        population->action(Plugin::Population::Action("turn", xMovement * mouseSensitivity));
+                        population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
                     }
+                }
+                else
+                {
+                    pendingMouseXMovement.exchange(0, std::memory_order_acq_rel);
+                    pendingMouseYMovement.exchange(0, std::memory_order_acq_rel);
                 }
             }
 
