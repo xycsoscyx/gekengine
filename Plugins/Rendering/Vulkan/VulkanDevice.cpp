@@ -4351,6 +4351,11 @@ namespace Gek
                     return pipelineSearch->second;
                 }
 
+                if (failedGraphicsPipelineKeys.contains(key))
+                {
+                    return VK_NULL_HANDLE;
+                }
+
                 if (key.vertexModule == VK_NULL_HANDLE || key.pixelModule == VK_NULL_HANDLE)
                 {
                     return VK_NULL_HANDLE;
@@ -4431,17 +4436,22 @@ namespace Gek
                     }
                 }
 
+                const auto &vertexInfo = command.vertexProgram->getInformation();
+                const auto &pixelInfo = command.pixelProgram->getInformation();
+                const char *vertexEntryName = vertexInfo.entryFunction.empty() ? "main" : vertexInfo.entryFunction.c_str();
+                const char *pixelEntryName = pixelInfo.entryFunction.empty() ? "main" : pixelInfo.entryFunction.c_str();
+
                 VkPipelineShaderStageCreateInfo vertexStage{};
                 vertexStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 vertexStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 vertexStage.module = key.vertexModule;
-                vertexStage.pName = "main";
+                vertexStage.pName = vertexEntryName;
 
                 VkPipelineShaderStageCreateInfo pixelStage{};
                 pixelStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 pixelStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 pixelStage.module = key.pixelModule;
-                pixelStage.pName = "main";
+                pixelStage.pName = pixelEntryName;
 
                 VkPipelineShaderStageCreateInfo shaderStages[] = { vertexStage, pixelStage };
 
@@ -4556,30 +4566,62 @@ namespace Gek
                 pipelineInfo.subpass = 0;
 
                 VkPipeline pipeline = VK_NULL_HANDLE;
-                const VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                bool usedMainEntryFallback = false;
                 if (pipelineResult != VK_SUCCESS)
                 {
-                    if (failedGraphicsPipelineKeys.find(key) == std::end(failedGraphicsPipelineKeys))
+                    const bool tryMainFallback =
+                        (std::strcmp(vertexEntryName, "main") != 0) ||
+                        (std::strcmp(pixelEntryName, "main") != 0);
+                    if (tryMainFallback)
+                    {
+                        vertexStage.pName = "main";
+                        pixelStage.pName = "main";
+                        pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                        usedMainEntryFallback = (pipelineResult == VK_SUCCESS);
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS)
+                {
+                    if (!failedGraphicsPipelineKeys.contains(key))
                     {
                         failedGraphicsPipelineKeys.insert(key);
-                        const auto &vertexInfo = command.vertexProgram->getInformation();
-                        const auto &pixelInfo = command.pixelProgram->getInformation();
                         getContext()->log(
                             Gek::Context::Error,
-                            "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={}",
+                            "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' activeVEntry='{}' activePEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
                             static_cast<int32_t>(pipelineResult),
                             vertexInfo.name,
                             pixelInfo.name,
                             vertexInfo.entryFunction,
                             pixelInfo.entryFunction,
+                            vertexStage.pName,
+                            pixelStage.pName,
                             static_cast<uint64_t>(reinterpret_cast<uintptr_t>(activeRenderPass)),
                             static_cast<uint32_t>(key.depthEnabled),
                             static_cast<uint32_t>(key.depthWrite),
                             static_cast<uint32_t>(key.blendEnabled),
                             static_cast<uint32_t>(attributeDescriptions.size()),
-                            static_cast<uint32_t>(bindingDescriptions.size()));
+                            static_cast<uint32_t>(bindingDescriptions.size()),
+                            colorAttachmentCount,
+                            static_cast<uint32_t>(key.primitiveType),
+                            static_cast<uint32_t>(key.cullMode),
+                            static_cast<uint32_t>(key.depthCompareFunction),
+                            command.hasOffscreenTarget ? 1 : 0,
+                            command.offscreenTargetCount);
                     }
                     return VK_NULL_HANDLE;
+                }
+
+                if (usedMainEntryFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after fallback to entry name 'main' (vp='{}' declared='{}', pp='{}' declared='{}')",
+                        vertexInfo.name,
+                        vertexInfo.entryFunction,
+                        pixelInfo.name,
+                        pixelInfo.entryFunction);
                 }
 
                 graphicsPipelineCache[key] = pipeline;
@@ -4599,11 +4641,19 @@ namespace Gek
                     return pipelineSearch->second;
                 }
 
+                if (failedComputePipelineModules.contains(program->shaderModule))
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                const auto &programInfo = program->getInformation();
+                const char *computeEntryName = programInfo.entryFunction.empty() ? "main" : programInfo.entryFunction.c_str();
+
                 VkPipelineShaderStageCreateInfo stageInfo{};
                 stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
                 stageInfo.module = program->shaderModule;
-                stageInfo.pName = "main";
+                stageInfo.pName = computeEntryName;
 
                 VkComputePipelineCreateInfo createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -4611,21 +4661,39 @@ namespace Gek
                 createInfo.layout = graphicsPipelineLayout;
 
                 VkPipeline pipeline = VK_NULL_HANDLE;
-                const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
+                VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
+                bool usedComputeMainFallback = false;
+                if (result != VK_SUCCESS && std::strcmp(computeEntryName, "main") != 0)
+                {
+                    stageInfo.pName = "main";
+                    result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
+                    usedComputeMainFallback = (result == VK_SUCCESS);
+                }
+
                 if (result != VK_SUCCESS)
                 {
-                    if (failedComputePipelineModules.find(program->shaderModule) == std::end(failedComputePipelineModules))
+                    if (!failedComputePipelineModules.contains(program->shaderModule))
                     {
                         failedComputePipelineModules.insert(program->shaderModule);
                         getContext()->log(
                             Gek::Context::Error,
-                            "Failed Vulkan compute pipeline (result={}) program='{}' entry='{}'",
+                            "Failed Vulkan compute pipeline (result={}) program='{}' entry='{}' activeEntry='{}'",
                             static_cast<int32_t>(result),
-                            program->getInformation().name,
-                            program->getInformation().entryFunction);
+                            programInfo.name,
+                            programInfo.entryFunction,
+                            stageInfo.pName);
                     }
 
                     return VK_NULL_HANDLE;
+                }
+
+                if (usedComputeMainFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan compute pipeline created only after fallback to entry name 'main' (program='{}' declared='{}')",
+                        programInfo.name,
+                        programInfo.entryFunction);
                 }
 
                 computePipelineCache[program->shaderModule] = pipeline;
