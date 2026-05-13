@@ -1975,7 +1975,18 @@ namespace Gek
                     auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
                     return videoDevice->createProgram(compiledData); });
 
-                return staticProgramCache.getResource(handle);
+                auto *program = staticProgramCache.getResource(handle);
+                if (!program)
+                {
+                    getContext()->log(
+                        Context::Error,
+                        "Resources::getProgram failed: type={} name='{}' entry='{}'",
+                        static_cast<uint32_t>(type),
+                        name,
+                        entryFunction);
+                }
+
+                return program;
             }
 
             ProgramHandle loadProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)

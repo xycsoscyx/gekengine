@@ -20,6 +20,7 @@ namespace Gek
             Render::ObjectPtr inputLayout;
             Render::Program *vertexProgram = nullptr;
             Render::Program *geometryProgram = nullptr;
+            bool loggedMissingVertexProgram = false;
 
           public:
             Visual(Context * context, Render::Device * videoDevice, Engine::Resources * resources, std::string visualName)
@@ -113,10 +114,33 @@ OutputVertex getProjection(OutputVertex outputVertex)
                     std::string vertexProgram(JSON::Value(vertexNode, "program", String::Empty));
                     std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".slang").getString());
                     this->vertexProgram = resources->getProgram(Render::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
+                    if (!this->vertexProgram)
+                    {
+                        getContext()->log(
+                            Context::Error,
+                            "Visual '{}' failed to load vertex program '{}' entry='{}'",
+                            visualName,
+                            vertexFileName,
+                            vertexEntry);
+                    }
                     if (!elementList.empty() && this->vertexProgram)
                     {
                         inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
                     }
+                    else if (!elementList.empty() && !inputLayout)
+                    {
+                        getContext()->log(
+                            Context::Warning,
+                            "Visual '{}' has input elements but no valid input layout (vertex program unavailable)",
+                            visualName);
+                    }
+                }
+                else
+                {
+                    getContext()->log(
+                        Context::Warning,
+                        "Visual '{}' is missing vertex program metadata (requires 'vertex.entry' and 'vertex.program')",
+                        visualName);
                 }
 
                 auto geometryNode = visualNode["geometry"];
@@ -141,6 +165,14 @@ OutputVertex getProjection(OutputVertex outputVertex)
             void enable(Render::Device::Context * videoContext)
             {
                 videoContext->setInputLayout(inputLayout.get());
+                if (!vertexProgram && !loggedMissingVertexProgram)
+                {
+                    loggedMissingVertexProgram = true;
+                    getContext()->log(
+                        Context::Warning,
+                        "Visual '{}' enabling with null vertex program",
+                        visualName);
+                }
                 videoContext->vertexPipeline()->setProgram(vertexProgram);
                 videoContext->geometryPipeline()->setProgram(geometryProgram);
             }
