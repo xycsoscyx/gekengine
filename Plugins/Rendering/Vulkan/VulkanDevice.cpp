@@ -3533,6 +3533,15 @@ namespace Gek
                 vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
                 if (deviceCount == 0)
                 {
+                    const char *icdFiles = std::getenv("VK_ICD_FILENAMES");
+                    const char *driverFiles = std::getenv("VK_DRIVER_FILES");
+                    const char *layerPath = std::getenv("VK_LAYER_PATH");
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan enumerate physical devices returned 0. VK_ICD_FILENAMES='{}' VK_DRIVER_FILES='{}' VK_LAYER_PATH='{}'",
+                        (icdFiles ? icdFiles : ""),
+                        (driverFiles ? driverFiles : ""),
+                        (layerPath ? layerPath : ""));
                     throw std::runtime_error("failed to find GPUs with Vulkan support!");
                 }
 
@@ -4166,10 +4175,10 @@ namespace Gek
                 {
                     depthAttachment.format = depthAttachmentFormat;
                     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                        // Use LOAD because the engine explicitly clears depth via vkCmdClearDepthStencilImage
-                        // before the render pass begins. Using CLEAR here would re-clear to 1.0f,
-                        // which breaks reversed-Z rendering (GREATER_EQUAL comparison requires clear=0.0).
-                        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    // Use LOAD because the engine explicitly clears depth via vkCmdClearDepthStencilImage
+                    // before the render pass begins. Using CLEAR here would re-clear to 1.0f,
+                    // which breaks reversed-Z rendering (GREATER_EQUAL comparison requires clear=0.0).
+                    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
