@@ -164,16 +164,22 @@ OutputVertex getProjection(OutputVertex outputVertex)
 
             void enable(Render::Device::Context * videoContext)
             {
-                videoContext->setInputLayout(inputLayout.get());
+                if (inputLayout)
+                {
+                    videoContext->setInputLayout(inputLayout.get());
+                }
                 if (!vertexProgram && !loggedMissingVertexProgram)
                 {
                     loggedMissingVertexProgram = true;
                     getContext()->log(
                         Context::Warning,
-                        "Visual '{}' enabling with null vertex program",
+                        "Visual '{}' enabling with null vertex program; preserving previously bound vertex program",
                         visualName);
                 }
-                videoContext->vertexPipeline()->setProgram(vertexProgram);
+                if (vertexProgram)
+                {
+                    videoContext->vertexPipeline()->setProgram(vertexProgram);
+                }
                 videoContext->geometryPipeline()->setProgram(geometryProgram);
             }
         };
