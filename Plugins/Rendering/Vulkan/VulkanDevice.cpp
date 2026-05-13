@@ -2857,6 +2857,17 @@ namespace Gek
             std::map<VkImage, VkImageLayout> offscreenImageLayouts;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookup;
             std::mutex persistentImageViewLookupMutex;
+
+            struct PendingUploadSubmission
+            {
+                VkFence fence = VK_NULL_HANDLE;
+                VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+                VkBuffer stagingBuffer = VK_NULL_HANDLE;
+                VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
+            };
+            std::vector<PendingUploadSubmission> pendingUploadSubmissions;
+            std::mutex pendingUploadSubmissionsMutex;
+
             uint64_t presentFrameIndex = 0;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
             bool deviceLost = false;
@@ -2992,6 +3003,106 @@ namespace Gek
             {
                 static std::mutex *mutex = new std::mutex();
                 return *mutex;
+            }
+
+            bool enqueueUploadSubmission(VkCommandBuffer uploadCommandBuffer, VkBuffer stagingBuffer, VkDeviceMemory stagingMemory, std::string_view label)
+            {
+                if (uploadCommandBuffer == VK_NULL_HANDLE)
+                {
+                    return false;
+                }
+
+                VkFence uploadFence = VK_NULL_HANDLE;
+                VkFenceCreateInfo uploadFenceInfo{};
+                uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                {
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    if (stagingBuffer != VK_NULL_HANDLE)
+                    {
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    }
+                    if (stagingMemory != VK_NULL_HANDLE)
+                    {
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                    }
+                    return false;
+                }
+
+                VkSubmitInfo submitInfo{};
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &uploadCommandBuffer;
+
+                VkResult submitResult = VK_ERROR_UNKNOWN;
+                {
+                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                    submitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                }
+
+                if (submitResult != VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Warning, "Vulkan async upload submit failed: {}", label);
+                    vkDestroyFence(device, uploadFence, nullptr);
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    if (stagingBuffer != VK_NULL_HANDLE)
+                    {
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    }
+                    if (stagingMemory != VK_NULL_HANDLE)
+                    {
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                    }
+                    return false;
+                }
+
+                std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                pendingUploadSubmissions.push_back({ uploadFence, uploadCommandBuffer, stagingBuffer, stagingMemory });
+                return true;
+            }
+
+            void retireCompletedUploadSubmissions(bool waitForAll)
+            {
+                std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                for (auto submission = std::begin(pendingUploadSubmissions); submission != std::end(pendingUploadSubmissions);)
+                {
+                    bool isComplete = false;
+                    if (waitForAll)
+                    {
+                        const VkResult waitResult = vkWaitForFences(device, 1, &submission->fence, VK_TRUE, UINT64_MAX);
+                        isComplete = (waitResult == VK_SUCCESS) || (waitResult == VK_ERROR_DEVICE_LOST);
+                    }
+                    else
+                    {
+                        const VkResult fenceStatus = vkGetFenceStatus(device, submission->fence);
+                        isComplete = (fenceStatus == VK_SUCCESS) || (fenceStatus == VK_ERROR_DEVICE_LOST);
+                    }
+
+                    if (!isComplete)
+                    {
+                        ++submission;
+                        continue;
+                    }
+
+                    if (submission->fence != VK_NULL_HANDLE)
+                    {
+                        vkDestroyFence(device, submission->fence, nullptr);
+                    }
+                    if (submission->commandBuffer != VK_NULL_HANDLE)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &submission->commandBuffer);
+                    }
+                    if (submission->stagingBuffer != VK_NULL_HANDLE)
+                    {
+                        vkDestroyBuffer(device, submission->stagingBuffer, nullptr);
+                    }
+                    if (submission->stagingMemory != VK_NULL_HANDLE)
+                    {
+                        vkFreeMemory(device, submission->stagingMemory, nullptr);
+                    }
+
+                    submission = pendingUploadSubmissions.erase(submission);
+                }
             }
 
             Render::BufferVersioningPolicy normalizeBufferVersioningPolicy(Render::BufferVersioningPolicy policy) const
@@ -4662,6 +4773,7 @@ namespace Gek
                 if (device != VK_NULL_HANDLE)
                 {
                     vkDeviceWaitIdle(device);
+                    retireCompletedUploadSubmissions(true);
                 }
 
                 backBuffer = nullptr;
@@ -6059,20 +6171,10 @@ namespace Gek
                     return nullptr;
                 }
 
-                constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                const VkResult waitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                vkDestroyFence(device, uploadFence, nullptr);
-                if (waitResult != VK_SUCCESS)
                 {
-                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                    vkDestroyBuffer(device, stagingBuffer, nullptr);
-                    vkFreeMemory(device, stagingMemory, nullptr);
-                    return nullptr;
+                    std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                    pendingUploadSubmissions.push_back({ uploadFence, uploadCommandBuffer, stagingBuffer, stagingMemory });
                 }
-
-                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                vkDestroyBuffer(device, stagingBuffer, nullptr);
-                vkFreeMemory(device, stagingMemory, nullptr);
 
                 VkImageViewCreateInfo imageViewInfo{};
                 imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -6279,23 +6381,10 @@ namespace Gek
                         }
                     }
 
-                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                    vkDestroyFence(device, uploadFence, nullptr);
-                    if (uploadWaitResult == VK_TIMEOUT)
                     {
-                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (staging upload path)");
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        return nullptr;
+                        std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                        pendingUploadSubmissions.push_back({ uploadFence, uploadCommandBuffer, VK_NULL_HANDLE, VK_NULL_HANDLE });
                     }
-
-                    if (uploadWaitResult != VK_SUCCESS)
-                    {
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        return nullptr;
-                    }
-
-                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
                 }
 
                 texture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -6690,29 +6779,10 @@ namespace Gek
                         }
                     }
 
-                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                    vkDestroyFence(device, uploadFence, nullptr);
-                    if (uploadWaitResult == VK_TIMEOUT)
                     {
-                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (copy-to-image path)");
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        vkDestroyBuffer(device, stagingBuffer, nullptr);
-                        vkFreeMemory(device, stagingMemory, nullptr);
-                        return nullptr;
+                        std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                        pendingUploadSubmissions.push_back({ uploadFence, uploadCommandBuffer, stagingBuffer, stagingMemory });
                     }
-
-                    if (uploadWaitResult != VK_SUCCESS)
-                    {
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        vkDestroyBuffer(device, stagingBuffer, nullptr);
-                        vkFreeMemory(device, stagingMemory, nullptr);
-                        return nullptr;
-                    }
-
-                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                    vkDestroyBuffer(device, stagingBuffer, nullptr);
-                    vkFreeMemory(device, stagingMemory, nullptr);
                 }
                 else
                 {
@@ -6793,23 +6863,10 @@ namespace Gek
                         }
                     }
 
-                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                    vkDestroyFence(device, uploadFence, nullptr);
-                    if (uploadWaitResult == VK_TIMEOUT)
                     {
-                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (render-target init path)");
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        return nullptr;
+                        std::lock_guard<std::mutex> pendingLock(pendingUploadSubmissionsMutex);
+                        pendingUploadSubmissions.push_back({ uploadFence, uploadCommandBuffer, VK_NULL_HANDLE, VK_NULL_HANDLE });
                     }
-
-                    if (uploadWaitResult != VK_SUCCESS)
-                    {
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        return nullptr;
-                    }
-
-                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
                 }
 
                 VkImageViewCreateInfo imageViewInfo{};
@@ -7742,6 +7799,12 @@ namespace Gek
             static uint64_t frameRecordTraceCounter = 0;
             ++frameRecordTraceCounter;
             const bool traceFrameRecord = (frameRecordTraceCounter <= 8) || ((frameRecordTraceCounter % 600) == 0);
+
+            if (device != VK_NULL_HANDLE)
+            {
+                retireCompletedUploadSubmissions(false);
+            }
+
             if (frameRecordingActive)
             {
                 return true;
