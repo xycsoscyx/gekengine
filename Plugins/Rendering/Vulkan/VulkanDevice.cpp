@@ -2882,6 +2882,7 @@ namespace Gek
             bool loggedOffscreenToShaderReadTransition = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
+            bool preferSpirv13Profile = false;
 
             void trackVertexProgramSet(bool hasProgram, bool typeMatched)
             {
@@ -3582,6 +3583,19 @@ namespace Gek
                 VkPhysicalDeviceProperties selectedProperties{};
                 vkGetPhysicalDeviceProperties(physicalDevice, &selectedProperties);
                 const uint32_t selectedScore = candidates.rbegin()->first;
+
+                VkPhysicalDeviceDriverProperties selectedDriverProperties{};
+                selectedDriverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+                VkPhysicalDeviceProperties2 selectedProperties2{};
+                selectedProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+                selectedProperties2.pNext = &selectedDriverProperties;
+                vkGetPhysicalDeviceProperties2(physicalDevice, &selectedProperties2);
+
+                preferSpirv13Profile =
+                    (selectedDriverProperties.driverID == VK_DRIVER_ID_MESA_DOZEN) ||
+                    (std::strstr(selectedDriverProperties.driverName, "Dozen") != nullptr) ||
+                    (std::strstr(selectedProperties.deviceName, "Microsoft Direct3D12") != nullptr);
+
                 getContext()->log(
                     Gek::Context::Info,
                     "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X}",
@@ -3594,6 +3608,16 @@ namespace Gek
                     VK_VERSION_MINOR(selectedProperties.apiVersion),
                     VK_VERSION_PATCH(selectedProperties.apiVersion),
                     selectedProperties.driverVersion);
+
+                if (preferSpirv13Profile)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan selected driver appears to be Dozen/D3D12 bridge (driver='{}', id={}); forcing Slang SPIR-V profile '{}'",
+                        selectedDriverProperties.driverName,
+                        static_cast<uint32_t>(selectedDriverProperties.driverID),
+                        "spirv_1_3");
+                }
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -5952,9 +5976,11 @@ namespace Gek
 
                 annotateVulkanBindings(resolvedProgram);
 
+                const char *spirvProfileName = preferSpirv13Profile ? "spirv_1_3" : "spirv_1_5";
+
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
-                targetDesc.profile = slangGlobalSession->findProfile("spirv_1_5");
+                targetDesc.profile = slangGlobalSession->findProfile(spirvProfileName);
                 targetDesc.flags = 0;
 
                 slang::SessionDesc sessionDesc = {};
