@@ -723,6 +723,7 @@ namespace Gek
             uint64_t drawSuppressedMissingVertexBufferCount = 0;
             uint64_t drawSuppressedInvalidRenderTargetCount = 0;
             uint64_t lastSuppressedLogCount = 0;
+            uint64_t lastMissingMaterialCount = 0;
             bool loggedMissingMaterial = false;
             bool loggedMissingMaterialData = false;
             bool loggedMissingVisual = false;
@@ -790,6 +791,7 @@ namespace Gek
                 static uint64_t resourceSummaryFrame = 0;
                 ++resourceSummaryFrame;
                 const bool suppressionIncreased = (drawCallSuppressedCount != lastSuppressedLogCount);
+                const bool missingMaterialIncreased = (drawSuppressedMissingMaterialCount != lastMissingMaterialCount);
                 const bool shouldLogSummary =
                     (resourceSummaryFrame <= 8) ||
                     ((resourceSummaryFrame % 120) == 0) ||
@@ -810,6 +812,20 @@ namespace Gek
                         drawSuppressedMissingVertexBufferCount,
                         drawSuppressedInvalidRenderTargetCount);
                     lastSuppressedLogCount = drawCallSuppressedCount;
+                }
+
+                if (missingMaterialIncreased)
+                {
+                    const uint64_t delta = (drawSuppressedMissingMaterialCount - lastMissingMaterialCount);
+                    getContext()->log(
+                        Context::Warning,
+                        "Resources missingMaterial counter increased: total={} delta={} (drawAttempts={} submitted={} suppressed={})",
+                        drawSuppressedMissingMaterialCount,
+                        delta,
+                        drawCallAttemptCount,
+                        drawCallSubmittedCount,
+                        drawCallSuppressedCount);
+                    lastMissingMaterialCount = drawSuppressedMissingMaterialCount;
                 }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -1147,11 +1163,12 @@ namespace Gek
             {
                 auto normalizedMaterialName = normalizeMaterialName(materialName);
                 auto hash = GetHash(normalizedMaterialName);
+                auto loggedMaterialName = normalizedMaterialName;
                 auto resource = materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle) -> Engine::MaterialPtr
                                                         { return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle); });
                 if (resource.first)
                 {
-                    materialNameMap.insert(std::make_pair(resource.second, std::string(resource.second->getName())));
+                    materialNameMap.insert(std::make_pair(resource.second, std::move(loggedMaterialName)));
                 }
 
                 return resource.second;
