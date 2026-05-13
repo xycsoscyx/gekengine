@@ -688,6 +688,7 @@ namespace Gek
             tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             tbb::concurrent_unordered_map<MaterialHandle, std::string> materialNameMap;
             tbb::concurrent_unordered_set<MaterialHandle> permanentlyFailedMaterials;
+            tbb::concurrent_unordered_set<VisualHandle> permanentlyFailedVisualVertexPrograms;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Texture::Description> textureDescriptionMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Buffer::Description> bufferDescriptionMap;
 
@@ -1716,6 +1717,7 @@ namespace Gek
                 bufferDescriptionMap.clear();
                 materialNameMap.clear();
                 permanentlyFailedMaterials.clear();
+                permanentlyFailedVisualVertexPrograms.clear();
                 loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -2179,12 +2181,13 @@ namespace Gek
                         {
                             drawPrimitiveValid = false;
                             ++drawSuppressedMissingProgramCount;
-                            if (!loggedMissingProgram)
+
+                            const bool isNewFailure = permanentlyFailedVisualVertexPrograms.insert(handle).second;
+                            if (isNewFailure)
                             {
-                                loggedMissingProgram = true;
                                 getContext()->log(
                                     Context::Warning,
-                                    "Resources visual missing vertex program: visual='{}' handle={} (draw block suppressed)",
+                                    "Resources visual missing vertex program (first occurrence): visual='{}' handle={} (draw block suppressed)",
                                     visual->getName(),
                                     static_cast<uint64_t>(handle.identifier));
                             }
