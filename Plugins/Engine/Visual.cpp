@@ -29,7 +29,56 @@ namespace Gek
                 assert(videoDevice);
                 assert(resources);
 
-                JSON::Object visualNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("visuals", visualName).withExtension(".json")));
+                auto visualPath = getContext()->findDataPath(FileSystem::CreatePath("visuals", visualName).withExtension(".json"), false);
+
+                // Linux filesystems are case-sensitive; allow logical visual names to resolve regardless of filename case.
+                if (!visualPath.isFile())
+                {
+                    auto visualsPath = getContext()->findDataPath("visuals", false);
+                    if (visualsPath.isDirectory())
+                    {
+                        std::string expectedSuffix = String::GetLower(std::string(visualName));
+                        expectedSuffix += ".json";
+                        for (char &character : expectedSuffix)
+                        {
+                            if (character == '\\')
+                            {
+                                character = '/';
+                            }
+                        }
+
+                        getContext()->findDataFiles("visuals", [&](FileSystem::Path const &candidate) -> bool
+                                                    {
+                            std::string candidateString = String::GetLower(candidate.getString());
+                            for (char &character : candidateString)
+                            {
+                                if (character == '\\')
+                                {
+                                    character = '/';
+                                }
+                            }
+
+                            if (candidateString.size() >= expectedSuffix.size() &&
+                                candidateString.substr(candidateString.size() - expectedSuffix.size()) == expectedSuffix)
+                            {
+                                visualPath = candidate;
+                                return false;
+                            }
+
+                            return true;
+                        }, false, true);
+                    }
+                }
+
+                JSON::Object visualNode;
+                if (visualPath.isFile())
+                {
+                    visualNode = JSON::Load(visualPath);
+                }
+                else
+                {
+                    getContext()->log(Context::Error, "Visual '{}' definition file not found (expected visuals/{}.json)", visualName, visualName);
+                }
 
                 std::vector<std::string> inputVertexData;
                 std::vector<Render::InputElement> elementList;
