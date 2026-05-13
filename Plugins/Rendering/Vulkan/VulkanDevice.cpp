@@ -2199,7 +2199,7 @@ namespace Gek
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
-                    command.offscreenTargetCount = currentRenderTargetCount;
+                    command.offscreenTargetCount = std::min<uint32_t>(currentRenderTargetCount, static_cast<uint32_t>(command.offscreenImages.size()));
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
@@ -2233,7 +2233,7 @@ namespace Gek
                         command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
 
-                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                    for (uint32_t targetIndex = 0; targetIndex < command.offscreenTargetCount; ++targetIndex)
                     {
                         auto *target = currentRenderTargetList[targetIndex];
                         if (!target)
@@ -2308,7 +2308,7 @@ namespace Gek
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
-                    command.offscreenTargetCount = currentRenderTargetCount;
+                    command.offscreenTargetCount = std::min<uint32_t>(currentRenderTargetCount, static_cast<uint32_t>(command.offscreenImages.size()));
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
@@ -2342,7 +2342,7 @@ namespace Gek
                         command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
 
-                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                    for (uint32_t targetIndex = 0; targetIndex < command.offscreenTargetCount; ++targetIndex)
                     {
                         auto *target = currentRenderTargetList[targetIndex];
                         if (!target)
@@ -2429,7 +2429,7 @@ namespace Gek
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
-                    command.offscreenTargetCount = currentRenderTargetCount;
+                    command.offscreenTargetCount = std::min<uint32_t>(currentRenderTargetCount, static_cast<uint32_t>(command.offscreenImages.size()));
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
@@ -2463,7 +2463,7 @@ namespace Gek
                         command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
 
-                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                    for (uint32_t targetIndex = 0; targetIndex < command.offscreenTargetCount; ++targetIndex)
                     {
                         auto *target = currentRenderTargetList[targetIndex];
                         if (!target)
@@ -2550,7 +2550,7 @@ namespace Gek
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
-                    command.offscreenTargetCount = currentRenderTargetCount;
+                    command.offscreenTargetCount = std::min<uint32_t>(currentRenderTargetCount, static_cast<uint32_t>(command.offscreenImages.size()));
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
@@ -2584,7 +2584,7 @@ namespace Gek
                         command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
 
-                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                    for (uint32_t targetIndex = 0; targetIndex < command.offscreenTargetCount; ++targetIndex)
                     {
                         auto *target = currentRenderTargetList[targetIndex];
                         if (!target)
@@ -4552,7 +4552,7 @@ namespace Gek
                 uint32_t colorAttachmentCount = 1;
                 if (command.hasOffscreenTarget && command.offscreenTargetCount > 0)
                 {
-                    colorAttachmentCount = command.offscreenTargetCount;
+                    colorAttachmentCount = std::min<uint32_t>(command.offscreenTargetCount, static_cast<uint32_t>(command.offscreenImages.size()));
                 }
 
                 std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(colorAttachmentCount, colorBlendAttachment);
