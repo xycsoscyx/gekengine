@@ -687,6 +687,7 @@ namespace Gek
 
             tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             tbb::concurrent_unordered_map<MaterialHandle, std::string> materialNameMap;
+            tbb::concurrent_unordered_set<MaterialHandle> permanentlyFailedMaterials;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Texture::Description> textureDescriptionMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Buffer::Description> bufferDescriptionMap;
 
@@ -1165,7 +1166,14 @@ namespace Gek
                 auto hash = GetHash(normalizedMaterialName);
                 auto loggedMaterialName = normalizedMaterialName;
                 auto resource = materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle) -> Engine::MaterialPtr
-                                                        { return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle); });
+                                                        {
+                                                            auto result = context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle);
+                                                            if (!result)
+                                                            {
+                                                                context->log(Context::Error, "Material creation failed for '{}' (handle={}): createClass returned null — check prior Engine::Material error log", materialName, static_cast<uint64_t>(handle.identifier));
+                                                            }
+                                                            return result;
+                                                        });
                 if (resource.first)
                 {
                     materialNameMap.insert(std::make_pair(resource.second, std::move(loggedMaterialName)));
@@ -1707,6 +1715,7 @@ namespace Gek
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
                 materialNameMap.clear();
+                permanentlyFailedMaterials.clear();
                 loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -2091,29 +2100,28 @@ namespace Gek
                 auto material = materialCache.getResource(handle);
                 if (!material)
                 {
-                    drawPrimitiveValid = false;
                     ++drawSuppressedMissingMaterialCount;
 
-                    getContext()->log(
-                        Context::Warning,
-                        "MATERIAL_MISSING_LOG: handle={} counter={} (should always print)",
-                        static_cast<uint64_t>(handle.identifier),
-                        drawSuppressedMissingMaterialCount);
-
-                    std::string expectedMaterialName;
-                    auto expectedMaterialSearch = materialNameMap.find(handle);
-                    if (expectedMaterialSearch != std::end(materialNameMap))
+                    const bool isNewFailure = permanentlyFailedMaterials.insert(handle).second;
+                    if (isNewFailure)
                     {
-                        expectedMaterialName = expectedMaterialSearch->second;
+                        std::string expectedMaterialName;
+                        auto expectedMaterialSearch = materialNameMap.find(handle);
+                        if (expectedMaterialSearch != std::end(materialNameMap))
+                        {
+                            expectedMaterialName = expectedMaterialSearch->second;
+                        }
+
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources material permanently missing (first occurrence): handle={} expectedMaterial='{}' pass='{}' passHash={} — draw block suppressed for this material",
+                            static_cast<uint64_t>(handle.identifier),
+                            expectedMaterialName,
+                            pass->getName(),
+                            pass->getMaterialHash());
                     }
 
-                    getContext()->log(
-                        Context::Warning,
-                        "Resources material missing: handle={} expectedMaterial='{}' pass='{}' passHash={}",
-                        static_cast<uint64_t>(handle.identifier),
-                        expectedMaterialName,
-                        pass->getName(),
-                        pass->getMaterialHash());
+                    drawPrimitiveValid = false;
 
                     return;
                 }
