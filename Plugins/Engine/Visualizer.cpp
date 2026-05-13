@@ -1456,9 +1456,7 @@ float4 main(PixelInput input) : SV_Target
                                     if (passMode != Engine::Shader::Pass::Mode::None)
                                     {
                                         ++preparedPassCount;
-                                        VisualHandle currentVisual;
                                         MaterialHandle currentMaterial;
-                                        bool visualBound = false;
                                         bool materialBound = false;
                                         switch (passMode)
                                         {
@@ -1467,12 +1465,9 @@ float4 main(PixelInput input) : SV_Target
                                             for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                             {
                                                 resources->startResourceBlock();
-                                                if (!visualBound || (currentVisual != drawCall->plugin))
-                                                {
-                                                    currentVisual = drawCall->plugin;
-                                                    resources->setVisual(videoContext, currentVisual);
-                                                    visualBound = true;
-                                                }
+                                                // Some paths can clear vertex-stage state between draws.
+                                                // Rebind visual every draw so the vertex program is always restored.
+                                                resources->setVisual(videoContext, drawCall->plugin);
 
                                                 if (!materialBound || (currentMaterial != drawCall->material))
                                                 {
