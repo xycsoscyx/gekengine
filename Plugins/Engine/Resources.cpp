@@ -2077,6 +2077,12 @@ namespace Gek
                     drawPrimitiveValid = false;
                     ++drawSuppressedMissingMaterialCount;
 
+                    getContext()->log(
+                        Context::Warning,
+                        "MATERIAL_MISSING_LOG: handle={} counter={} (should always print)",
+                        static_cast<uint64_t>(handle.identifier),
+                        drawSuppressedMissingMaterialCount);
+
                     std::string expectedMaterialName;
                     auto expectedMaterialSearch = materialNameMap.find(handle);
                     if (expectedMaterialSearch != std::end(materialNameMap))
