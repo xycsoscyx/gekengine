@@ -1506,27 +1506,7 @@ namespace Gek
                     void setProgram(Render::Program *program)
                     {
                         auto *vertexProgram = getObject<VertexProgram>(program);
-                        ++context->pipelineDevice->frameVertexProgramSetCount;
-                        if (program)
-                        {
-                            if (!vertexProgram)
-                            {
-                                ++context->pipelineDevice->frameVertexProgramTypeMismatchCount;
-                                if (!context->pipelineDevice->loggedVertexProgramTypeMismatch)
-                                {
-                                    context->pipelineDevice->loggedVertexProgramTypeMismatch = true;
-                                    getContext()->log(
-                                        Gek::Context::Warning,
-                                        "Vulkan vertex pipeline received incompatible program: name='{}' declaredType={}",
-                                        program->getInformation().name,
-                                        static_cast<uint32_t>(program->getInformation().type));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ++context->pipelineDevice->frameVertexProgramNullSetCount;
-                        }
+                        context->pipelineDevice->trackVertexProgramSet((program != nullptr), (vertexProgram != nullptr));
 
                         context->currentVertexProgram = vertexProgram;
                     }
@@ -1669,27 +1649,7 @@ namespace Gek
                     void setProgram(Render::Program *program)
                     {
                         auto *pixelProgram = getObject<PixelProgram>(program);
-                        ++context->pipelineDevice->framePixelProgramSetCount;
-                        if (program)
-                        {
-                            if (!pixelProgram)
-                            {
-                                ++context->pipelineDevice->framePixelProgramTypeMismatchCount;
-                                if (!context->pipelineDevice->loggedPixelProgramTypeMismatch)
-                                {
-                                    context->pipelineDevice->loggedPixelProgramTypeMismatch = true;
-                                    getContext()->log(
-                                        Gek::Context::Warning,
-                                        "Vulkan pixel pipeline received incompatible program: name='{}' declaredType={}",
-                                        program->getInformation().name,
-                                        static_cast<uint32_t>(program->getInformation().type));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ++context->pipelineDevice->framePixelProgramNullSetCount;
-                        }
+                        context->pipelineDevice->trackPixelProgramSet((program != nullptr), (pixelProgram != nullptr));
 
                         context->currentPixelProgram = pixelProgram;
                     }
@@ -2857,10 +2817,34 @@ namespace Gek
             bool loggedGraphicsPipelineNull = false;
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
-            bool loggedVertexProgramTypeMismatch = false;
-            bool loggedPixelProgramTypeMismatch = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
+
+            void trackVertexProgramSet(bool hasProgram, bool typeMatched)
+            {
+                ++frameVertexProgramSetCount;
+                if (!hasProgram)
+                {
+                    ++frameVertexProgramNullSetCount;
+                }
+                else if (!typeMatched)
+                {
+                    ++frameVertexProgramTypeMismatchCount;
+                }
+            }
+
+            void trackPixelProgramSet(bool hasProgram, bool typeMatched)
+            {
+                ++framePixelProgramSetCount;
+                if (!hasProgram)
+                {
+                    ++framePixelProgramNullSetCount;
+                }
+                else if (!typeMatched)
+                {
+                    ++framePixelProgramTypeMismatchCount;
+                }
+            }
 
             struct PipelineKey
             {

@@ -1458,6 +1458,8 @@ float4 main(PixelInput input) : SV_Target
                                         ++preparedPassCount;
                                         VisualHandle currentVisual;
                                         MaterialHandle currentMaterial;
+                                        bool visualBound = false;
+                                        bool materialBound = false;
                                         switch (passMode)
                                         {
                                         case Engine::Shader::Pass::Mode::Forward:
@@ -1465,16 +1467,18 @@ float4 main(PixelInput input) : SV_Target
                                             for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                             {
                                                 resources->startResourceBlock();
-                                                if (currentVisual != drawCall->plugin)
+                                                if (!visualBound || (currentVisual != drawCall->plugin))
                                                 {
                                                     currentVisual = drawCall->plugin;
                                                     resources->setVisual(videoContext, currentVisual);
+                                                    visualBound = true;
                                                 }
 
-                                                if (currentMaterial != drawCall->material)
+                                                if (!materialBound || (currentMaterial != drawCall->material))
                                                 {
                                                     currentMaterial = drawCall->material;
                                                     resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
+                                                    materialBound = true;
                                                 }
 
                                                 drawCall->onDraw(videoContext);
