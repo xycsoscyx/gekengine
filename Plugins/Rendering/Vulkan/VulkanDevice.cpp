@@ -5249,17 +5249,16 @@ namespace Gek
                         {
                             if (inFlightFencePending)
                             {
-                                lock.unlock();
-                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
-                                lock.lock();
-
-                                if (waitResult == VK_SUCCESS)
+                                // Avoid blocking here. A blocking wait in per-draw/per-update paths
+                                // can destroy frame time when many constant buffers update each frame.
+                                const VkResult fenceStatus = vkGetFenceStatus(device, inFlightFence);
+                                if (fenceStatus == VK_SUCCESS)
                                 {
                                     inFlightFencePending = false;
                                     releaseVersionedConstantBufferSlots();
                                     selectedVersion = selectFreeVersion();
                                 }
-                                // VK_TIMEOUT: leave inFlightFencePending=true, retry next frame
+                                // If still unsignaled, keep current slot and continue without stalling.
                             }
                         }
 
@@ -5326,11 +5325,9 @@ namespace Gek
                         {
                             if (inFlightFencePending)
                             {
-                                lock.unlock();
-                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, 10'000'000ULL);
-                                lock.lock();
-
-                                if (waitResult == VK_SUCCESS)
+                                // Non-blocking retirement only; never stall updateResource() on a fence wait.
+                                const VkResult fenceStatus = vkGetFenceStatus(device, inFlightFence);
+                                if (fenceStatus == VK_SUCCESS)
                                 {
                                     inFlightFencePending = false;
                                     releaseVersionedConstantBufferSlots();
@@ -5350,7 +5347,7 @@ namespace Gek
                                         vulkanBuffer->activeVersionIndex = *selectedVersion;
                                     }
                                 }
-                                // VK_TIMEOUT: leave inFlightFencePending=true, retry next frame
+                                // If still unsignaled, continue with current slot instead of waiting.
                             }
                         }
 
