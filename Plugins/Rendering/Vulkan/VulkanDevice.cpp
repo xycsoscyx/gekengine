@@ -3979,7 +3979,10 @@ namespace Gek
                 {
                     depthAttachment.format = depthAttachmentFormat;
                     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                        // Use LOAD because the engine explicitly clears depth via vkCmdClearDepthStencilImage
+                        // before the render pass begins. Using CLEAR here would re-clear to 1.0f,
+                        // which breaks reversed-Z rendering (GREATER_EQUAL comparison requires clear=0.0).
+                        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -9465,7 +9468,9 @@ namespace Gek
 
                 if (activeRenderPassHasDepth)
                 {
-                    clearValues[clearValueCount++].depthStencil = { 1.0f, 0 };
+                    // Depth loadOp is LOAD, so this clear value is not used by Vulkan.
+                    // Use 0.0f (reversed-Z far plane) as a safety default if loadOp ever changes.
+                    clearValues[clearValueCount++].depthStencil = { 0.0f, 0 };
                 }
             }
 
