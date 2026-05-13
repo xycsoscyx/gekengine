@@ -3482,6 +3482,51 @@ namespace Gek
                 return score;
             }
 
+            static std::string_view getDeviceTypeName(VkPhysicalDeviceType deviceType)
+            {
+                switch (deviceType)
+                {
+                case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+                    return "IntegratedGPU";
+                case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+                    return "DiscreteGPU";
+                case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+                    return "VirtualGPU";
+                case VK_PHYSICAL_DEVICE_TYPE_CPU:
+                    return "CPU";
+                default:
+                    return "Other";
+                }
+            }
+
+            static std::string_view getVendorName(uint32_t vendorID)
+            {
+                switch (vendorID)
+                {
+                case 0x10DE:
+                    return "NVIDIA";
+                case 0x1002:
+                case 0x1022:
+                    return "AMD";
+                case 0x8086:
+                    return "Intel";
+                case 0x13B5:
+                    return "ARM";
+                case 0x5143:
+                    return "Qualcomm";
+                case 0x106B:
+                    return "Apple";
+                case 0x1010:
+                    return "Imagination";
+                case 0x1AE0:
+                    return "Google";
+                case 0x10005:
+                    return "Mesa";
+                default:
+                    return "Unknown";
+                }
+            }
+
             void pickPhysicalDevice(void)
             {
                 uint32_t deviceCount = 0;
@@ -3499,6 +3544,21 @@ namespace Gek
                 {
                     uint32_t score = rateDeviceSuitability(device);
                     candidates.insert(std::make_pair(score, device));
+
+                    VkPhysicalDeviceProperties deviceProperties{};
+                    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+                    getContext()->log(
+                        Gek::Context::Info,
+                        "Vulkan candidate: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X}",
+                        deviceProperties.deviceName,
+                        getDeviceTypeName(deviceProperties.deviceType),
+                        getVendorName(deviceProperties.vendorID),
+                        deviceProperties.vendorID,
+                        score,
+                        VK_VERSION_MAJOR(deviceProperties.apiVersion),
+                        VK_VERSION_MINOR(deviceProperties.apiVersion),
+                        VK_VERSION_PATCH(deviceProperties.apiVersion),
+                        deviceProperties.driverVersion);
                 }
 
                 if (!candidates.empty() && candidates.rbegin()->first > 0)
@@ -3510,7 +3570,21 @@ namespace Gek
                     throw std::runtime_error("failed to find a suitable GPU!");
                 }
 
-                getContext()->log(Gek::Context::Info, "Found suitable Vulkan physical device");
+                VkPhysicalDeviceProperties selectedProperties{};
+                vkGetPhysicalDeviceProperties(physicalDevice, &selectedProperties);
+                const uint32_t selectedScore = candidates.rbegin()->first;
+                getContext()->log(
+                    Gek::Context::Info,
+                    "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X}",
+                    selectedProperties.deviceName,
+                    getDeviceTypeName(selectedProperties.deviceType),
+                    getVendorName(selectedProperties.vendorID),
+                    selectedProperties.vendorID,
+                    selectedScore,
+                    VK_VERSION_MAJOR(selectedProperties.apiVersion),
+                    VK_VERSION_MINOR(selectedProperties.apiVersion),
+                    VK_VERSION_PATCH(selectedProperties.apiVersion),
+                    selectedProperties.driverVersion);
             }
 
             QueueFamilyIndices findQueueFamilies(void)
