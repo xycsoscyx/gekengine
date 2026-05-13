@@ -2084,17 +2084,13 @@ namespace Gek
                         expectedMaterialName = expectedMaterialSearch->second;
                     }
 
-                    if (!loggedMissingMaterial)
-                    {
-                        loggedMissingMaterial = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources material missing: handle={} expectedMaterial='{}' pass='{}' passHash={}",
-                            static_cast<uint64_t>(handle.identifier),
-                            expectedMaterialName,
-                            pass->getName(),
-                            pass->getMaterialHash());
-                    }
+                    getContext()->log(
+                        Context::Warning,
+                        "Resources material missing: handle={} expectedMaterial='{}' pass='{}' passHash={}",
+                        static_cast<uint64_t>(handle.identifier),
+                        expectedMaterialName,
+                        pass->getName(),
+                        pass->getMaterialHash());
 
                     return;
                 }
