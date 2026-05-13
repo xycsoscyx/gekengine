@@ -19,6 +19,7 @@ namespace Gek
             virtual ~Visual(void) = default;
 
             virtual std::string_view getName(void) const = 0;
+            virtual bool hasVertexProgram(void) const = 0;
 
             virtual void enable(Render::Device::Context * context) = 0;
         };

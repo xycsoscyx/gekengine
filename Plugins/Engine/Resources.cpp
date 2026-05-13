@@ -2175,6 +2175,22 @@ namespace Gek
                     auto visual = visualCache.getResource(handle);
                     if (drawPrimitiveValid = (visual != nullptr))
                     {
+                        if (!visual->hasVertexProgram())
+                        {
+                            drawPrimitiveValid = false;
+                            ++drawSuppressedMissingProgramCount;
+                            if (!loggedMissingProgram)
+                            {
+                                loggedMissingProgram = true;
+                                getContext()->log(
+                                    Context::Warning,
+                                    "Resources visual missing vertex program: visual='{}' handle={} (draw block suppressed)",
+                                    visual->getName(),
+                                    static_cast<uint64_t>(handle.identifier));
+                            }
+                            return;
+                        }
+
                         visual->enable(videoContext);
                     }
                     else

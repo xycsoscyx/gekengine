@@ -162,6 +162,11 @@ OutputVertex getProjection(OutputVertex outputVertex)
                 return visualName;
             }
 
+            bool hasVertexProgram(void) const
+            {
+                return (vertexProgram != nullptr);
+            }
+
             void enable(Render::Device::Context * videoContext)
             {
                 if (inputLayout)
