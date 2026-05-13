@@ -1505,7 +1505,30 @@ namespace Gek
 
                     void setProgram(Render::Program *program)
                     {
-                        context->currentVertexProgram = getObject<VertexProgram>(program);
+                        auto *vertexProgram = getObject<VertexProgram>(program);
+                        ++context->pipelineDevice->frameVertexProgramSetCount;
+                        if (program)
+                        {
+                            if (!vertexProgram)
+                            {
+                                ++context->pipelineDevice->frameVertexProgramTypeMismatchCount;
+                                if (!context->pipelineDevice->loggedVertexProgramTypeMismatch)
+                                {
+                                    context->pipelineDevice->loggedVertexProgramTypeMismatch = true;
+                                    getContext()->log(
+                                        Gek::Context::Warning,
+                                        "Vulkan vertex pipeline received incompatible program: name='{}' declaredType={}",
+                                        program->getInformation().name,
+                                        static_cast<uint32_t>(program->getInformation().type));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ++context->pipelineDevice->frameVertexProgramNullSetCount;
+                        }
+
+                        context->currentVertexProgram = vertexProgram;
                     }
 
                     void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
@@ -1645,7 +1668,30 @@ namespace Gek
 
                     void setProgram(Render::Program *program)
                     {
-                        context->currentPixelProgram = getObject<PixelProgram>(program);
+                        auto *pixelProgram = getObject<PixelProgram>(program);
+                        ++context->pipelineDevice->framePixelProgramSetCount;
+                        if (program)
+                        {
+                            if (!pixelProgram)
+                            {
+                                ++context->pipelineDevice->framePixelProgramTypeMismatchCount;
+                                if (!context->pipelineDevice->loggedPixelProgramTypeMismatch)
+                                {
+                                    context->pipelineDevice->loggedPixelProgramTypeMismatch = true;
+                                    getContext()->log(
+                                        Gek::Context::Warning,
+                                        "Vulkan pixel pipeline received incompatible program: name='{}' declaredType={}",
+                                        program->getInformation().name,
+                                        static_cast<uint32_t>(program->getInformation().type));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ++context->pipelineDevice->framePixelProgramNullSetCount;
+                        }
+
+                        context->currentPixelProgram = pixelProgram;
                     }
 
                     void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
@@ -2767,6 +2813,12 @@ namespace Gek
             uint32_t frameCapturedBackbufferDrawCommandCount = 0;
             uint32_t frameCapturedBackbufferAfterOffscreenBindCount = 0;
             uint32_t frameCapturedDiscardedNoProgramCount = 0;
+            uint32_t frameVertexProgramSetCount = 0;
+            uint32_t framePixelProgramSetCount = 0;
+            uint32_t frameVertexProgramNullSetCount = 0;
+            uint32_t framePixelProgramNullSetCount = 0;
+            uint32_t frameVertexProgramTypeMismatchCount = 0;
+            uint32_t framePixelProgramTypeMismatchCount = 0;
             uint32_t framePipelineFailCount = 0;
             uint32_t frameInvalidTargetCount = 0;
             uint32_t frameEmptyDescriptorCount = 0;
@@ -2805,6 +2857,8 @@ namespace Gek
             bool loggedGraphicsPipelineNull = false;
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
+            bool loggedVertexProgramTypeMismatch = false;
+            bool loggedPixelProgramTypeMismatch = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
 
@@ -7220,6 +7274,12 @@ namespace Gek
                 const uint32_t frameCapturedBackbufferDrawCommandCountSnapshot = frameCapturedBackbufferDrawCommandCount;
                 const uint32_t frameCapturedBackbufferAfterOffscreenBindCountSnapshot = frameCapturedBackbufferAfterOffscreenBindCount;
                 const uint32_t frameCapturedDiscardedNoProgramCountSnapshot = frameCapturedDiscardedNoProgramCount;
+                const uint32_t frameVertexProgramSetCountSnapshot = frameVertexProgramSetCount;
+                const uint32_t framePixelProgramSetCountSnapshot = framePixelProgramSetCount;
+                const uint32_t frameVertexProgramNullSetCountSnapshot = frameVertexProgramNullSetCount;
+                const uint32_t framePixelProgramNullSetCountSnapshot = framePixelProgramNullSetCount;
+                const uint32_t frameVertexProgramTypeMismatchCountSnapshot = frameVertexProgramTypeMismatchCount;
+                const uint32_t framePixelProgramTypeMismatchCountSnapshot = framePixelProgramTypeMismatchCount;
                 const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
                 const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
                 const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
@@ -7238,6 +7298,12 @@ namespace Gek
                 frameCapturedBackbufferDrawCommandCount = 0;
                 frameCapturedBackbufferAfterOffscreenBindCount = 0;
                 frameCapturedDiscardedNoProgramCount = 0;
+                frameVertexProgramSetCount = 0;
+                framePixelProgramSetCount = 0;
+                frameVertexProgramNullSetCount = 0;
+                framePixelProgramNullSetCount = 0;
+                frameVertexProgramTypeMismatchCount = 0;
+                framePixelProgramTypeMismatchCount = 0;
                 frameInvalidTargetCount = 0;
                 frameEmptyDescriptorCount = 0;
                 frameRenderTargetBindCount = 0;
@@ -7271,6 +7337,12 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferDrawCommands", static_cast<double>(frameCapturedBackbufferDrawCommandCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferAfterOffscreenBind", static_cast<double>(frameCapturedBackbufferAfterOffscreenBindCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoProgram", static_cast<double>(frameCapturedDiscardedNoProgramCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.vsProgramSets", static_cast<double>(frameVertexProgramSetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.psProgramSets", static_cast<double>(framePixelProgramSetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.vsProgramNullSets", static_cast<double>(frameVertexProgramNullSetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.psProgramNullSets", static_cast<double>(framePixelProgramNullSetCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.vsProgramTypeMismatch", static_cast<double>(frameVertexProgramTypeMismatchCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.psProgramTypeMismatch", static_cast<double>(framePixelProgramTypeMismatchCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
@@ -7294,7 +7366,7 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameCapturedDrawCommandCountSnapshot,
@@ -7302,6 +7374,12 @@ namespace Gek
                         frameCapturedBackbufferDrawCommandCountSnapshot,
                         frameCapturedBackbufferAfterOffscreenBindCountSnapshot,
                         frameCapturedDiscardedNoProgramCountSnapshot,
+                        frameVertexProgramSetCountSnapshot,
+                        framePixelProgramSetCountSnapshot,
+                        frameVertexProgramNullSetCountSnapshot,
+                        framePixelProgramNullSetCountSnapshot,
+                        frameVertexProgramTypeMismatchCountSnapshot,
+                        framePixelProgramTypeMismatchCountSnapshot,
                         frameOffscreenCommandCountSnapshot,
                         frameOffscreenDrawCountSnapshot,
                         frameBackbufferDrawCountSnapshot,
