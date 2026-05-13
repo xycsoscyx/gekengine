@@ -2153,6 +2153,18 @@ namespace Gek
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
                         ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
+                        if (!currentVertexProgram && !currentPixelProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexOrPixelProgramCount;
+                        }
+                        else if (!currentVertexProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexProgramCount;
+                        }
+                        else
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoPixelProgramCount;
+                        }
                         return;
                     }
 
@@ -2250,6 +2262,18 @@ namespace Gek
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
                         ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
+                        if (!currentVertexProgram && !currentPixelProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexOrPixelProgramCount;
+                        }
+                        else if (!currentVertexProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexProgramCount;
+                        }
+                        else
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoPixelProgramCount;
+                        }
                         return;
                     }
 
@@ -2347,6 +2371,18 @@ namespace Gek
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
                         ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
+                        if (!currentVertexProgram && !currentPixelProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexOrPixelProgramCount;
+                        }
+                        else if (!currentVertexProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexProgramCount;
+                        }
+                        else
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoPixelProgramCount;
+                        }
                         return;
                     }
 
@@ -2456,6 +2492,18 @@ namespace Gek
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
                         ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
+                        if (!currentVertexProgram && !currentPixelProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexOrPixelProgramCount;
+                        }
+                        else if (!currentVertexProgram)
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoVertexProgramCount;
+                        }
+                        else
+                        {
+                            ++pipelineDevice->frameCapturedDiscardedNoPixelProgramCount;
+                        }
                         return;
                     }
 
@@ -2773,6 +2821,9 @@ namespace Gek
             uint32_t frameCapturedBackbufferDrawCommandCount = 0;
             uint32_t frameCapturedBackbufferAfterOffscreenBindCount = 0;
             uint32_t frameCapturedDiscardedNoProgramCount = 0;
+            uint32_t frameCapturedDiscardedNoVertexProgramCount = 0;
+            uint32_t frameCapturedDiscardedNoPixelProgramCount = 0;
+            uint32_t frameCapturedDiscardedNoVertexOrPixelProgramCount = 0;
             uint32_t frameVertexProgramSetCount = 0;
             uint32_t framePixelProgramSetCount = 0;
             uint32_t frameVertexProgramNullSetCount = 0;
@@ -7258,6 +7309,9 @@ namespace Gek
                 const uint32_t frameCapturedBackbufferDrawCommandCountSnapshot = frameCapturedBackbufferDrawCommandCount;
                 const uint32_t frameCapturedBackbufferAfterOffscreenBindCountSnapshot = frameCapturedBackbufferAfterOffscreenBindCount;
                 const uint32_t frameCapturedDiscardedNoProgramCountSnapshot = frameCapturedDiscardedNoProgramCount;
+                const uint32_t frameCapturedDiscardedNoVertexProgramCountSnapshot = frameCapturedDiscardedNoVertexProgramCount;
+                const uint32_t frameCapturedDiscardedNoPixelProgramCountSnapshot = frameCapturedDiscardedNoPixelProgramCount;
+                const uint32_t frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot = frameCapturedDiscardedNoVertexOrPixelProgramCount;
                 const uint32_t frameVertexProgramSetCountSnapshot = frameVertexProgramSetCount;
                 const uint32_t framePixelProgramSetCountSnapshot = framePixelProgramSetCount;
                 const uint32_t frameVertexProgramNullSetCountSnapshot = frameVertexProgramNullSetCount;
@@ -7282,6 +7336,9 @@ namespace Gek
                 frameCapturedBackbufferDrawCommandCount = 0;
                 frameCapturedBackbufferAfterOffscreenBindCount = 0;
                 frameCapturedDiscardedNoProgramCount = 0;
+                frameCapturedDiscardedNoVertexProgramCount = 0;
+                frameCapturedDiscardedNoPixelProgramCount = 0;
+                frameCapturedDiscardedNoVertexOrPixelProgramCount = 0;
                 frameVertexProgramSetCount = 0;
                 framePixelProgramSetCount = 0;
                 frameVertexProgramNullSetCount = 0;
@@ -7321,6 +7378,9 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferDrawCommands", static_cast<double>(frameCapturedBackbufferDrawCommandCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferAfterOffscreenBind", static_cast<double>(frameCapturedBackbufferAfterOffscreenBindCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoProgram", static_cast<double>(frameCapturedDiscardedNoProgramCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoVertexProgram", static_cast<double>(frameCapturedDiscardedNoVertexProgramCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoPixelProgram", static_cast<double>(frameCapturedDiscardedNoPixelProgramCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoVertexOrPixelProgram", static_cast<double>(frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.vsProgramSets", static_cast<double>(frameVertexProgramSetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.psProgramSets", static_cast<double>(framePixelProgramSetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.vsProgramNullSets", static_cast<double>(frameVertexProgramNullSetCountSnapshot));
@@ -7350,7 +7410,7 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameCapturedDrawCommandCountSnapshot,
@@ -7358,6 +7418,9 @@ namespace Gek
                         frameCapturedBackbufferDrawCommandCountSnapshot,
                         frameCapturedBackbufferAfterOffscreenBindCountSnapshot,
                         frameCapturedDiscardedNoProgramCountSnapshot,
+                        frameCapturedDiscardedNoVertexProgramCountSnapshot,
+                        frameCapturedDiscardedNoPixelProgramCountSnapshot,
+                        frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot,
                         frameVertexProgramSetCountSnapshot,
                         framePixelProgramSetCountSnapshot,
                         frameVertexProgramNullSetCountSnapshot,
