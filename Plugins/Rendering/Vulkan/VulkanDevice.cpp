@@ -4,6 +4,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
 #include <algorithm>
+
 #include <array>
 #include <atomic>
 #include <bit>
@@ -3958,8 +3959,9 @@ namespace Gek
                     VkAttachmentDescription colorAttachment{};
                     colorAttachment.format = formats[attachmentIndex];
                     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                    // Offscreen scene passes expect deterministic contents each draw pass.
-                    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    // Offscreen targets are explicitly cleared by clear commands before draw dispatch.
+                    // Keep attachment contents across draw calls so scene geometry accumulates.
+                    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -9495,99 +9497,8 @@ namespace Gek
 
                 if (!drawToBackBuffer)
                 {
-                    for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
-                    {
-                        if (offscreenImages[targetIndex] == VK_NULL_HANDLE)
-                        {
-                            continue;
-                        }
-
-                        // Transition render target to SHADER_READ_ONLY for sampling.
-                        // Handle both COLOR_ATTACHMENT_OPTIMAL (rendered to) and TRANSFER_DST_OPTIMAL (cleared).
-                        VkImageLayout expectedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        auto layoutSearch = offscreenImageLayouts.find(offscreenImages[targetIndex]);
-                        if (layoutSearch != std::end(offscreenImageLayouts))
-                        {
-                            expectedLayout = layoutSearch->second;
-                        }
-
-                        if (expectedLayout == VK_IMAGE_LAYOUT_UNDEFINED && transitionedToColorAttachment[targetIndex] != 0)
-                        {
-                            expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                        }
-
-                        if (expectedLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                        {
-                            continue;
-                        }
-
-                        if (expectedLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
-                            expectedLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-                            expectedLayout != VK_IMAGE_LAYOUT_GENERAL)
-                        {
-                            if (transitionedToColorAttachment[targetIndex] != 0)
-                            {
-                                expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                            }
-                            else
-                            {
-                                continue;
-                            }
-                        }
-
-                        VkImageMemoryBarrier toShaderReadTarget{};
-                        toShaderReadTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toShaderReadTarget.oldLayout = expectedLayout;
-                        toShaderReadTarget.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        toShaderReadTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderReadTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderReadTarget.image = offscreenImages[targetIndex];
-                        toShaderReadTarget.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        toShaderReadTarget.subresourceRange.baseMipLevel = 0;
-                        toShaderReadTarget.subresourceRange.levelCount = 1;
-                        toShaderReadTarget.subresourceRange.baseArrayLayer = 0;
-                        toShaderReadTarget.subresourceRange.layerCount = 1;
-
-                        VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                        switch (expectedLayout)
-                        {
-                        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-                            toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                            srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                            break;
-                        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-                            toShaderReadTarget.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                            break;
-                        case VK_IMAGE_LAYOUT_GENERAL:
-                            toShaderReadTarget.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-                            srcStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-                            break;
-                        default:
-                            toShaderReadTarget.srcAccessMask = 0;
-                            srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                            break;
-                        }
-                        toShaderReadTarget.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                        vkCmdPipelineBarrier(commandBuffer,
-                                             srcStage,
-                                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                             0, 0, nullptr, 0, nullptr, 1, &toShaderReadTarget);
-
-                        if (!loggedOffscreenToShaderReadTransition)
-                        {
-                            loggedOffscreenToShaderReadTransition = true;
-                            getContext()->log(
-                                Gek::Context::Info,
-                                "Vulkan offscreen transition: image={} oldLayout={} newLayout={} frame={}",
-                                static_cast<uint64_t>(reinterpret_cast<uintptr_t>(offscreenImages[targetIndex])),
-                                static_cast<int32_t>(toShaderReadTarget.oldLayout),
-                                static_cast<int32_t>(toShaderReadTarget.newLayout),
-                                presentFrameIndex);
-                        }
-
-                        offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    }
+                    // Keep offscreen color targets in COLOR_ATTACHMENT layout between scene draws.
+                    // Transition to SHADER_READ happens on-demand in ensureSampledLayoutForView().
 
                     if (activeDepthTexture)
                     {
