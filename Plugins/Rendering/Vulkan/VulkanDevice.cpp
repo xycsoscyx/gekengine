@@ -2146,6 +2146,7 @@ namespace Gek
 
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
                         return;
                     }
 
@@ -2183,48 +2184,6 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
-
-                    ++pipelineDevice->frameCapturedDrawCommandCount;
-                    if (command.hasOffscreenTarget)
-                    {
-                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
-                    }
-                    else
-                    {
-                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
-                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
-                        {
-                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
-                        }
-                    }
-
-                    ++pipelineDevice->frameCapturedDrawCommandCount;
-                    if (command.hasOffscreenTarget)
-                    {
-                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
-                    }
-                    else
-                    {
-                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
-                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
-                        {
-                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
-                        }
-                    }
-
-                    ++pipelineDevice->frameCapturedDrawCommandCount;
-                    if (command.hasOffscreenTarget)
-                    {
-                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
-                    }
-                    else
-                    {
-                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
-                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
-                        {
-                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
-                        }
-                    }
 
                     ++pipelineDevice->frameCapturedDrawCommandCount;
                     if (command.hasOffscreenTarget)
@@ -2284,6 +2243,7 @@ namespace Gek
 
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
                         return;
                     }
 
@@ -2321,6 +2281,20 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
+
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
 
                     std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
@@ -2366,6 +2340,7 @@ namespace Gek
 
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
                         return;
                     }
 
@@ -2416,6 +2391,20 @@ namespace Gek
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
 
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
+
                     std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
@@ -2460,6 +2449,7 @@ namespace Gek
 
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++pipelineDevice->frameCapturedDiscardedNoProgramCount;
                         return;
                     }
 
@@ -2509,6 +2499,20 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
+
+                    ++pipelineDevice->frameCapturedDrawCommandCount;
+                    if (command.hasOffscreenTarget)
+                    {
+                        ++pipelineDevice->frameCapturedOffscreenDrawCommandCount;
+                    }
+                    else
+                    {
+                        ++pipelineDevice->frameCapturedBackbufferDrawCommandCount;
+                        if (pipelineDevice->frameOffscreenTargetBindCount > 0)
+                        {
+                            ++pipelineDevice->frameCapturedBackbufferAfterOffscreenBindCount;
+                        }
+                    }
 
                     std::lock_guard<std::recursive_mutex> lock(Device::getDrawCommandMutex());
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
@@ -2762,6 +2766,7 @@ namespace Gek
             uint32_t frameCapturedOffscreenDrawCommandCount = 0;
             uint32_t frameCapturedBackbufferDrawCommandCount = 0;
             uint32_t frameCapturedBackbufferAfterOffscreenBindCount = 0;
+            uint32_t frameCapturedDiscardedNoProgramCount = 0;
             uint32_t framePipelineFailCount = 0;
             uint32_t frameInvalidTargetCount = 0;
             uint32_t frameEmptyDescriptorCount = 0;
@@ -7214,6 +7219,7 @@ namespace Gek
                 const uint32_t frameCapturedOffscreenDrawCommandCountSnapshot = frameCapturedOffscreenDrawCommandCount;
                 const uint32_t frameCapturedBackbufferDrawCommandCountSnapshot = frameCapturedBackbufferDrawCommandCount;
                 const uint32_t frameCapturedBackbufferAfterOffscreenBindCountSnapshot = frameCapturedBackbufferAfterOffscreenBindCount;
+                const uint32_t frameCapturedDiscardedNoProgramCountSnapshot = frameCapturedDiscardedNoProgramCount;
                 const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
                 const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
                 const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
@@ -7231,7 +7237,7 @@ namespace Gek
                 frameCapturedOffscreenDrawCommandCount = 0;
                 frameCapturedBackbufferDrawCommandCount = 0;
                 frameCapturedBackbufferAfterOffscreenBindCount = 0;
-                framePipelineFailCount = 0;
+                frameCapturedDiscardedNoProgramCount = 0;
                 frameInvalidTargetCount = 0;
                 frameEmptyDescriptorCount = 0;
                 frameRenderTargetBindCount = 0;
@@ -7264,6 +7270,7 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.capturedOffscreenDrawCommands", static_cast<double>(frameCapturedOffscreenDrawCommandCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferDrawCommands", static_cast<double>(frameCapturedBackbufferDrawCommandCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.capturedBackbufferAfterOffscreenBind", static_cast<double>(frameCapturedBackbufferAfterOffscreenBindCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoProgram", static_cast<double>(frameCapturedDiscardedNoProgramCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
@@ -7287,13 +7294,14 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameCapturedDrawCommandCountSnapshot,
                         frameCapturedOffscreenDrawCommandCountSnapshot,
                         frameCapturedBackbufferDrawCommandCountSnapshot,
                         frameCapturedBackbufferAfterOffscreenBindCountSnapshot,
+                        frameCapturedDiscardedNoProgramCountSnapshot,
                         frameOffscreenCommandCountSnapshot,
                         frameOffscreenDrawCountSnapshot,
                         frameBackbufferDrawCountSnapshot,
