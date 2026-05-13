@@ -686,6 +686,7 @@ namespace Gek
             GeneralResourceCache<BlendStateHandle, Render::BlendState> blendStateCache;
 
             tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
+            tbb::concurrent_unordered_map<MaterialHandle, std::string> materialNameMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Texture::Description> textureDescriptionMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Buffer::Description> bufferDescriptionMap;
 
@@ -1146,9 +1147,14 @@ namespace Gek
             {
                 auto normalizedMaterialName = normalizeMaterialName(materialName);
                 auto hash = GetHash(normalizedMaterialName);
-                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle) -> Engine::MaterialPtr
-                                               { return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle); })
-                    .second;
+                auto resource = materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle) -> Engine::MaterialPtr
+                                                        { return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle); });
+                if (resource.first)
+                {
+                    materialNameMap.insert(std::make_pair(resource.second, std::string(resource.second->getName())));
+                }
+
+                return resource.second;
             }
 
             ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallback)
@@ -1683,6 +1689,7 @@ namespace Gek
             {
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
+                materialNameMap.clear();
                 loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -2070,13 +2077,21 @@ namespace Gek
                     drawPrimitiveValid = false;
                     ++drawSuppressedMissingMaterialCount;
 
+                    std::string expectedMaterialName;
+                    auto expectedMaterialSearch = materialNameMap.find(handle);
+                    if (expectedMaterialSearch != std::end(materialNameMap))
+                    {
+                        expectedMaterialName = expectedMaterialSearch->second;
+                    }
+
                     if (!loggedMissingMaterial)
                     {
                         loggedMissingMaterial = true;
                         getContext()->log(
                             Context::Warning,
-                            "Resources material missing: handle={} pass='{}' passHash={}",
+                            "Resources material missing: handle={} expectedMaterial='{}' pass='{}' passHash={}",
                             static_cast<uint64_t>(handle.identifier),
+                            expectedMaterialName,
                             pass->getName(),
                             pass->getMaterialHash());
                     }
