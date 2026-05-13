@@ -687,10 +687,13 @@ namespace Gek
 
             tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             tbb::concurrent_unordered_map<MaterialHandle, std::string> materialNameMap;
+            tbb::concurrent_unordered_map<VisualHandle, std::string> visualNameMap;
             tbb::concurrent_unordered_set<MaterialHandle> permanentlyFailedMaterials;
             tbb::concurrent_unordered_set<VisualHandle> permanentlyFailedVisualVertexPrograms;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Texture::Description> textureDescriptionMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Buffer::Description> bufferDescriptionMap;
+            uint64_t lastMissingProgramVisualHandle = 0;
+            std::string lastMissingProgramVisualName;
 
             struct Validate
             {
@@ -802,7 +805,7 @@ namespace Gek
                 {
                     getContext()->log(
                         Context::Debug,
-                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={}",
+                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingProgramLastVisual='{}' missingProgramLastHandle={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={}",
                         drawCallAttemptCount,
                         drawCallSubmittedCount,
                         drawCallSuppressedCount,
@@ -810,6 +813,8 @@ namespace Gek
                         drawSuppressedMissingMaterialDataCount,
                         drawSuppressedMissingVisualCount,
                         drawSuppressedMissingProgramCount,
+                        lastMissingProgramVisualName,
+                        lastMissingProgramVisualHandle,
                         drawSuppressedMissingIndexBufferCount,
                         drawSuppressedMissingVertexBufferCount,
                         drawSuppressedInvalidRenderTargetCount);
@@ -1156,9 +1161,17 @@ namespace Gek
             VisualHandle loadVisual(std::string_view visualName)
             {
                 auto hash = GetHash(visualName);
-                return visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
+                auto loggedVisualName = std::string(visualName);
+                auto resource = visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
                                              { return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName); })
-                    .second;
+                    ;
+
+                if (resource.first)
+                {
+                    visualNameMap.insert(std::make_pair(resource.second, std::move(loggedVisualName)));
+                }
+
+                return resource.second;
             }
 
             MaterialHandle loadMaterial(std::string_view materialName)
@@ -1716,8 +1729,11 @@ namespace Gek
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
                 materialNameMap.clear();
+                visualNameMap.clear();
                 permanentlyFailedMaterials.clear();
                 permanentlyFailedVisualVertexPrograms.clear();
+                lastMissingProgramVisualHandle = 0;
+                lastMissingProgramVisualName.clear();
                 loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -2181,6 +2197,17 @@ namespace Gek
                         {
                             drawPrimitiveValid = false;
                             ++drawSuppressedMissingProgramCount;
+
+                            lastMissingProgramVisualHandle = static_cast<uint64_t>(handle.identifier);
+                            auto visualNameSearch = visualNameMap.find(handle);
+                            if (visualNameSearch != std::end(visualNameMap))
+                            {
+                                lastMissingProgramVisualName = visualNameSearch->second;
+                            }
+                            else
+                            {
+                                lastMissingProgramVisualName = std::string(visual->getName());
+                            }
 
                             const bool isNewFailure = permanentlyFailedVisualVertexPrograms.insert(handle).second;
                             if (isNewFailure)
