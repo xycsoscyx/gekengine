@@ -3549,17 +3549,38 @@ namespace Gek
                 std::vector<VkPhysicalDevice> availableDevices(deviceCount);
                 vkEnumeratePhysicalDevices(instance, &deviceCount, availableDevices.data());
 
-                std::multimap<uint32_t, VkPhysicalDevice> candidates;
+                struct CandidateDevice
+                {
+                    VkPhysicalDevice device = VK_NULL_HANDLE;
+                    uint32_t score = 0;
+                    VkPhysicalDeviceProperties properties{};
+                    VkPhysicalDeviceDriverProperties driverProperties{};
+                    bool isDozen = false;
+                };
+
+                CandidateDevice bestCandidate{};
+                CandidateDevice bestNonDozenCandidate{};
                 for (const auto &device : availableDevices)
                 {
                     uint32_t score = rateDeviceSuitability(device);
-                    candidates.insert(std::make_pair(score, device));
-
                     VkPhysicalDeviceProperties deviceProperties{};
                     vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+                    VkPhysicalDeviceDriverProperties driverProperties{};
+                    driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+                    VkPhysicalDeviceProperties2 properties2{};
+                    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+                    properties2.pNext = &driverProperties;
+                    vkGetPhysicalDeviceProperties2(device, &properties2);
+
+                    const bool isDozen =
+                        (driverProperties.driverID == VK_DRIVER_ID_MESA_DOZEN) ||
+                        (std::strstr(driverProperties.driverName, "Dozen") != nullptr) ||
+                        (std::strstr(deviceProperties.deviceName, "Microsoft Direct3D12") != nullptr);
+
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan candidate: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X}",
+                        "Vulkan candidate: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X} driverName='{}' driverId={} dozen={}",
                         deviceProperties.deviceName,
                         getDeviceTypeName(deviceProperties.deviceType),
                         getVendorName(deviceProperties.vendorID),
@@ -3568,28 +3589,63 @@ namespace Gek
                         VK_VERSION_MAJOR(deviceProperties.apiVersion),
                         VK_VERSION_MINOR(deviceProperties.apiVersion),
                         VK_VERSION_PATCH(deviceProperties.apiVersion),
-                        deviceProperties.driverVersion);
+                        deviceProperties.driverVersion,
+                        driverProperties.driverName,
+                        static_cast<uint32_t>(driverProperties.driverID),
+                        isDozen ? 1 : 0);
+
+                    if (score > bestCandidate.score)
+                    {
+                        bestCandidate.device = device;
+                        bestCandidate.score = score;
+                        bestCandidate.properties = deviceProperties;
+                        bestCandidate.driverProperties = driverProperties;
+                        bestCandidate.isDozen = isDozen;
+                    }
+
+                    if (!isDozen && score > bestNonDozenCandidate.score)
+                    {
+                        bestNonDozenCandidate.device = device;
+                        bestNonDozenCandidate.score = score;
+                        bestNonDozenCandidate.properties = deviceProperties;
+                        bestNonDozenCandidate.driverProperties = driverProperties;
+                        bestNonDozenCandidate.isDozen = false;
+                    }
                 }
 
-                if (!candidates.empty() && candidates.rbegin()->first > 0)
+                if (bestCandidate.device != VK_NULL_HANDLE && bestCandidate.score > 0)
                 {
-                    physicalDevice = candidates.rbegin()->second;
+                    physicalDevice = bestCandidate.device;
                 }
                 else
                 {
                     throw std::runtime_error("failed to find a suitable GPU!");
                 }
 
-                VkPhysicalDeviceProperties selectedProperties{};
-                vkGetPhysicalDeviceProperties(physicalDevice, &selectedProperties);
-                const uint32_t selectedScore = candidates.rbegin()->first;
+                const char *allowDozenEnvironment = std::getenv("GEK_VULKAN_ALLOW_DOZEN");
+                const bool allowDozen =
+                    (allowDozenEnvironment != nullptr) &&
+                    ((std::strcmp(allowDozenEnvironment, "1") == 0) ||
+                     (std::strcmp(allowDozenEnvironment, "true") == 0) ||
+                     (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
+
+                CandidateDevice selectedCandidate = bestCandidate;
+                if (bestCandidate.isDozen && !allowDozen && bestNonDozenCandidate.device != VK_NULL_HANDLE && bestNonDozenCandidate.score > 0)
+                {
+                    selectedCandidate = bestNonDozenCandidate;
+                    physicalDevice = selectedCandidate.device;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan auto-fallback: selected candidate '{}' uses Dozen; preferring non-Dozen device '{}' (set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen)",
+                        bestCandidate.properties.deviceName,
+                        selectedCandidate.properties.deviceName);
+                }
+
+                VkPhysicalDeviceProperties selectedProperties = selectedCandidate.properties;
+                const uint32_t selectedScore = selectedCandidate.score;
 
                 VkPhysicalDeviceDriverProperties selectedDriverProperties{};
-                selectedDriverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
-                VkPhysicalDeviceProperties2 selectedProperties2{};
-                selectedProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-                selectedProperties2.pNext = &selectedDriverProperties;
-                vkGetPhysicalDeviceProperties2(physicalDevice, &selectedProperties2);
+                selectedDriverProperties = selectedCandidate.driverProperties;
 
                 preferSpirv13Profile =
                     (selectedDriverProperties.driverID == VK_DRIVER_ID_MESA_DOZEN) ||
