@@ -2882,9 +2882,12 @@ namespace Gek
             bool loggedGraphicsPipelineShaderModuleNull = false;
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
+            bool loggedOffscreenBackbufferFallbackEnabled = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
+            bool useBackbufferFallbackForOffscreen = false;
+            uint32_t consecutiveOffscreenPipelineFailFrames = 0;
 
             void trackVertexProgramSet(bool hasProgram, bool typeMatched)
             {
@@ -7714,6 +7717,32 @@ namespace Gek
                 const uint32_t frameOffscreenSkippedNullRenderPassCountSnapshot = frameOffscreenSkippedNullRenderPassCount;
                 const uint32_t frameOffscreenSkippedNullFramebufferCountSnapshot = frameOffscreenSkippedNullFramebufferCount;
 
+                const bool frameHadCompleteOffscreenPipelineFailure =
+                    (frameOffscreenCommandCountSnapshot > 0) &&
+                    (frameOffscreenDrawCountSnapshot == 0) &&
+                    (framePipelineFailCountSnapshot >= frameOffscreenCommandCountSnapshot);
+                if (frameHadCompleteOffscreenPipelineFailure)
+                {
+                    ++consecutiveOffscreenPipelineFailFrames;
+                }
+                else
+                {
+                    consecutiveOffscreenPipelineFailFrames = 0;
+                }
+
+                if (!useBackbufferFallbackForOffscreen && consecutiveOffscreenPipelineFailFrames >= 3)
+                {
+                    useBackbufferFallbackForOffscreen = true;
+                    if (!loggedOffscreenBackbufferFallbackEnabled)
+                    {
+                        loggedOffscreenBackbufferFallbackEnabled = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan fallback enabled: routing offscreen draws to backbuffer after {} consecutive full offscreen pipeline-failure frames",
+                            consecutiveOffscreenPipelineFailFrames);
+                    }
+                }
+
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
@@ -9491,7 +9520,8 @@ namespace Gek
 
             // Graphics draw command
 
-            const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
+            const bool forceOffscreenToBackbuffer = useBackbufferFallbackForOffscreen && drawCommand.hasOffscreenTarget;
+            const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget || forceOffscreenToBackbuffer;
             if (!drawToBackBuffer)
             {
                 ++frameOffscreenCommandCount;
@@ -9936,8 +9966,15 @@ namespace Gek
             if (drawToBackBuffer)
             {
                 backBufferCompositionCommand = drawCommand;
-                backBufferCompositionCommand.depthState = nullptr;
-                backBufferCompositionCommand.renderState = nullptr;
+                backBufferCompositionCommand.hasOffscreenTarget = false;
+                backBufferCompositionCommand.offscreenTargetCount = 0;
+
+                if (!drawCommand.hasOffscreenTarget)
+                {
+                    backBufferCompositionCommand.depthState = nullptr;
+                    backBufferCompositionCommand.renderState = nullptr;
+                }
+
                 pipelineCommand = &backBufferCompositionCommand;
             }
 
