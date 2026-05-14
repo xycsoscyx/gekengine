@@ -3651,6 +3651,7 @@ namespace Gek
                 preferSpirv13Profile =
                     (selectedDriverProperties.driverID == VK_DRIVER_ID_MESA_DOZEN) ||
                     (std::strstr(selectedDriverProperties.driverName, "Dozen") != nullptr) ||
+                    (std::strstr(selectedDriverProperties.driverName, "llvmpipe") != nullptr) ||
                     (std::strstr(selectedProperties.deviceName, "Microsoft Direct3D12") != nullptr);
 
                 getContext()->log(
@@ -3670,7 +3671,7 @@ namespace Gek
                 {
                     getContext()->log(
                         Gek::Context::Warning,
-                        "Vulkan selected driver appears to be Dozen/D3D12 bridge (driver='{}', id={}); forcing Slang SPIR-V profile '{}'",
+                        "Vulkan selected driver requires conservative SPIR-V profile (driver='{}', id={}): forcing Slang profile '{}'",
                         selectedDriverProperties.driverName,
                         static_cast<uint32_t>(selectedDriverProperties.driverID),
                         "spirv_1_3");
@@ -6106,7 +6107,14 @@ namespace Gek
 
                 annotateVulkanBindings(resolvedProgram);
 
-                const char *spirvProfileName = preferSpirv13Profile ? "spirv_1_3" : "spirv_1_4";
+                const char *forceSpirv13Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV13");
+                const bool forceSpirv13Profile =
+                    (forceSpirv13Environment != nullptr) &&
+                    ((std::strcmp(forceSpirv13Environment, "1") == 0) ||
+                     (std::strcmp(forceSpirv13Environment, "true") == 0) ||
+                     (std::strcmp(forceSpirv13Environment, "TRUE") == 0));
+
+                const char *spirvProfileName = (preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4";
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
