@@ -70,14 +70,62 @@ int main(int argumentCount, char const *const argumentList[])
     {
         context->setCachePath(cachePath);
 
+        auto addDataPathIfDirectory = [&](const FileSystem::Path &path, const char *label) -> bool
+        {
+            if (!path.isDirectory())
+            {
+                return false;
+            }
+
+            context->addDataPath(path);
+            context->log(Context::Info, "demo_engine data path [{}]: {}", label, path.getString());
+            return true;
+        };
+
         auto gekDataPath = std::getenv("gek_data_path");
         if (gekDataPath)
         {
-            context->addDataPath(gekDataPath);
+            addDataPathIfDirectory(FileSystem::Path(gekDataPath), "env:gek_data_path");
+        }
+        else
+        {
+            auto gekDataPathUpper = std::getenv("GEK_DATA_PATH");
+            if (gekDataPathUpper)
+            {
+                addDataPathIfDirectory(FileSystem::Path(gekDataPathUpper), "env:GEK_DATA_PATH");
+            }
         }
 
-        context->addDataPath(rootPath / "data");
-        context->addDataPath(rootPath.getString());
+        addDataPathIfDirectory(rootPath / "data", "cacheRoot/data");
+        addDataPathIfDirectory(rootPath, "cacheRoot");
+
+        bool discoveredRepositoryData = false;
+        auto probePath = binaryPath;
+        for (uint32_t probeDepth = 0; probeDepth < 8; ++probeDepth)
+        {
+            auto candidateDataPath = probePath / "data";
+            if (candidateDataPath.isDirectory())
+            {
+                discoveredRepositoryData = addDataPathIfDirectory(candidateDataPath, "auto-discovered");
+                break;
+            }
+
+            auto parentPath = probePath.getParentPath();
+            if (parentPath.getString() == probePath.getString())
+            {
+                break;
+            }
+
+            probePath = parentPath;
+        }
+
+        if (!discoveredRepositoryData)
+        {
+            context->log(
+                Context::Warning,
+                "demo_engine could not auto-discover a data directory from binary path '{}' (set gek_data_path or GEK_DATA_PATH if assets are missing)",
+                binaryPath.getString());
+        }
 
         Plugin::CorePtr core = context->createClass<Plugin::Core>("Engine::Core");
     }
