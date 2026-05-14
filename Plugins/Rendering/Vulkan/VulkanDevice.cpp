@@ -2840,6 +2840,8 @@ namespace Gek
             uint32_t frameOffscreenSkippedNoTargetCount = 0;
             uint32_t frameOffscreenSkippedNullRenderPassCount = 0;
             uint32_t frameOffscreenSkippedNullFramebufferCount = 0;
+            uint32_t frameBackbufferAccumulatePipelineFailCount = 0;
+            uint32_t frameBackbufferAccumulateSkipCount = 0;
             uint64_t frameIndex = 0;
             std::vector<VkDescriptorSet> frameDescriptorSets;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
@@ -2883,6 +2885,8 @@ namespace Gek
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
+            bool loggedBackbufferAccumulateBypassEnabled = false;
+            bool loggedBackbufferAccumulateBypassSkip = false;
             bool emergencyFallbackVertexProgramAttempted = false;
             bool emergencyFallbackPixelProgram1RtAttempted = false;
             bool emergencyFallbackPixelProgram3RtAttempted = false;
@@ -2893,9 +2897,22 @@ namespace Gek
             bool preferSpirv13Profile = false;
             bool useBackbufferFallbackForOffscreen = false;
             uint32_t consecutiveOffscreenPipelineFailFrames = 0;
+            bool skipBackbufferAccumulateLightingPass = false;
+            uint32_t consecutiveBackbufferAccumulatePipelineFailFrames = 0;
             Render::ProgramPtr emergencyFallbackVertexProgram;
             Render::ProgramPtr emergencyFallbackPixelProgram1Rt;
             Render::ProgramPtr emergencyFallbackPixelProgram3Rt;
+
+            static bool isAccumulateLightingPixelProgram(const PixelProgram *pixelProgram)
+            {
+                if (!pixelProgram)
+                {
+                    return false;
+                }
+
+                const std::string_view programName = pixelProgram->getInformation().name;
+                return (programName.find("AccumulateLighting.slang") != std::string_view::npos);
+            }
 
             VertexProgram *getEmergencyFallbackVertexProgram(void)
             {
@@ -7993,6 +8010,8 @@ float4 main(PixelInput input) : SV_Target
                 const uint32_t frameOffscreenSkippedNoTargetCountSnapshot = frameOffscreenSkippedNoTargetCount;
                 const uint32_t frameOffscreenSkippedNullRenderPassCountSnapshot = frameOffscreenSkippedNullRenderPassCount;
                 const uint32_t frameOffscreenSkippedNullFramebufferCountSnapshot = frameOffscreenSkippedNullFramebufferCount;
+                const uint32_t frameBackbufferAccumulatePipelineFailCountSnapshot = frameBackbufferAccumulatePipelineFailCount;
+                const uint32_t frameBackbufferAccumulateSkipCountSnapshot = frameBackbufferAccumulateSkipCount;
 
                 const bool frameHadCompleteOffscreenPipelineFailure =
                     (frameOffscreenCommandCountSnapshot > 0) &&
@@ -8017,6 +8036,31 @@ float4 main(PixelInput input) : SV_Target
                             Gek::Context::Warning,
                             "Vulkan fallback enabled: routing offscreen draws to backbuffer after {} consecutive full offscreen pipeline-failure frames",
                             consecutiveOffscreenPipelineFailFrames);
+                    }
+                }
+
+                if (frameBackbufferAccumulatePipelineFailCountSnapshot > 0)
+                {
+                    ++consecutiveBackbufferAccumulatePipelineFailFrames;
+                }
+                else
+                {
+                    consecutiveBackbufferAccumulatePipelineFailFrames = 0;
+                }
+
+                if (!skipBackbufferAccumulateLightingPass &&
+                    useBackbufferFallbackForOffscreen &&
+                    preferSpirv13Profile &&
+                    (consecutiveBackbufferAccumulatePipelineFailFrames >= 2))
+                {
+                    skipBackbufferAccumulateLightingPass = true;
+                    if (!loggedBackbufferAccumulateBypassEnabled)
+                    {
+                        loggedBackbufferAccumulateBypassEnabled = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan fallback enabled: bypassing backbuffer AccumulateLighting after {} consecutive pipeline-failure frames",
+                            consecutiveBackbufferAccumulatePipelineFailFrames);
                     }
                 }
 
@@ -8046,6 +8090,8 @@ float4 main(PixelInput input) : SV_Target
                 frameOffscreenSkippedNoTargetCount = 0;
                 frameOffscreenSkippedNullRenderPassCount = 0;
                 frameOffscreenSkippedNullFramebufferCount = 0;
+                frameBackbufferAccumulatePipelineFailCount = 0;
+                frameBackbufferAccumulateSkipCount = 0;
 
                 ++presentFrameIndex;
                 const uint32_t totalCommandCount = frameTotalCommandCount;
@@ -8089,6 +8135,8 @@ float4 main(PixelInput input) : SV_Target
                 getContext()->setRuntimeMetric("vulkan.offscreenSkipNoTargets", static_cast<double>(frameOffscreenSkippedNoTargetCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.offscreenSkipNullRenderPass", static_cast<double>(frameOffscreenSkippedNullRenderPassCountSnapshot));
                 getContext()->setRuntimeMetric("vulkan.offscreenSkipNullFramebuffer", static_cast<double>(frameOffscreenSkippedNullFramebufferCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.backbufferAccumulatePipelineFails", static_cast<double>(frameBackbufferAccumulatePipelineFailCountSnapshot));
+                getContext()->setRuntimeMetric("vulkan.backbufferAccumulateSkips", static_cast<double>(frameBackbufferAccumulateSkipCountSnapshot));
                 getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
                 const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
@@ -8104,7 +8152,7 @@ float4 main(PixelInput input) : SV_Target
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} backbufferAccumulateFails={} backbufferAccumulateSkips={} invalidTargets={} emptyDescriptors={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameCapturedDrawCommandCountSnapshot,
@@ -8130,6 +8178,8 @@ float4 main(PixelInput input) : SV_Target
                         frameOffscreenSkippedNullRenderPassCountSnapshot,
                         frameOffscreenSkippedNullFramebufferCountSnapshot,
                         framePipelineFailCountSnapshot,
+                        frameBackbufferAccumulatePipelineFailCountSnapshot,
+                        frameBackbufferAccumulateSkipCountSnapshot,
                         frameInvalidTargetCountSnapshot,
                         frameEmptyDescriptorCountSnapshot);
                 }
@@ -10262,10 +10312,32 @@ float4 main(PixelInput input) : SV_Target
                 pipelineCommand = &backBufferCompositionCommand;
             }
 
+            const bool isBackbufferAccumulateLightingPass =
+                drawToBackBuffer &&
+                isAccumulateLightingPixelProgram(pipelineCommand->pixelProgram);
+
+            if (skipBackbufferAccumulateLightingPass && isBackbufferAccumulateLightingPass)
+            {
+                ++frameBackbufferAccumulateSkipCount;
+                if (!loggedBackbufferAccumulateBypassSkip)
+                {
+                    loggedBackbufferAccumulateBypassSkip = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan bypass active: skipping backbuffer AccumulateLighting draw to avoid repeated pipeline failures");
+                }
+                endRenderPassForCurrentTarget();
+                return;
+            }
+
             VkPipeline pipeline = getOrCreateGraphicsPipeline(*pipelineCommand, activeRenderPass);
             if (pipeline == VK_NULL_HANDLE)
             {
                 ++framePipelineFailCount;
+                if (isBackbufferAccumulateLightingPass)
+                {
+                    ++frameBackbufferAccumulatePipelineFailCount;
+                }
                 if (!loggedGraphicsPipelineNull)
                 {
                     loggedGraphicsPipelineNull = true;
