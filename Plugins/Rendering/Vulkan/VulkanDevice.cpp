@@ -2883,11 +2883,75 @@ namespace Gek
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
+            bool emergencyFallbackPixelProgramAttempted = false;
+            bool loggedEmergencyFallbackPixelProgramReady = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
             bool useBackbufferFallbackForOffscreen = false;
             uint32_t consecutiveOffscreenPipelineFailFrames = 0;
+            Render::ProgramPtr emergencyFallbackPixelProgram;
+
+            PixelProgram *getEmergencyFallbackPixelProgram(void)
+            {
+                if (emergencyFallbackPixelProgram)
+                {
+                    return dynamic_cast<PixelProgram *>(emergencyFallbackPixelProgram.get());
+                }
+
+                if (emergencyFallbackPixelProgramAttempted)
+                {
+                    return nullptr;
+                }
+
+                emergencyFallbackPixelProgramAttempted = true;
+
+                Render::Program::Information fallbackProgramInfo;
+                fallbackProgramInfo.type = Render::Program::Type::Pixel;
+                fallbackProgramInfo.name = "vulkan:fallbackUnlitPixelProgram";
+                fallbackProgramInfo.entryFunction = "main";
+                fallbackProgramInfo.shaderData = R"(
+struct PixelInput
+{
+    float4 position : SV_POSITION;
+};
+
+[shader("fragment")]
+float4 main(PixelInput input) : SV_Target
+{
+    return float4(0.80, 0.82, 0.86, 1.0);
+}
+)";
+
+                if (!compileProgram(fallbackProgramInfo))
+                {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan emergency fallback pixel program compilation failed");
+                    return nullptr;
+                }
+
+                emergencyFallbackPixelProgram = createProgram(fallbackProgramInfo);
+                auto *fallbackPixelProgram = dynamic_cast<PixelProgram *>(emergencyFallbackPixelProgram.get());
+                if (!fallbackPixelProgram || fallbackPixelProgram->shaderModule == VK_NULL_HANDLE)
+                {
+                    emergencyFallbackPixelProgram.reset();
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan emergency fallback pixel program module creation failed");
+                    return nullptr;
+                }
+
+                if (!loggedEmergencyFallbackPixelProgramReady)
+                {
+                    loggedEmergencyFallbackPixelProgramReady = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan emergency fallback pixel program is active for incompatible graphics pipelines");
+                }
+
+                return fallbackPixelProgram;
+            }
 
             void trackVertexProgramSet(bool hasProgram, bool typeMatched)
             {
@@ -4669,6 +4733,7 @@ namespace Gek
                 bool usedMainEntryFallback = false;
                 bool usedDepthCompareFallback = false;
                 bool usedCullNoneFallback = false;
+                bool usedEmergencyPixelShaderFallback = false;
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const bool tryMainFallback =
@@ -4718,6 +4783,27 @@ namespace Gek
                     if (pipelineResult != VK_SUCCESS)
                     {
                         rasterizer.cullMode = originalCullMode;
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS)
+                {
+                    auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram();
+                    if (fallbackPixelProgram && fallbackPixelProgram->shaderModule != VK_NULL_HANDLE)
+                    {
+                        const VkShaderModule originalPixelModule = pixelStage.module;
+                        const char *originalPixelEntryName = pixelStage.pName;
+
+                        pixelStage.module = fallbackPixelProgram->shaderModule;
+                        pixelStage.pName = "main";
+                        pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                        usedEmergencyPixelShaderFallback = (pipelineResult == VK_SUCCESS);
+
+                        if (!usedEmergencyPixelShaderFallback)
+                        {
+                            pixelStage.module = originalPixelModule;
+                            pixelStage.pName = originalPixelEntryName;
+                        }
                     }
                 }
 
@@ -4782,6 +4868,16 @@ namespace Gek
                         pixelInfo.name,
                         command.hasOffscreenTarget ? 1 : 0);
                 }
+
+                    if (usedEmergencyPixelShaderFallback)
+                    {
+                        getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after emergency pixel-shader fallback (vp='{}' pp='{}' offscreen={})",
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        command.hasOffscreenTarget ? 1 : 0);
+                    }
 
                 graphicsPipelineCache[key] = pipeline;
                 return pipeline;
