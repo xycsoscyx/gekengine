@@ -2883,16 +2883,89 @@ namespace Gek
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
+            bool emergencyFallbackVertexProgramAttempted = false;
             bool emergencyFallbackPixelProgram1RtAttempted = false;
             bool emergencyFallbackPixelProgram3RtAttempted = false;
             bool loggedEmergencyFallbackPixelProgramReady = false;
+            bool loggedEmergencyFallbackVertexProgramReady = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
             bool useBackbufferFallbackForOffscreen = false;
             uint32_t consecutiveOffscreenPipelineFailFrames = 0;
+            Render::ProgramPtr emergencyFallbackVertexProgram;
             Render::ProgramPtr emergencyFallbackPixelProgram1Rt;
             Render::ProgramPtr emergencyFallbackPixelProgram3Rt;
+
+            VertexProgram *getEmergencyFallbackVertexProgram(void)
+            {
+                if (emergencyFallbackVertexProgram)
+                {
+                    return dynamic_cast<VertexProgram *>(emergencyFallbackVertexProgram.get());
+                }
+
+                if (emergencyFallbackVertexProgramAttempted)
+                {
+                    return nullptr;
+                }
+
+                emergencyFallbackVertexProgramAttempted = true;
+
+                Render::Program::Information fallbackProgramInfo{
+                    "vulkan:fallbackUnlitVertexProgram",
+                    Render::Program::Type::Vertex,
+                    "mainVertexProgram",
+                    "",
+                    FileSystem::Path("")};
+                fallbackProgramInfo.shaderData = R"(
+struct InputVertex
+{
+    float3 position : POSITION;
+};
+
+struct OutputVertex
+{
+    float4 projected : SV_POSITION;
+};
+
+[shader("vertex")]
+OutputVertex mainVertexProgram(InputVertex input)
+{
+    OutputVertex outputVertex;
+    outputVertex.projected = float4(input.position, 1.0);
+    return outputVertex;
+}
+)";
+
+                if (!compileProgram(fallbackProgramInfo))
+                {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan emergency fallback vertex program compilation failed");
+                    return nullptr;
+                }
+
+                emergencyFallbackVertexProgram = createProgram(fallbackProgramInfo);
+                auto *fallbackVertexProgram = dynamic_cast<VertexProgram *>(emergencyFallbackVertexProgram.get());
+                if (!fallbackVertexProgram || fallbackVertexProgram->shaderModule == VK_NULL_HANDLE)
+                {
+                    emergencyFallbackVertexProgram.reset();
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan emergency fallback vertex program module creation failed");
+                    return nullptr;
+                }
+
+                if (!loggedEmergencyFallbackVertexProgramReady)
+                {
+                    loggedEmergencyFallbackVertexProgramReady = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan emergency fallback vertex program is active for incompatible graphics pipelines");
+                }
+
+                return fallbackVertexProgram;
+            }
 
             PixelProgram *getEmergencyFallbackPixelProgram(uint32_t colorAttachmentCount)
             {
@@ -4766,6 +4839,7 @@ float4 main(PixelInput input) : SV_Target
                 bool usedDepthCompareFallback = false;
                 bool usedCullNoneFallback = false;
                 bool usedEmergencyPixelShaderFallback = false;
+                bool usedEmergencyVertexPixelShaderFallback = false;
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const bool tryMainFallback =
@@ -4868,6 +4942,44 @@ float4 main(PixelInput input) : SV_Target
 
                 if (pipelineResult != VK_SUCCESS)
                 {
+                    auto *fallbackVertexProgram = getEmergencyFallbackVertexProgram();
+                    auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram(colorAttachmentCount);
+                    if (fallbackVertexProgram && fallbackVertexProgram->shaderModule != VK_NULL_HANDLE &&
+                        fallbackPixelProgram && fallbackPixelProgram->shaderModule != VK_NULL_HANDLE)
+                    {
+                        const VkShaderModule originalVertexModule = vertexStage.module;
+                        const char *originalVertexEntryName = vertexStage.pName;
+                        const VkShaderModule originalPixelModule = pixelStage.module;
+                        const char *originalPixelEntryName = pixelStage.pName;
+
+                        vertexStage.module = fallbackVertexProgram->shaderModule;
+                        vertexStage.pName = "mainVertexProgram";
+                        pixelStage.module = fallbackPixelProgram->shaderModule;
+                        pixelStage.pName = "main";
+
+                        pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                        usedEmergencyVertexPixelShaderFallback = (pipelineResult == VK_SUCCESS);
+
+                        if (!usedEmergencyVertexPixelShaderFallback)
+                        {
+                            vertexStage.module = originalVertexModule;
+                            vertexStage.pName = originalVertexEntryName;
+                            pixelStage.module = originalPixelModule;
+                            pixelStage.pName = originalPixelEntryName;
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan emergency vertex+pixel fallback pipeline attempt failed (result={}) vp='{}' pp='{}' colorAttachments={} offscreen={}",
+                                static_cast<int32_t>(pipelineResult),
+                                vertexInfo.name,
+                                pixelInfo.name,
+                                colorAttachmentCount,
+                                command.hasOffscreenTarget ? 1 : 0);
+                        }
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS)
+                {
                     if (!failedGraphicsPipelineKeys.contains(key))
                     {
                         failedGraphicsPipelineKeys.insert(key);
@@ -4928,15 +5040,25 @@ float4 main(PixelInput input) : SV_Target
                         command.hasOffscreenTarget ? 1 : 0);
                 }
 
-                    if (usedEmergencyPixelShaderFallback)
-                    {
-                        getContext()->log(
+                if (usedEmergencyPixelShaderFallback)
+                {
+                    getContext()->log(
                         Gek::Context::Warning,
                         "Vulkan graphics pipeline created only after emergency pixel-shader fallback (vp='{}' pp='{}' offscreen={})",
                         vertexInfo.name,
                         pixelInfo.name,
                         command.hasOffscreenTarget ? 1 : 0);
-                    }
+                }
+
+                if (usedEmergencyVertexPixelShaderFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after emergency vertex+pixel fallback (vp='{}' pp='{}' offscreen={})",
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        command.hasOffscreenTarget ? 1 : 0);
+                }
 
                 graphicsPipelineCache[key] = pipeline;
                 return pipeline;
