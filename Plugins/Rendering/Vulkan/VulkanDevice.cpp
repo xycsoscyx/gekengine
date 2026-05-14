@@ -4662,6 +4662,8 @@ namespace Gek
                 VkPipeline pipeline = VK_NULL_HANDLE;
                 VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                 bool usedMainEntryFallback = false;
+                bool usedDepthCompareFallback = false;
+                bool usedCullNoneFallback = false;
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const bool tryMainFallback =
@@ -4673,6 +4675,44 @@ namespace Gek
                         pixelStage.pName = "main";
                         pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                         usedMainEntryFallback = (pipelineResult == VK_SUCCESS);
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS)
+                {
+                    const VkCompareOp originalCompareOp = depthStencil.depthCompareOp;
+                    if (depthStencil.depthTestEnable == VK_TRUE)
+                    {
+                        if (depthStencil.depthCompareOp == VK_COMPARE_OP_GREATER)
+                        {
+                            depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+                            pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                            usedDepthCompareFallback = (pipelineResult == VK_SUCCESS);
+                        }
+                        else if (depthStencil.depthCompareOp == VK_COMPARE_OP_GREATER_OR_EQUAL)
+                        {
+                            depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+                            pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                            usedDepthCompareFallback = (pipelineResult == VK_SUCCESS);
+                        }
+                    }
+
+                    if (pipelineResult != VK_SUCCESS)
+                    {
+                        depthStencil.depthCompareOp = originalCompareOp;
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS && rasterizer.cullMode != VK_CULL_MODE_NONE)
+                {
+                    const VkCullModeFlags originalCullMode = rasterizer.cullMode;
+                    rasterizer.cullMode = VK_CULL_MODE_NONE;
+                    pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                    usedCullNoneFallback = (pipelineResult == VK_SUCCESS);
+
+                    if (pipelineResult != VK_SUCCESS)
+                    {
+                        rasterizer.cullMode = originalCullMode;
                     }
                 }
 
@@ -4716,6 +4756,26 @@ namespace Gek
                         vertexInfo.entryFunction,
                         pixelInfo.name,
                         pixelInfo.entryFunction);
+                }
+
+                if (usedDepthCompareFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after depth-compare compatibility fallback (vp='{}' pp='{}' offscreen={})",
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        command.hasOffscreenTarget ? 1 : 0);
+                }
+
+                if (usedCullNoneFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after cull-mode compatibility fallback (vp='{}' pp='{}' offscreen={})",
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        command.hasOffscreenTarget ? 1 : 0);
                 }
 
                 graphicsPipelineCache[key] = pipeline;
