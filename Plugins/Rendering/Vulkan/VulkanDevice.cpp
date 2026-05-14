@@ -2883,34 +2883,62 @@ namespace Gek
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
-            bool emergencyFallbackPixelProgramAttempted = false;
+            bool emergencyFallbackPixelProgram1RtAttempted = false;
+            bool emergencyFallbackPixelProgram3RtAttempted = false;
             bool loggedEmergencyFallbackPixelProgramReady = false;
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
             bool useBackbufferFallbackForOffscreen = false;
             uint32_t consecutiveOffscreenPipelineFailFrames = 0;
-            Render::ProgramPtr emergencyFallbackPixelProgram;
+            Render::ProgramPtr emergencyFallbackPixelProgram1Rt;
+            Render::ProgramPtr emergencyFallbackPixelProgram3Rt;
 
-            PixelProgram *getEmergencyFallbackPixelProgram(void)
+            PixelProgram *getEmergencyFallbackPixelProgram(uint32_t colorAttachmentCount)
             {
-                if (emergencyFallbackPixelProgram)
+                const bool useThreeTargets = (colorAttachmentCount >= 3);
+                auto &fallbackProgram = useThreeTargets ? emergencyFallbackPixelProgram3Rt : emergencyFallbackPixelProgram1Rt;
+                auto &attempted = useThreeTargets ? emergencyFallbackPixelProgram3RtAttempted : emergencyFallbackPixelProgram1RtAttempted;
+
+                if (fallbackProgram)
                 {
-                    return dynamic_cast<PixelProgram *>(emergencyFallbackPixelProgram.get());
+                    return dynamic_cast<PixelProgram *>(fallbackProgram.get());
                 }
 
-                if (emergencyFallbackPixelProgramAttempted)
+                if (attempted)
                 {
                     return nullptr;
                 }
 
-                emergencyFallbackPixelProgramAttempted = true;
+                attempted = true;
 
                 Render::Program::Information fallbackProgramInfo;
                 fallbackProgramInfo.type = Render::Program::Type::Pixel;
-                fallbackProgramInfo.name = "vulkan:fallbackUnlitPixelProgram";
+                fallbackProgramInfo.name = useThreeTargets ? "vulkan:fallbackUnlitPixelProgram3Rt" : "vulkan:fallbackUnlitPixelProgram1Rt";
                 fallbackProgramInfo.entryFunction = "main";
-                fallbackProgramInfo.shaderData = R"(
+                fallbackProgramInfo.shaderData = useThreeTargets ? R"(
+struct PixelInput
+{
+    float4 position : SV_POSITION;
+};
+
+struct PixelOutput
+{
+    float3 finalBuffer : SV_Target0;
+    float3 albedoBuffer : SV_Target1;
+    float2 normalBuffer : SV_Target2;
+};
+
+[shader("fragment")]
+PixelOutput main(PixelInput input)
+{
+    PixelOutput outputPixel;
+    outputPixel.finalBuffer = float3(0.80, 0.82, 0.86);
+    outputPixel.albedoBuffer = float3(0.80, 0.82, 0.86);
+    outputPixel.normalBuffer = float2(0.5, 0.5);
+    return outputPixel;
+}
+)" : R"(
 struct PixelInput
 {
     float4 position : SV_POSITION;
@@ -2927,18 +2955,20 @@ float4 main(PixelInput input) : SV_Target
                 {
                     getContext()->log(
                         Gek::Context::Error,
-                        "Vulkan emergency fallback pixel program compilation failed");
+                        "Vulkan emergency fallback pixel program compilation failed (colorAttachments={})",
+                        colorAttachmentCount);
                     return nullptr;
                 }
 
-                emergencyFallbackPixelProgram = createProgram(fallbackProgramInfo);
-                auto *fallbackPixelProgram = dynamic_cast<PixelProgram *>(emergencyFallbackPixelProgram.get());
+                fallbackProgram = createProgram(fallbackProgramInfo);
+                auto *fallbackPixelProgram = dynamic_cast<PixelProgram *>(fallbackProgram.get());
                 if (!fallbackPixelProgram || fallbackPixelProgram->shaderModule == VK_NULL_HANDLE)
                 {
-                    emergencyFallbackPixelProgram.reset();
+                    fallbackProgram.reset();
                     getContext()->log(
                         Gek::Context::Error,
-                        "Vulkan emergency fallback pixel program module creation failed");
+                        "Vulkan emergency fallback pixel program module creation failed (colorAttachments={})",
+                        colorAttachmentCount);
                     return nullptr;
                 }
 
@@ -2947,7 +2977,7 @@ float4 main(PixelInput input) : SV_Target
                     loggedEmergencyFallbackPixelProgramReady = true;
                     getContext()->log(
                         Gek::Context::Warning,
-                        "Vulkan emergency fallback pixel program is active for incompatible graphics pipelines");
+                        "Vulkan emergency fallback pixel programs are active for incompatible graphics pipelines");
                 }
 
                 return fallbackPixelProgram;
@@ -4788,7 +4818,7 @@ float4 main(PixelInput input) : SV_Target
 
                 if (pipelineResult != VK_SUCCESS)
                 {
-                    auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram();
+                    auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram(colorAttachmentCount);
                     if (fallbackPixelProgram && fallbackPixelProgram->shaderModule != VK_NULL_HANDLE)
                     {
                         const VkShaderModule originalPixelModule = pixelStage.module;
@@ -4803,7 +4833,25 @@ float4 main(PixelInput input) : SV_Target
                         {
                             pixelStage.module = originalPixelModule;
                             pixelStage.pName = originalPixelEntryName;
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan emergency pixel-shader fallback pipeline attempt failed (result={}) vp='{}' pp='{}' colorAttachments={} offscreen={}",
+                                static_cast<int32_t>(pipelineResult),
+                                vertexInfo.name,
+                                pixelInfo.name,
+                                colorAttachmentCount,
+                                command.hasOffscreenTarget ? 1 : 0);
                         }
+                    }
+                    else
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan emergency pixel-shader fallback unavailable for pipeline retry vp='{}' pp='{}' colorAttachments={} offscreen={}",
+                            vertexInfo.name,
+                            pixelInfo.name,
+                            colorAttachmentCount,
+                            command.hasOffscreenTarget ? 1 : 0);
                     }
                 }
 
