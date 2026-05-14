@@ -10314,6 +10314,7 @@ float4 main(PixelInput input) : SV_Target
 
             const bool isBackbufferAccumulateLightingPass =
                 drawToBackBuffer &&
+                !drawCommand.hasOffscreenTarget &&
                 isAccumulateLightingPixelProgram(pipelineCommand->pixelProgram);
 
             if (skipBackbufferAccumulateLightingPass && isBackbufferAccumulateLightingPass)
