@@ -9974,6 +9974,13 @@ namespace Gek
                     backBufferCompositionCommand.depthState = nullptr;
                     backBufferCompositionCommand.renderState = nullptr;
                 }
+                else if (forceOffscreenToBackbuffer)
+                {
+                    // Offscreen scene passes may rely on reversed-Z depth clears that do not
+                    // match the backbuffer depth lifecycle. Disable depth for fallback routing
+                    // so geometry can still be composed to the backbuffer.
+                    backBufferCompositionCommand.depthState = nullptr;
+                }
 
                 pipelineCommand = &backBufferCompositionCommand;
             }
