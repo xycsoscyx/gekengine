@@ -2816,6 +2816,7 @@ namespace Gek
             uint32_t frameTotalCommandCount = 0;
             uint32_t frameOffscreenDrawCount = 0;
             uint32_t frameBackbufferDrawCount = 0;
+            bool frameBackbufferColorCleared = false;
             uint32_t frameOffscreenCommandCount = 0;
             uint32_t frameCapturedDrawCommandCount = 0;
             uint32_t frameCapturedOffscreenDrawCommandCount = 0;
@@ -7716,6 +7717,7 @@ namespace Gek
                 ++frameIndex;
                 frameOffscreenDrawCount = 0;
                 frameBackbufferDrawCount = 0;
+                frameBackbufferColorCleared = false;
                 frameOffscreenCommandCount = 0;
                 frameCapturedDrawCommandCount = 0;
                 frameCapturedOffscreenDrawCommandCount = 0;
@@ -9877,6 +9879,23 @@ namespace Gek
             }
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+            if (drawToBackBuffer && !frameBackbufferColorCleared)
+            {
+                VkClearAttachment clearAttachment{};
+                clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                clearAttachment.colorAttachment = 0;
+                clearAttachment.clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+                VkClearRect clearRect{};
+                clearRect.rect.offset = { 0, 0 };
+                clearRect.rect.extent = activeExtent;
+                clearRect.baseArrayLayer = 0;
+                clearRect.layerCount = 1;
+
+                vkCmdClearAttachments(commandBuffer, 1, &clearAttachment, 1, &clearRect);
+                frameBackbufferColorCleared = true;
+            }
 
             auto endRenderPassForCurrentTarget = [&]()
             {
