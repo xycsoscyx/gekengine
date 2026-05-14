@@ -4773,10 +4773,19 @@ float4 main(PixelInput input) : SV_Target
                         (std::strcmp(pixelEntryName, "main") != 0);
                     if (tryMainFallback)
                     {
+                        const char *originalVertexEntryName = vertexStage.pName;
+                        const char *originalPixelEntryName = pixelStage.pName;
                         vertexStage.pName = "main";
                         pixelStage.pName = "main";
                         pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                         usedMainEntryFallback = (pipelineResult == VK_SUCCESS);
+
+                        // Keep later retries on the authored entrypoints unless the 'main' fallback succeeded.
+                        if (!usedMainEntryFallback)
+                        {
+                            vertexStage.pName = originalVertexEntryName;
+                            pixelStage.pName = originalPixelEntryName;
+                        }
                     }
                 }
 
