@@ -2912,10 +2912,12 @@ namespace Gek
 
                 attempted = true;
 
-                Render::Program::Information fallbackProgramInfo;
-                fallbackProgramInfo.type = Render::Program::Type::Pixel;
-                fallbackProgramInfo.name = useThreeTargets ? "vulkan:fallbackUnlitPixelProgram3Rt" : "vulkan:fallbackUnlitPixelProgram1Rt";
-                fallbackProgramInfo.entryFunction = "main";
+                Render::Program::Information fallbackProgramInfo{
+                    useThreeTargets ? "vulkan:fallbackUnlitPixelProgram3Rt" : "vulkan:fallbackUnlitPixelProgram1Rt",
+                    Render::Program::Type::Pixel,
+                    "main",
+                    "",
+                    FileSystem::Path("")};
                 fallbackProgramInfo.shaderData = useThreeTargets ? R"(
 struct PixelInput
 {
