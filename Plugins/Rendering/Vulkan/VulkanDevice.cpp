@@ -2878,6 +2878,7 @@ namespace Gek
             bool loggedOffscreenFramebufferNull = false;
             bool loggedCollapsedScissor = false;
             bool loggedGraphicsPipelineNull = false;
+            bool loggedGraphicsPipelineShaderModuleNull = false;
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool samplerAnisotropySupported = false;
@@ -4438,6 +4439,19 @@ namespace Gek
 
                 if (key.vertexModule == VK_NULL_HANDLE || key.pixelModule == VK_NULL_HANDLE)
                 {
+                    if (!loggedGraphicsPipelineShaderModuleNull)
+                    {
+                        loggedGraphicsPipelineShaderModuleNull = true;
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan graphics pipeline unavailable: shader module null (vp='{}' vEntry='{}' vsModule={} pp='{}' pEntry='{}' psModule={})",
+                            command.vertexProgram ? command.vertexProgram->getInformation().name : std::string_view(),
+                            command.vertexProgram ? command.vertexProgram->getInformation().entryFunction : std::string_view(),
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(key.vertexModule)),
+                            command.pixelProgram ? command.pixelProgram->getInformation().name : std::string_view(),
+                            command.pixelProgram ? command.pixelProgram->getInformation().entryFunction : std::string_view(),
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(key.pixelModule)));
+                    }
                     return VK_NULL_HANDLE;
                 }
 
@@ -6032,7 +6046,7 @@ namespace Gek
 
                 annotateVulkanBindings(resolvedProgram);
 
-                const char *spirvProfileName = preferSpirv13Profile ? "spirv_1_3" : "spirv_1_5";
+                const char *spirvProfileName = preferSpirv13Profile ? "spirv_1_3" : "spirv_1_4";
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
@@ -6145,7 +6159,19 @@ namespace Gek
             template <class TYPE>
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
-                return std::make_unique<TYPE>(device, information);
+                auto program = std::make_unique<TYPE>(device, information);
+                if (!information.compiledData.empty() && program->shaderModule == VK_NULL_HANDLE)
+                {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan shader module creation failed: program='{}' type={} entry='{}' compiledBytes={} (check SPIR-V profile compatibility)",
+                        information.name,
+                        static_cast<uint32_t>(information.type),
+                        information.entryFunction,
+                        static_cast<uint32_t>(information.compiledData.size()));
+                }
+
+                return Render::ProgramPtr(std::move(program));
             }
 
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
