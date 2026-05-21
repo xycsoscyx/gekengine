@@ -2848,6 +2848,7 @@ namespace Gek
             std::map<std::string, std::pair<VkImage, VkExtent2D>> frameNamedRenderTargetImages;
             VkImage frameSceneCopySourceImage = VK_NULL_HANDLE;
             VkExtent2D frameSceneCopySourceExtent = { 0, 0 };
+            bool frameCompatibilitySceneCopyIssued = false;
             GraphicsDescriptorSignature frameLastDescriptorSignature{};
             bool frameHasLastDescriptor = false;
             VkDescriptorSet frameLastDescriptorSet = VK_NULL_HANDLE;
@@ -2888,6 +2889,7 @@ namespace Gek
             bool loggedForcedEmergencyCompatibilityPipeline = false;
             bool loggedDeferredBackbufferCompositionSkip = false;
             bool loggedDeferredBackbufferCopyFallback = false;
+            bool loggedReroutedSceneCopyFallback = false;
             bool loggedBackbufferAccumulateBypassEnabled = false;
             bool loggedBackbufferAccumulateBypassSkip = false;
             bool emergencyFallbackVertexProgramAttempted = false;
@@ -8636,6 +8638,7 @@ float4 main(PixelInput input) : SV_Target
             frameNamedRenderTargetImages.clear();
             frameSceneCopySourceImage = VK_NULL_HANDLE;
             frameSceneCopySourceExtent = { 0, 0 };
+            frameCompatibilitySceneCopyIssued = false;
             frameHasLastDescriptor = false;
             frameLastDescriptorSet = VK_NULL_HANDLE;
             frameTotalCommandCount = 0;
@@ -9942,6 +9945,141 @@ float4 main(PixelInput input) : SV_Target
                     frameSceneCopySourceExtent = swapChainExtent;
                 }
             }
+
+            if (preferSpirv13Profile && forceOffscreenToBackbuffer)
+            {
+                if (!frameCompatibilitySceneCopyIssued && frameSceneCopySourceImage != VK_NULL_HANDLE)
+                {
+                    VkImageLayout sourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    auto sourceLayoutSearch = offscreenImageLayouts.find(frameSceneCopySourceImage);
+                    if (sourceLayoutSearch != std::end(offscreenImageLayouts))
+                    {
+                        sourceLayout = sourceLayoutSearch->second;
+                    }
+
+                    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    VkAccessFlags sourceAccess = 0;
+                    switch (sourceLayout)
+                    {
+                    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                        sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                        sourceAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                        sourceAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                        sourceAccess = VK_ACCESS_TRANSFER_READ_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_GENERAL:
+                        sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                        sourceAccess = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                        break;
+                    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                        sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                        sourceAccess = VK_ACCESS_SHADER_READ_BIT;
+                        break;
+                    default:
+                        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                        sourceAccess = 0;
+                        break;
+                    }
+
+                    if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                    {
+                        VkImageMemoryBarrier sourceToTransfer{};
+                        sourceToTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        sourceToTransfer.oldLayout = sourceLayout;
+                        sourceToTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                        sourceToTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransfer.image = frameSceneCopySourceImage;
+                        sourceToTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        sourceToTransfer.subresourceRange.baseMipLevel = 0;
+                        sourceToTransfer.subresourceRange.levelCount = 1;
+                        sourceToTransfer.subresourceRange.baseArrayLayer = 0;
+                        sourceToTransfer.subresourceRange.layerCount = 1;
+                        sourceToTransfer.srcAccessMask = sourceAccess;
+                        sourceToTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                        vkCmdPipelineBarrier(commandBuffer,
+                                             sourceStage,
+                                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                             0, 0, nullptr, 0, nullptr, 1, &sourceToTransfer);
+                    }
+
+                    frameTransitionSwapChainImage(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                    const uint32_t sourceWidth = std::max(frameSceneCopySourceExtent.width, 1u);
+                    const uint32_t sourceHeight = std::max(frameSceneCopySourceExtent.height, 1u);
+                    const uint32_t destinationWidth = std::max(swapChainExtent.width, 1u);
+                    const uint32_t destinationHeight = std::max(swapChainExtent.height, 1u);
+
+                    VkImageBlit blitRegion{};
+                    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.srcSubresource.mipLevel = 0;
+                    blitRegion.srcSubresource.baseArrayLayer = 0;
+                    blitRegion.srcSubresource.layerCount = 1;
+                    blitRegion.srcOffsets[0] = { 0, 0, 0 };
+                    blitRegion.srcOffsets[1] = { static_cast<int32_t>(sourceWidth), static_cast<int32_t>(sourceHeight), 1 };
+                    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.dstSubresource.mipLevel = 0;
+                    blitRegion.dstSubresource.baseArrayLayer = 0;
+                    blitRegion.dstSubresource.layerCount = 1;
+                    blitRegion.dstOffsets[0] = { 0, 0, 0 };
+                    blitRegion.dstOffsets[1] = { static_cast<int32_t>(destinationWidth), static_cast<int32_t>(destinationHeight), 1 };
+
+                    vkCmdBlitImage(commandBuffer,
+                                   frameSceneCopySourceImage,
+                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   swapChainImages[frameImageIndex],
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                   1,
+                                   &blitRegion,
+                                   VK_FILTER_LINEAR);
+
+                    if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                    {
+                        VkImageMemoryBarrier sourceFromTransfer{};
+                        sourceFromTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        sourceFromTransfer.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                        sourceFromTransfer.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                        sourceFromTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceFromTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceFromTransfer.image = frameSceneCopySourceImage;
+                        sourceFromTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        sourceFromTransfer.subresourceRange.baseMipLevel = 0;
+                        sourceFromTransfer.subresourceRange.levelCount = 1;
+                        sourceFromTransfer.subresourceRange.baseArrayLayer = 0;
+                        sourceFromTransfer.subresourceRange.layerCount = 1;
+                        sourceFromTransfer.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                        sourceFromTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        vkCmdPipelineBarrier(commandBuffer,
+                                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                             0, 0, nullptr, 0, nullptr, 1, &sourceFromTransfer);
+                        offscreenImageLayouts[frameSceneCopySourceImage] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    }
+
+                    frameTransitionSwapChainImage(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                  VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+                    frameCompatibilitySceneCopyIssued = true;
+
+                    if (!loggedReroutedSceneCopyFallback)
+                    {
+                        loggedReroutedSceneCopyFallback = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan compatibility mode: using direct offscreen-to-swapchain copy for rerouted scene draws");
+                    }
+                }
+
+                return;
+            }
+
             if (!drawToBackBuffer)
             {
                 ++frameOffscreenCommandCount;
