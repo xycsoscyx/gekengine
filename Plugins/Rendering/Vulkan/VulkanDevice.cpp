@@ -2886,6 +2886,7 @@ namespace Gek
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
             bool loggedForcedEmergencyCompatibilityPipeline = false;
+            bool loggedDeferredBackbufferCompositionSkip = false;
             bool loggedBackbufferAccumulateBypassEnabled = false;
             bool loggedBackbufferAccumulateBypassSkip = false;
             bool emergencyFallbackVertexProgramAttempted = false;
@@ -10442,6 +10443,24 @@ float4 main(PixelInput input) : SV_Target
                 drawToBackBuffer &&
                 !drawCommand.hasOffscreenTarget &&
                 isAccumulateLightingPixelProgram(pipelineCommand->pixelProgram);
+
+            const bool isDeferredBackbufferCompositionPass =
+                drawToBackBuffer &&
+                !drawCommand.hasOffscreenTarget &&
+                isDeferredBackbufferPixelProgram(drawCommand.pixelProgram);
+
+            if (preferSpirv13Profile && isDeferredBackbufferCompositionPass)
+            {
+                if (!loggedDeferredBackbufferCompositionSkip)
+                {
+                    loggedDeferredBackbufferCompositionSkip = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan compatibility mode: skipping deferred backbuffer composition draw on conservative driver path");
+                }
+                endRenderPassForCurrentTarget();
+                return;
+            }
 
             if (skipBackbufferAccumulateLightingPass && isBackbufferAccumulateLightingPass)
             {
