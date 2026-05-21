@@ -2917,6 +2917,17 @@ namespace Gek
                 return (programName.find("AccumulateLighting.slang") != std::string_view::npos);
             }
 
+            static bool isDeferredBackbufferPixelProgram(const PixelProgram *pixelProgram)
+            {
+                if (!pixelProgram)
+                {
+                    return false;
+                }
+
+                const std::string_view programName = pixelProgram->getInformation().name;
+                return (programName.find("renderer:deferredPixelProgram") != std::string_view::npos);
+            }
+
             VertexProgram *getEmergencyFallbackVertexProgram(void)
             {
                 if (emergencyFallbackVertexProgram)
@@ -10371,6 +10382,27 @@ float4 main(PixelInput input) : SV_Target
                 {
                     backBufferCompositionCommand.depthState = nullptr;
                     backBufferCompositionCommand.renderState = nullptr;
+
+                    // Some Linux software Vulkan stacks reject the deferred backbuffer
+                    // composition pipeline. Route that specific pass through the emergency
+                    // shader pair so presentation keeps working.
+                    if (preferSpirv13Profile && isDeferredBackbufferPixelProgram(drawCommand.pixelProgram))
+                    {
+                        auto *fallbackVertexProgram = getEmergencyFallbackVertexProgram();
+                        auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram(1);
+                        if (fallbackVertexProgram && fallbackPixelProgram)
+                        {
+                            backBufferCompositionCommand.vertexProgram = fallbackVertexProgram;
+                            backBufferCompositionCommand.pixelProgram = fallbackPixelProgram;
+                            if (!loggedForcedEmergencyCompatibilityPipeline)
+                            {
+                                loggedForcedEmergencyCompatibilityPipeline = true;
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan compatibility mode: forcing emergency shader pair for deferred backbuffer composition");
+                            }
+                        }
+                    }
                 }
                 else if (forceOffscreenToBackbuffer)
                 {
