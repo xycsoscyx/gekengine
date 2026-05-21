@@ -104,13 +104,16 @@ namespace Gek
     {
         std::string normalizeMaterialName(std::string_view materialName)
         {
-            FileSystem::Path normalizedPath(materialName);
+            std::string normalizedMaterialPath(materialName);
+            String::Replace(normalizedMaterialPath, "\\", "/");
+
+            FileSystem::Path normalizedPath(normalizedMaterialPath);
             if (String::GetLower(normalizedPath.getExtension()) == ".json")
             {
                 normalizedPath = normalizedPath.withoutExtension();
             }
 
-            return normalizedPath.getString();
+            return String::GetLower(normalizedPath.getString());
         }
 
         bool findTexturePathCaseInsensitive(Context *context, std::string_view textureName, FileSystem::Path &resolvedPath)
@@ -729,6 +732,12 @@ namespace Gek
             uint64_t drawSuppressedInvalidRenderTargetCount = 0;
             uint64_t lastSuppressedLogCount = 0;
             uint64_t lastMissingMaterialCount = 0;
+            uint64_t lastMissingMaterialDataCount = 0;
+            uint64_t lastMissingVisualCount = 0;
+            uint64_t lastMissingProgramCount = 0;
+            uint64_t lastMissingIndexBufferCount = 0;
+            uint64_t lastMissingVertexBufferCount = 0;
+            uint64_t lastInvalidRenderTargetCount = 0;
             bool loggedMissingMaterial = false;
             bool loggedMissingMaterialData = false;
             bool loggedMissingVisual = false;
@@ -818,6 +827,48 @@ namespace Gek
                         drawSuppressedMissingIndexBufferCount,
                         drawSuppressedMissingVertexBufferCount,
                         drawSuppressedInvalidRenderTargetCount);
+
+                    if (suppressionIncreased)
+                    {
+                        const uint64_t suppressedDelta = (drawCallSuppressedCount - lastSuppressedLogCount);
+                        const uint64_t missingMaterialDelta = (drawSuppressedMissingMaterialCount - lastMissingMaterialCount);
+                        const uint64_t missingMaterialDataDelta = (drawSuppressedMissingMaterialDataCount - lastMissingMaterialDataCount);
+                        const uint64_t missingVisualDelta = (drawSuppressedMissingVisualCount - lastMissingVisualCount);
+                        const uint64_t missingProgramDelta = (drawSuppressedMissingProgramCount - lastMissingProgramCount);
+                        const uint64_t missingIndexBufferDelta = (drawSuppressedMissingIndexBufferCount - lastMissingIndexBufferCount);
+                        const uint64_t missingVertexBufferDelta = (drawSuppressedMissingVertexBufferCount - lastMissingVertexBufferCount);
+                        const uint64_t invalidRenderTargetDelta = (drawSuppressedInvalidRenderTargetCount - lastInvalidRenderTargetCount);
+                        const uint64_t classifiedDelta =
+                            missingMaterialDelta +
+                            missingMaterialDataDelta +
+                            missingVisualDelta +
+                            missingProgramDelta +
+                            missingIndexBufferDelta +
+                            missingVertexBufferDelta +
+                            invalidRenderTargetDelta;
+                        const uint64_t unattributedDelta = (suppressedDelta > classifiedDelta) ? (suppressedDelta - classifiedDelta) : 0;
+
+                        getContext()->log(
+                            Context::Debug,
+                            "Resources suppression delta: suppressedDelta={} missingMaterialDelta={} missingMaterialDataDelta={} missingVisualDelta={} missingProgramDelta={} missingIndexBufferDelta={} missingVertexBufferDelta={} invalidRenderTargetDelta={} unattributedDelta={}",
+                            suppressedDelta,
+                            missingMaterialDelta,
+                            missingMaterialDataDelta,
+                            missingVisualDelta,
+                            missingProgramDelta,
+                            missingIndexBufferDelta,
+                            missingVertexBufferDelta,
+                            invalidRenderTargetDelta,
+                            unattributedDelta);
+
+                        lastMissingMaterialDataCount = drawSuppressedMissingMaterialDataCount;
+                        lastMissingVisualCount = drawSuppressedMissingVisualCount;
+                        lastMissingProgramCount = drawSuppressedMissingProgramCount;
+                        lastMissingIndexBufferCount = drawSuppressedMissingIndexBufferCount;
+                        lastMissingVertexBufferCount = drawSuppressedMissingVertexBufferCount;
+                        lastInvalidRenderTargetCount = drawSuppressedInvalidRenderTargetCount;
+                    }
+
                     lastSuppressedLogCount = drawCallSuppressedCount;
                 }
 
