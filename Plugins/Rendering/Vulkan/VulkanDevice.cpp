@@ -2885,6 +2885,7 @@ namespace Gek
             bool loggedOffscreenToColorTransition = false;
             bool loggedOffscreenToShaderReadTransition = false;
             bool loggedOffscreenBackbufferFallbackEnabled = false;
+            bool loggedForcedEmergencyCompatibilityPipeline = false;
             bool loggedBackbufferAccumulateBypassEnabled = false;
             bool loggedBackbufferAccumulateBypassSkip = false;
             bool emergencyFallbackVertexProgramAttempted = false;
@@ -2899,6 +2900,8 @@ namespace Gek
             uint32_t consecutiveOffscreenPipelineFailFrames = 0;
             bool skipBackbufferAccumulateLightingPass = false;
             uint32_t consecutiveBackbufferAccumulatePipelineFailFrames = 0;
+            uint32_t lastLoggedPipelineFailCount = std::numeric_limits<uint32_t>::max();
+            uint32_t lastLoggedInvalidTargetCount = std::numeric_limits<uint32_t>::max();
             Render::ProgramPtr emergencyFallbackVertexProgram;
             Render::ProgramPtr emergencyFallbackPixelProgram1Rt;
             Render::ProgramPtr emergencyFallbackPixelProgram3Rt;
@@ -4857,6 +4860,7 @@ float4 main(PixelInput input) : SV_Target
                 bool usedCullNoneFallback = false;
                 bool usedEmergencyPixelShaderFallback = false;
                 bool usedEmergencyVertexPixelShaderFallback = false;
+                bool usedEmergencyVertexPixelMinimalVertexInputFallback = false;
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const bool tryMainFallback =
@@ -4997,6 +5001,56 @@ float4 main(PixelInput input) : SV_Target
 
                 if (pipelineResult != VK_SUCCESS)
                 {
+                    auto *fallbackVertexProgram = getEmergencyFallbackVertexProgram();
+                    auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram(colorAttachmentCount);
+                    if (fallbackVertexProgram && fallbackVertexProgram->shaderModule != VK_NULL_HANDLE &&
+                        fallbackPixelProgram && fallbackPixelProgram->shaderModule != VK_NULL_HANDLE)
+                    {
+                        const VkShaderModule originalVertexModule = vertexStage.module;
+                        const char *originalVertexEntryName = vertexStage.pName;
+                        const VkShaderModule originalPixelModule = pixelStage.module;
+                        const char *originalPixelEntryName = pixelStage.pName;
+                        const uint32_t originalVertexBindingDescriptionCount = vertexInputInfo.vertexBindingDescriptionCount;
+                        const VkVertexInputBindingDescription *originalVertexBindingDescriptions = vertexInputInfo.pVertexBindingDescriptions;
+                        const uint32_t originalVertexAttributeDescriptionCount = vertexInputInfo.vertexAttributeDescriptionCount;
+                        const VkVertexInputAttributeDescription *originalVertexAttributeDescriptions = vertexInputInfo.pVertexAttributeDescriptions;
+
+                        vertexStage.module = fallbackVertexProgram->shaderModule;
+                        vertexStage.pName = "mainVertexProgram";
+                        pixelStage.module = fallbackPixelProgram->shaderModule;
+                        pixelStage.pName = "main";
+                        vertexInputInfo.vertexBindingDescriptionCount = 0;
+                        vertexInputInfo.pVertexBindingDescriptions = nullptr;
+                        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+                        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+                        pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                        usedEmergencyVertexPixelMinimalVertexInputFallback = (pipelineResult == VK_SUCCESS);
+
+                        if (!usedEmergencyVertexPixelMinimalVertexInputFallback)
+                        {
+                            vertexStage.module = originalVertexModule;
+                            vertexStage.pName = originalVertexEntryName;
+                            pixelStage.module = originalPixelModule;
+                            pixelStage.pName = originalPixelEntryName;
+                            vertexInputInfo.vertexBindingDescriptionCount = originalVertexBindingDescriptionCount;
+                            vertexInputInfo.pVertexBindingDescriptions = originalVertexBindingDescriptions;
+                            vertexInputInfo.vertexAttributeDescriptionCount = originalVertexAttributeDescriptionCount;
+                            vertexInputInfo.pVertexAttributeDescriptions = originalVertexAttributeDescriptions;
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan emergency vertex+pixel minimal-vertex-input pipeline attempt failed (result={}) vp='{}' pp='{}' colorAttachments={} offscreen={}",
+                                static_cast<int32_t>(pipelineResult),
+                                vertexInfo.name,
+                                pixelInfo.name,
+                                colorAttachmentCount,
+                                command.hasOffscreenTarget ? 1 : 0);
+                        }
+                    }
+                }
+
+                if (pipelineResult != VK_SUCCESS)
+                {
                     if (!failedGraphicsPipelineKeys.contains(key))
                     {
                         failedGraphicsPipelineKeys.insert(key);
@@ -5072,6 +5126,16 @@ float4 main(PixelInput input) : SV_Target
                     getContext()->log(
                         Gek::Context::Warning,
                         "Vulkan graphics pipeline created only after emergency vertex+pixel fallback (vp='{}' pp='{}' offscreen={})",
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        command.hasOffscreenTarget ? 1 : 0);
+                }
+
+                if (usedEmergencyVertexPixelMinimalVertexInputFallback)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan graphics pipeline created only after emergency vertex+pixel minimal-vertex-input fallback (vp='{}' pp='{}' offscreen={})",
                         vertexInfo.name,
                         pixelInfo.name,
                         command.hasOffscreenTarget ? 1 : 0);
@@ -8143,16 +8207,18 @@ float4 main(PixelInput input) : SV_Target
                 getContext()->setRuntimeMetric("vulkan.deferredContextQueues", 0.0);
                 getContext()->setRuntimeMetric("vulkan.deferredCommandLists", 0.0);
 
+                const bool pipelineFailStateChanged = (framePipelineFailCountSnapshot != lastLoggedPipelineFailCount);
+                const bool invalidTargetStateChanged = (frameInvalidTargetCountSnapshot != lastLoggedInvalidTargetCount);
                 const bool shouldLogFrameSummary =
                     (presentFrameIndex <= 8) ||
                     ((presentFrameIndex % 120) == 0) ||
-                    (framePipelineFailCountSnapshot > 0) ||
-                    (frameInvalidTargetCountSnapshot > 0);
+                    pipelineFailStateChanged ||
+                    invalidTargetStateChanged;
                 if (shouldLogFrameSummary)
                 {
                     getContext()->log(
                         Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} backbufferAccumulateFails={} backbufferAccumulateSkips={} invalidTargets={} emptyDescriptors={}",
+                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} backbufferAccumulateFails={} backbufferAccumulateSkips={} invalidTargets={} emptyDescriptors={} fallbackOffscreenToBackbuffer={} skipBackbufferAccumulate={}",
                         presentFrameIndex,
                         totalCommandCount,
                         frameCapturedDrawCommandCountSnapshot,
@@ -8181,7 +8247,12 @@ float4 main(PixelInput input) : SV_Target
                         frameBackbufferAccumulatePipelineFailCountSnapshot,
                         frameBackbufferAccumulateSkipCountSnapshot,
                         frameInvalidTargetCountSnapshot,
-                        frameEmptyDescriptorCountSnapshot);
+                        frameEmptyDescriptorCountSnapshot,
+                        useBackbufferFallbackForOffscreen ? 1 : 0,
+                        skipBackbufferAccumulateLightingPass ? 1 : 0);
+
+                    lastLoggedPipelineFailCount = framePipelineFailCountSnapshot;
+                    lastLoggedInvalidTargetCount = frameInvalidTargetCountSnapshot;
                 }
             }
         };
@@ -10307,6 +10378,29 @@ float4 main(PixelInput input) : SV_Target
                     // match the backbuffer depth lifecycle. Disable depth for fallback routing
                     // so geometry can still be composed to the backbuffer.
                     backBufferCompositionCommand.depthState = nullptr;
+
+                    // Linux software/Dozen-style drivers can reject many material pipelines even
+                    // after retries. Force a minimal known-good shader pair for rerouted scene draws.
+                    if (preferSpirv13Profile)
+                    {
+                        auto *fallbackVertexProgram = getEmergencyFallbackVertexProgram();
+                        auto *fallbackPixelProgram = getEmergencyFallbackPixelProgram(1);
+                        if (fallbackVertexProgram && fallbackPixelProgram)
+                        {
+                            backBufferCompositionCommand.vertexProgram = fallbackVertexProgram;
+                            backBufferCompositionCommand.pixelProgram = fallbackPixelProgram;
+                            backBufferCompositionCommand.blendState = nullptr;
+                            backBufferCompositionCommand.renderState = nullptr;
+
+                            if (!loggedForcedEmergencyCompatibilityPipeline)
+                            {
+                                loggedForcedEmergencyCompatibilityPipeline = true;
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan compatibility mode: forcing emergency shader pair for offscreen-rerouted scene draws");
+                            }
+                        }
+                    }
                 }
 
                 pipelineCommand = &backBufferCompositionCommand;
