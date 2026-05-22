@@ -4,7 +4,7 @@
 #include <GEKLighting.slang>
 
 [shader("fragment")]
-OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
+OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     const uint debugSelection = uint(Options::BRDF::Debug::Selection);
 
