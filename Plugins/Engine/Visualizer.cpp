@@ -513,19 +513,20 @@ Output mainVertexProgram(in uint vertexID : SV_VertexID)
 Texture2D<float3> inputBuffer : register(t0);
 
 [shader("fragment")]
-float3 mainPixelProgram(in Input input) : SV_TARGET0
+float4 mainPixelProgram(in Input input) : SV_TARGET0
 {
     uint width, height, mipMapCount;
     inputBuffer.GetDimensions(0, width, height, mipMapCount);
 	const int2 maxCoord = int2(int(max(width, 1u)) - 1, int(max(height, 1u)) - 1);
 	const uint2 screenCoord = uint2(clamp(int2(input.texCoord * float2(width, height)), int2(0, 0), maxCoord));
-	return inputBuffer[screenCoord];
+	float3 color = inputBuffer[screenCoord];
+	return float4(color, 1.0f);
 }
 )";
 
-                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v6", "mainVertexProgram", vertexProgram);
+                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v7", "mainVertexProgram", vertexProgram);
 
-                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v6", "mainPixelProgram", pixelProgram);
+                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v7", "mainPixelProgram", pixelProgram);
 
                 std::vector<Render::InputElement> deferredElementList;
                 Render::InputElement deferredElement;
