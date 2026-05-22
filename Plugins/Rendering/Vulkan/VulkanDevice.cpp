@@ -4786,6 +4786,45 @@ namespace Gek
                                 signature.shaderLocation);
                         }
                     }
+
+                    // Log offscreen color attachment formats so we can identify unsupported formats on Linux
+                    if (command.hasOffscreenTarget && command.offscreenTargetCount > 0)
+                    {
+                        const uint32_t fmtCount = std::min<uint32_t>(command.offscreenTargetCount, 8u);
+                        for (uint32_t fi = 0; fi < fmtCount; ++fi)
+                        {
+                            VkFormat fmt = command.offscreenFormats[fi];
+                            VkFormatProperties fmtProps{};
+                            vkGetPhysicalDeviceFormatProperties(physicalDevice, fmt, &fmtProps);
+                            const bool supportsColorAttachment = (fmtProps.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
+                            const bool supportsColorAttachmentBlend = (fmtProps.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan offscreen[{}]: vkFormat={} colorAttachment={} blend={}",
+                                fi,
+                                static_cast<uint32_t>(fmt),
+                                supportsColorAttachment ? 1 : 0,
+                                supportsColorAttachmentBlend ? 1 : 0);
+                        }
+                    }
+
+                    // Log vertex attribute VkFormat values for diagnosing unsupported vertex formats
+                    for (uint32_t ai = 0; ai < attributeDescriptions.size(); ++ai)
+                    {
+                        const auto &attr = attributeDescriptions[ai];
+                        VkFormatProperties fmtProps{};
+                        vkGetPhysicalDeviceFormatProperties(physicalDevice, attr.format, &fmtProps);
+                        const bool supportsVertexBuffer = (fmtProps.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0;
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan attr[{}]: location={} binding={} vkFormat={} vertexBuffer={}",
+                            ai,
+                            attr.location,
+                            attr.binding,
+                            static_cast<uint32_t>(attr.format),
+                            supportsVertexBuffer ? 1 : 0);
+                    }
+
                     return VK_NULL_HANDLE;
                 }
 
