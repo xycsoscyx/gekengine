@@ -6183,16 +6183,48 @@ namespace Gek
             template <class TYPE>
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
-                auto program = std::make_unique<TYPE>(device, information);
-                if (!information.compiledData.empty() && program->shaderModule == VK_NULL_HANDLE)
+                Render::Program::Information resolvedInformation = information;
+                if (!resolvedInformation.compiledData.empty())
+                {
+                    const auto spirvEntryNames = GetSpirvEntryPointNames(resolvedInformation.compiledData);
+                    if (!spirvEntryNames.empty())
+                    {
+                        const std::string requestedEntryName = resolvedInformation.entryFunction.empty() ? "main" : resolvedInformation.entryFunction;
+                        if (std::find(spirvEntryNames.begin(), spirvEntryNames.end(), requestedEntryName) == spirvEntryNames.end())
+                        {
+                            std::string resolvedEntryName;
+                            auto mainSearch = std::find(spirvEntryNames.begin(), spirvEntryNames.end(), "main");
+                            if (mainSearch != spirvEntryNames.end())
+                            {
+                                resolvedEntryName = *mainSearch;
+                            }
+                            else
+                            {
+                                resolvedEntryName = spirvEntryNames.front();
+                            }
+
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan shader entry canonicalized: program='{}' requested='{}' resolved='{}' available='{}'",
+                                resolvedInformation.name,
+                                requestedEntryName,
+                                resolvedEntryName,
+                                JoinEntryPointNames(spirvEntryNames));
+                            resolvedInformation.entryFunction = resolvedEntryName;
+                        }
+                    }
+                }
+
+                auto program = std::make_unique<TYPE>(device, resolvedInformation);
+                if (!resolvedInformation.compiledData.empty() && program->shaderModule == VK_NULL_HANDLE)
                 {
                     getContext()->log(
                         Gek::Context::Error,
                         "Vulkan shader module creation failed: program='{}' type={} entry='{}' compiledBytes={} (check SPIR-V profile compatibility)",
-                        information.name,
-                        static_cast<uint32_t>(information.type),
-                        information.entryFunction,
-                        static_cast<uint32_t>(information.compiledData.size()));
+                        resolvedInformation.name,
+                        static_cast<uint32_t>(resolvedInformation.type),
+                        resolvedInformation.entryFunction,
+                        static_cast<uint32_t>(resolvedInformation.compiledData.size()));
                 }
 
                 return Render::ProgramPtr(std::move(program));
