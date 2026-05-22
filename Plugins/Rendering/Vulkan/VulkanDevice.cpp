@@ -4269,10 +4269,14 @@ namespace Gek
                     return VK_NULL_HANDLE;
                 }
 
+                const auto &vertexInfo = command.vertexProgram->getInformation();
+                const auto &pixelInfo = command.pixelProgram->getInformation();
+                const bool shaderExpectsVertexInputs = !vertexInfo.vertexInputSignatures.empty();
+
                 std::vector<VkVertexInputBindingDescription> bindingDescriptions;
                 std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-                if (command.inputLayout)
+                if (command.inputLayout && shaderExpectsVertexInputs)
                 {
                     std::array<bool, 8> bindingUsed{};
                     std::array<VkVertexInputRate, 8> bindingRate{};
@@ -4344,8 +4348,6 @@ namespace Gek
                     }
                 }
 
-                const auto &vertexInfo = command.vertexProgram->getInformation();
-                const auto &pixelInfo = command.pixelProgram->getInformation();
                 const char *vertexEntryName = vertexInfo.entryFunction.empty() ? "main" : vertexInfo.entryFunction.c_str();
                 const char *pixelEntryName = pixelInfo.entryFunction.empty() ? "main" : pixelInfo.entryFunction.c_str();
 
@@ -4480,7 +4482,7 @@ namespace Gek
                     failedGraphicsPipelineKeys.insert(key);
                     getContext()->log(
                         Gek::Context::Error,
-                        "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
+                        "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} expectsVertexInputs={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
                         static_cast<int32_t>(pipelineResult),
                         vertexInfo.name,
                         pixelInfo.name,
@@ -4492,6 +4494,7 @@ namespace Gek
                         key.blendEnabled ? 1 : 0,
                         static_cast<uint32_t>(attributeDescriptions.size()),
                         static_cast<uint32_t>(bindingDescriptions.size()),
+                        shaderExpectsVertexInputs ? 1 : 0,
                         colorAttachmentCount,
                         static_cast<uint32_t>(key.primitiveType),
                         static_cast<uint32_t>(key.cullMode),
