@@ -545,6 +545,97 @@ namespace Gek
             }
         }
 
+        static std::vector<std::string> GetSpirvEntryPointNames(std::vector<uint8_t> const &compiledData, uint32_t maxCount = 8)
+        {
+            std::vector<std::string> entryNames;
+            if ((compiledData.size() < (5u * sizeof(uint32_t))) || ((compiledData.size() % sizeof(uint32_t)) != 0) || (maxCount == 0))
+            {
+                return entryNames;
+            }
+
+            auto appendUniqueName = [&](std::string const &name)
+            {
+                if (name.empty())
+                {
+                    return;
+                }
+
+                if (std::find(entryNames.begin(), entryNames.end(), name) == entryNames.end())
+                {
+                    entryNames.push_back(name);
+                }
+            };
+
+            const auto *words = reinterpret_cast<const uint32_t *>(compiledData.data());
+            const size_t wordCount = compiledData.size() / sizeof(uint32_t);
+            size_t instructionOffset = 5; // Skip SPIR-V module header.
+
+            while (instructionOffset < wordCount)
+            {
+                const uint32_t instruction = words[instructionOffset];
+                const uint16_t opcode = static_cast<uint16_t>(instruction & 0xFFFFu);
+                const uint16_t instructionWordCount = static_cast<uint16_t>(instruction >> 16);
+                if ((instructionWordCount == 0) || ((instructionOffset + instructionWordCount) > wordCount))
+                {
+                    break;
+                }
+
+                // OpEntryPoint: word0=opcode/wordcount, word1=execution model, word2=id, word3+=name bytes.
+                if (opcode == 15u && instructionWordCount >= 4u)
+                {
+                    std::string entryName;
+                    entryName.reserve(32);
+                    for (size_t nameWordIndex = instructionOffset + 3; nameWordIndex < (instructionOffset + instructionWordCount); ++nameWordIndex)
+                    {
+                        const uint32_t packed = words[nameWordIndex];
+                        for (uint32_t byteShift = 0; byteShift < 32; byteShift += 8)
+                        {
+                            const char character = static_cast<char>((packed >> byteShift) & 0xFFu);
+                            if (character == '\0')
+                            {
+                                appendUniqueName(entryName);
+                                goto nextInstruction;
+                            }
+
+                            entryName.push_back(character);
+                        }
+                    }
+
+                    appendUniqueName(entryName);
+                }
+
+            nextInstruction:
+                instructionOffset += instructionWordCount;
+                if (entryNames.size() >= maxCount)
+                {
+                    break;
+                }
+            }
+
+            return entryNames;
+        }
+
+        static std::string JoinEntryPointNames(std::vector<std::string> const &names)
+        {
+            if (names.empty())
+            {
+                return "";
+            }
+
+            std::string joined;
+            for (size_t index = 0; index < names.size(); ++index)
+            {
+                if (index != 0)
+                {
+                    joined += ",";
+                }
+
+                joined += names[index];
+            }
+
+            return joined;
+        }
+
         const std::vector<const char *> validationLayers = {
             "VK_LAYER_KHRONOS_validation",
         };
@@ -4400,20 +4491,65 @@ namespace Gek
                     }
                 }
 
-                const char *vertexEntryName = vertexInfo.entryFunction.empty() ? "main" : vertexInfo.entryFunction.c_str();
-                const char *pixelEntryName = pixelInfo.entryFunction.empty() ? "main" : pixelInfo.entryFunction.c_str();
+                const std::string requestedVertexEntryName = vertexInfo.entryFunction.empty() ? "main" : vertexInfo.entryFunction;
+                const std::string requestedPixelEntryName = pixelInfo.entryFunction.empty() ? "main" : pixelInfo.entryFunction;
+
+                const auto vertexSpirvEntryNames = GetSpirvEntryPointNames(vertexInfo.compiledData);
+                const auto pixelSpirvEntryNames = GetSpirvEntryPointNames(pixelInfo.compiledData);
+
+                std::string vertexEntryName = requestedVertexEntryName;
+                std::string pixelEntryName = requestedPixelEntryName;
+
+                auto resolveEntryName = [](std::string const &requestedName, std::vector<std::string> const &spirvEntryNames) -> std::string
+                {
+                    if (spirvEntryNames.empty())
+                    {
+                        return requestedName;
+                    }
+
+                    if (std::find(spirvEntryNames.begin(), spirvEntryNames.end(), requestedName) != spirvEntryNames.end())
+                    {
+                        return requestedName;
+                    }
+
+                    auto mainSearch = std::find(spirvEntryNames.begin(), spirvEntryNames.end(), "main");
+                    if (mainSearch != spirvEntryNames.end())
+                    {
+                        return *mainSearch;
+                    }
+
+                    return spirvEntryNames.front();
+                };
+
+                vertexEntryName = resolveEntryName(requestedVertexEntryName, vertexSpirvEntryNames);
+                pixelEntryName = resolveEntryName(requestedPixelEntryName, pixelSpirvEntryNames);
+
+                if ((vertexEntryName != requestedVertexEntryName) || (pixelEntryName != requestedPixelEntryName))
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan SPIR-V entry remap: vp='{}' requested='{}' used='{}' available='{}' | pp='{}' requested='{}' used='{}' available='{}'",
+                        vertexInfo.name,
+                        requestedVertexEntryName,
+                        vertexEntryName,
+                        JoinEntryPointNames(vertexSpirvEntryNames),
+                        pixelInfo.name,
+                        requestedPixelEntryName,
+                        pixelEntryName,
+                        JoinEntryPointNames(pixelSpirvEntryNames));
+                }
 
                 VkPipelineShaderStageCreateInfo vertexStage{};
                 vertexStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 vertexStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 vertexStage.module = key.vertexModule;
-                vertexStage.pName = vertexEntryName;
+                vertexStage.pName = vertexEntryName.c_str();
 
                 VkPipelineShaderStageCreateInfo pixelStage{};
                 pixelStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 pixelStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 pixelStage.module = key.pixelModule;
-                pixelStage.pName = pixelEntryName;
+                pixelStage.pName = pixelEntryName.c_str();
 
                 VkPipelineShaderStageCreateInfo shaderStages[] = { vertexStage, pixelStage };
 
@@ -4556,6 +4692,14 @@ namespace Gek
                         static_cast<uint32_t>(key.depthCompareFunction),
                         command.hasOffscreenTarget ? 1 : 0,
                         command.offscreenTargetCount);
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan SPIR-V entries: vpRequested='{}' vpAvailable='{}' ppRequested='{}' ppAvailable='{}'",
+                        requestedVertexEntryName,
+                        JoinEntryPointNames(vertexSpirvEntryNames),
+                        requestedPixelEntryName,
+                        JoinEntryPointNames(pixelSpirvEntryNames));
 
                     getContext()->log(
                         Gek::Context::Error,
