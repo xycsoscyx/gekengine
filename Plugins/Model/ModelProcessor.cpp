@@ -1119,15 +1119,6 @@ namespace Gek
 						}
 					}
 				}); });
-
-            getContext()->setRuntimeMetric("model.frame", static_cast<double>(modelQueueFrameCounter));
-            getContext()->setRuntimeMetric("model.entities", static_cast<double>(entityDataList.size()));
-            getContext()->setRuntimeMetric("model.visibleEntities", static_cast<double>(visibleEntityCount));
-            getContext()->setRuntimeMetric("model.models", static_cast<double>(entityModelList.size()));
-            getContext()->setRuntimeMetric("model.visibleModels", static_cast<double>(visibleModelCount));
-            getContext()->setRuntimeMetric("model.queuedBatches", static_cast<double>(queuedBatchCount.load()));
-            getContext()->setRuntimeMetric("model.entityCullingFallback", static_cast<double>(entityCullingFallbackCount));
-            getContext()->setRuntimeMetric("model.modelCullingFallback", static_cast<double>(modelCullingFallbackCount));
         }
     };
 

@@ -69,7 +69,6 @@ namespace Gek
         };
 
         Path GetCanonicalPath(Path const &path);
-        Path GetExistingPath(Path const &path);
         Path GetModuleFilePath(void);
         Path GetCacheFromModule(void);
 

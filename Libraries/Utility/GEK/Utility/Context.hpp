@@ -80,10 +80,6 @@ namespace Gek
         virtual uint8_t getLogSinkMask(void) const = 0;
         virtual void setLogFilePath(FileSystem::Path const &path, bool append = true) = 0;
 
-        virtual void setRuntimeMetric(std::string_view name, double value) = 0;
-        virtual bool getRuntimeMetric(std::string_view name, double &value) const = 0;
-        virtual std::unordered_map<std::string, double> getRuntimeMetricSnapshot(void) const = 0;
-
         virtual void setCachePath(FileSystem::Path const &path) = 0;
         virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
 

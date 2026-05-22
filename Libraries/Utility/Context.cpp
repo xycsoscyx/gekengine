@@ -379,31 +379,6 @@ namespace Gek
             }
         }
 
-        void setRuntimeMetric(std::string_view name, double value)
-        {
-            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
-            runtimeMetricMap[std::string(name)] = value;
-        }
-
-        bool getRuntimeMetric(std::string_view name, double &value) const
-        {
-            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
-            auto search = runtimeMetricMap.find(std::string(name));
-            if (search == std::end(runtimeMetricMap))
-            {
-                return false;
-            }
-
-            value = search->second;
-            return true;
-        }
-
-        std::unordered_map<std::string, double> getRuntimeMetricSnapshot(void) const
-        {
-            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
-            return runtimeMetricMap;
-        }
-
         void setCachePath(FileSystem::Path const &path)
         {
             cachePath = path;

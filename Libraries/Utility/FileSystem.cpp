@@ -10,104 +10,6 @@ namespace Gek
 {
     namespace FileSystem
     {
-        namespace
-        {
-            std::string ToLowerAscii(std::string value)
-            {
-                std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c)
-                               { return static_cast<char>(std::tolower(c)); });
-                return value;
-            }
-
-#ifdef _WIN32
-            std::filesystem::path ResolveExistingPath(std::filesystem::path const &path)
-            {
-                return path;
-            }
-#else
-            std::filesystem::path ResolveExistingPath(std::filesystem::path const &path)
-            {
-                if (path.empty())
-                {
-                    return path;
-                }
-
-                std::error_code errorCode;
-                if (std::filesystem::exists(path, errorCode))
-                {
-                    return path;
-                }
-
-                std::filesystem::path currentPath;
-                auto iterator = path.begin();
-
-                if (path.has_root_path())
-                {
-                    currentPath = path.root_path();
-                    while (iterator != path.end() && *iterator == path.root_path())
-                    {
-                        ++iterator;
-                    }
-                }
-                else
-                {
-                    currentPath = std::filesystem::current_path(errorCode);
-                    if (errorCode)
-                    {
-                        return path;
-                    }
-                }
-
-                for (; iterator != path.end(); ++iterator)
-                {
-                    const std::filesystem::path requestedPart = *iterator;
-                    if (requestedPart.empty() || requestedPart == ".")
-                    {
-                        continue;
-                    }
-
-                    if (requestedPart == "..")
-                    {
-                        currentPath = currentPath.parent_path();
-                        continue;
-                    }
-
-                    std::filesystem::path exactPath = currentPath / requestedPart;
-                    if (std::filesystem::exists(exactPath, errorCode))
-                    {
-                        currentPath = exactPath;
-                        continue;
-                    }
-
-                    bool foundMatch = false;
-                    const std::string requestedLower = ToLowerAscii(requestedPart.string());
-                    for (auto const &entry : std::filesystem::directory_iterator(currentPath, errorCode))
-                    {
-                        if (errorCode)
-                        {
-                            break;
-                        }
-
-                        const std::string candidateLower = ToLowerAscii(entry.path().filename().string());
-                        if (candidateLower == requestedLower)
-                        {
-                            currentPath = entry.path();
-                            foundMatch = true;
-                            break;
-                        }
-                    }
-
-                    if (!foundMatch)
-                    {
-                        return path;
-                    }
-                }
-
-                return currentPath;
-            }
-#endif
-        } // namespace
-
         Path operator/(Path const &leftPath, std::string_view rightPath)
         {
             return leftPath.data / std::filesystem::path(rightPath);
@@ -265,23 +167,20 @@ namespace Gek
 
         bool Path::isFile(void) const
         {
-            auto resolvedPath = ResolveExistingPath(data);
             std::error_code errorCode;
-            return std::filesystem::is_regular_file(resolvedPath, errorCode);
+            return std::filesystem::is_regular_file(data, errorCode);
         }
 
         size_t Path::getFileSize(void) const
         {
-            auto resolvedPath = ResolveExistingPath(data);
             std::error_code errorCode;
-            return std::filesystem::file_size(resolvedPath, errorCode);
+            return std::filesystem::file_size(data, errorCode);
         }
 
         bool Path::isDirectory(void) const
         {
-            auto resolvedPath = ResolveExistingPath(data);
             std::error_code errorCode;
-            return std::filesystem::is_directory(resolvedPath, errorCode);
+            return std::filesystem::is_directory(data, errorCode);
         }
 
         void Path::createChain(void) const
@@ -322,12 +221,11 @@ namespace Gek
         std::string Read(Path const &filePath)
         {
             std::string buffer;
-            auto resolvedPath = ResolveExistingPath(filePath.data);
             std::error_code errorCode;
-            if (std::filesystem::is_regular_file(resolvedPath, errorCode))
+            if (std::filesystem::is_regular_file(filePath.data, errorCode))
             {
                 std::ifstream file;
-                file.open(resolvedPath.string().data(), std::ios::in);
+                file.open(filePath.data.string().data(), std::ios::in);
                 if (file.is_open())
                 {
                     std::stringstream stream;
@@ -343,16 +241,15 @@ namespace Gek
         std::vector<uint8_t> Load(Path const &filePath, std::uintmax_t limitReadSize)
         {
             std::vector<uint8_t> buffer;
-            auto resolvedPath = ResolveExistingPath(filePath.data);
             std::error_code errorCode;
-            if (std::filesystem::is_regular_file(resolvedPath, errorCode))
+            if (std::filesystem::is_regular_file(filePath.data, errorCode))
             {
-                std::uintmax_t fileSize = std::filesystem::file_size(resolvedPath, errorCode);
+                std::uintmax_t fileSize = std::filesystem::file_size(filePath.data, errorCode);
                 auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
                 if (size > 0)
                 {
                     std::ifstream file;
-                    file.open(resolvedPath.string().data(), std::ios::in | std::ios::binary);
+                    file.open(filePath.data.string().data(), std::ios::in | std::ios::binary);
                     if (file.is_open())
                     {
                         buffer.resize(size);
@@ -369,11 +266,6 @@ namespace Gek
         {
             std::error_code errorCode;
             return std::filesystem::canonical(path.data, errorCode);
-        }
-
-        Path GetExistingPath(Path const &path)
-        {
-            return ResolveExistingPath(path.data);
         }
 
         Path GetModuleFilePath(void)

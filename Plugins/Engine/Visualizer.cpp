@@ -1647,35 +1647,6 @@ float4 main(PixelInput input) : SV_Target
 
                 renderUI(ImGui::GetDrawData());
 
-                getContext()->setRuntimeMetric("visualizer.frame", static_cast<double>(renderFrameCounter));
-                getContext()->setRuntimeMetric("visualizer.processedCameras", static_cast<double>(processedCameras));
-                getContext()->setRuntimeMetric("visualizer.queuedDrawCalls", static_cast<double>(queuedDrawCalls));
-                getContext()->setRuntimeMetric("visualizer.shaderGroups", static_cast<double>(shaderGroupCount));
-                getContext()->setRuntimeMetric("visualizer.preparedPasses", static_cast<double>(preparedPassCount));
-                getContext()->setRuntimeMetric("visualizer.forwardPasses", static_cast<double>(forwardPassCount));
-                getContext()->setRuntimeMetric("visualizer.deferredPasses", static_cast<double>(deferredPassCount));
-                getContext()->setRuntimeMetric("visualizer.computePasses", static_cast<double>(computePassCount));
-                getContext()->setRuntimeMetric("visualizer.forwardDrawDispatches", static_cast<double>(forwardDrawDispatchCount));
-                getContext()->setRuntimeMetric("visualizer.deferredDrawDispatches", static_cast<double>(deferredDrawDispatchCount));
-
-                const bool shouldLogVisualizerSummary =
-                    (renderFrameCounter <= 8) ||
-                    ((renderFrameCounter % 120) == 0) ||
-                    (processedCameras == 0 && queuedDrawCalls > 0);
-                if (shouldLogVisualizerSummary)
-                {
-                    getContext()->log(
-                        Gek::Context::Debug,
-                        "Visualizer frame summary: frame={} processedCameras={} queuedDrawCalls={} forwardPasses={} deferredPasses={} forwardDrawDispatches={} deferredDrawDispatches={}",
-                        renderFrameCounter,
-                        processedCameras,
-                        queuedDrawCalls,
-                        forwardPassCount,
-                        deferredPassCount,
-                        forwardDrawDispatchCount,
-                        deferredDrawDispatchCount);
-                }
-
                 renderDevice->present(true);
                 if (reloadRequired)
                 {

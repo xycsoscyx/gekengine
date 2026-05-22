@@ -2951,7 +2951,8 @@ namespace Gek
                     Render::Program::Type::Vertex,
                     "mainVertexProgram",
                     "",
-                    FileSystem::Path("")};
+                    FileSystem::Path("")
+                };
                 fallbackProgramInfo.shaderData = R"(
 struct InputVertex
 {
@@ -3025,7 +3026,8 @@ OutputVertex mainVertexProgram(InputVertex input)
                     Render::Program::Type::Pixel,
                     "main",
                     "",
-                    FileSystem::Path("")};
+                    FileSystem::Path("")
+                };
                 fallbackProgramInfo.shaderData = useThreeTargets ? R"(
 struct PixelInput
 {
@@ -3048,7 +3050,8 @@ PixelOutput main(PixelInput input)
     outputPixel.normalBuffer = float2(0.5, 0.5);
     return outputPixel;
 }
-)" : R"(
+)"
+                                                                 : R"(
 struct PixelInput
 {
     float4 position : SV_POSITION;
@@ -8062,212 +8065,6 @@ float4 main(PixelInput input) : SV_Target
                                       static_cast<int32_t>(presentResult));
                     recreateSwapChain();
                     return;
-                }
-
-                const uint32_t frameOffscreenDrawCountSnapshot = frameOffscreenDrawCount;
-                const uint32_t frameBackbufferDrawCountSnapshot = frameBackbufferDrawCount;
-                const uint32_t frameOffscreenCommandCountSnapshot = frameOffscreenCommandCount;
-                const uint32_t frameCapturedDrawCommandCountSnapshot = frameCapturedDrawCommandCount;
-                const uint32_t frameCapturedOffscreenDrawCommandCountSnapshot = frameCapturedOffscreenDrawCommandCount;
-                const uint32_t frameCapturedBackbufferDrawCommandCountSnapshot = frameCapturedBackbufferDrawCommandCount;
-                const uint32_t frameCapturedBackbufferAfterOffscreenBindCountSnapshot = frameCapturedBackbufferAfterOffscreenBindCount;
-                const uint32_t frameCapturedDiscardedNoProgramCountSnapshot = frameCapturedDiscardedNoProgramCount;
-                const uint32_t frameCapturedDiscardedNoVertexProgramCountSnapshot = frameCapturedDiscardedNoVertexProgramCount;
-                const uint32_t frameCapturedDiscardedNoPixelProgramCountSnapshot = frameCapturedDiscardedNoPixelProgramCount;
-                const uint32_t frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot = frameCapturedDiscardedNoVertexOrPixelProgramCount;
-                const uint32_t frameVertexProgramSetCountSnapshot = frameVertexProgramSetCount;
-                const uint32_t framePixelProgramSetCountSnapshot = framePixelProgramSetCount;
-                const uint32_t frameVertexProgramNullSetCountSnapshot = frameVertexProgramNullSetCount;
-                const uint32_t framePixelProgramNullSetCountSnapshot = framePixelProgramNullSetCount;
-                const uint32_t frameVertexProgramTypeMismatchCountSnapshot = frameVertexProgramTypeMismatchCount;
-                const uint32_t framePixelProgramTypeMismatchCountSnapshot = framePixelProgramTypeMismatchCount;
-                const uint32_t framePipelineFailCountSnapshot = framePipelineFailCount;
-                const uint32_t frameInvalidTargetCountSnapshot = frameInvalidTargetCount;
-                const uint32_t frameEmptyDescriptorCountSnapshot = frameEmptyDescriptorCount;
-                const uint32_t frameRenderTargetBindCountSnapshot = frameRenderTargetBindCount;
-                const uint32_t frameOffscreenTargetBindCountSnapshot = frameOffscreenTargetBindCount;
-                const uint32_t frameOffscreenSkippedNoTargetCountSnapshot = frameOffscreenSkippedNoTargetCount;
-                const uint32_t frameOffscreenSkippedNullRenderPassCountSnapshot = frameOffscreenSkippedNullRenderPassCount;
-                const uint32_t frameOffscreenSkippedNullFramebufferCountSnapshot = frameOffscreenSkippedNullFramebufferCount;
-                const uint32_t frameBackbufferAccumulatePipelineFailCountSnapshot = frameBackbufferAccumulatePipelineFailCount;
-                const uint32_t frameBackbufferAccumulateSkipCountSnapshot = frameBackbufferAccumulateSkipCount;
-
-                const bool frameHadCompleteOffscreenPipelineFailure =
-                    (frameOffscreenCommandCountSnapshot > 0) &&
-                    (frameOffscreenDrawCountSnapshot == 0) &&
-                    (framePipelineFailCountSnapshot >= frameOffscreenCommandCountSnapshot);
-                if (frameHadCompleteOffscreenPipelineFailure)
-                {
-                    ++consecutiveOffscreenPipelineFailFrames;
-                }
-                else
-                {
-                    consecutiveOffscreenPipelineFailFrames = 0;
-                }
-
-                if (!useBackbufferFallbackForOffscreen && consecutiveOffscreenPipelineFailFrames >= 3)
-                {
-                    useBackbufferFallbackForOffscreen = true;
-                    if (!loggedOffscreenBackbufferFallbackEnabled)
-                    {
-                        loggedOffscreenBackbufferFallbackEnabled = true;
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan fallback enabled: routing offscreen draws to backbuffer after {} consecutive full offscreen pipeline-failure frames",
-                            consecutiveOffscreenPipelineFailFrames);
-                    }
-                }
-
-                if (frameBackbufferAccumulatePipelineFailCountSnapshot > 0)
-                {
-                    ++consecutiveBackbufferAccumulatePipelineFailFrames;
-                }
-                else
-                {
-                    consecutiveBackbufferAccumulatePipelineFailFrames = 0;
-                }
-
-                if (!skipBackbufferAccumulateLightingPass &&
-                    useBackbufferFallbackForOffscreen &&
-                    preferSpirv13Profile &&
-                    (consecutiveBackbufferAccumulatePipelineFailFrames >= 2))
-                {
-                    skipBackbufferAccumulateLightingPass = true;
-                    if (!loggedBackbufferAccumulateBypassEnabled)
-                    {
-                        loggedBackbufferAccumulateBypassEnabled = true;
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan fallback enabled: bypassing backbuffer AccumulateLighting after {} consecutive pipeline-failure frames",
-                            consecutiveBackbufferAccumulatePipelineFailFrames);
-                    }
-                }
-
-                ++frameIndex;
-                frameOffscreenDrawCount = 0;
-                frameBackbufferDrawCount = 0;
-                frameBackbufferColorCleared = false;
-                frameOffscreenCommandCount = 0;
-                frameCapturedDrawCommandCount = 0;
-                frameCapturedOffscreenDrawCommandCount = 0;
-                frameCapturedBackbufferDrawCommandCount = 0;
-                frameCapturedBackbufferAfterOffscreenBindCount = 0;
-                frameCapturedDiscardedNoProgramCount = 0;
-                frameCapturedDiscardedNoVertexProgramCount = 0;
-                frameCapturedDiscardedNoPixelProgramCount = 0;
-                frameCapturedDiscardedNoVertexOrPixelProgramCount = 0;
-                frameVertexProgramSetCount = 0;
-                framePixelProgramSetCount = 0;
-                frameVertexProgramNullSetCount = 0;
-                framePixelProgramNullSetCount = 0;
-                frameVertexProgramTypeMismatchCount = 0;
-                framePixelProgramTypeMismatchCount = 0;
-                frameInvalidTargetCount = 0;
-                frameEmptyDescriptorCount = 0;
-                frameRenderTargetBindCount = 0;
-                frameOffscreenTargetBindCount = 0;
-                frameOffscreenSkippedNoTargetCount = 0;
-                frameOffscreenSkippedNullRenderPassCount = 0;
-                frameOffscreenSkippedNullFramebufferCount = 0;
-                frameBackbufferAccumulatePipelineFailCount = 0;
-                frameBackbufferAccumulateSkipCount = 0;
-
-                ++presentFrameIndex;
-                const uint32_t totalCommandCount = frameTotalCommandCount;
-                getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
-                getContext()->setRuntimeMetric("vulkan.totalCommands", static_cast<double>(totalCommandCount));
-                getContext()->setRuntimeMetric("vulkan.constantBufferVersioningEnabled", (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
-                getContext()->setRuntimeMetric("vulkan.vertexBufferVersioningEnabled", (vertexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
-                getContext()->setRuntimeMetric("vulkan.indexBufferVersioningEnabled", (indexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
-                getContext()->setRuntimeMetric("vulkan.constantBufferRingSize", static_cast<double>(constantBufferVersioningPolicy.ringSize));
-                getContext()->setRuntimeMetric("vulkan.vertexBufferRingSize", static_cast<double>(vertexBufferVersioningPolicy.ringSize));
-                getContext()->setRuntimeMetric("vulkan.indexBufferRingSize", static_cast<double>(indexBufferVersioningPolicy.ringSize));
-                getContext()->setRuntimeMetric("render.frame", static_cast<double>(presentFrameIndex));
-                getContext()->setRuntimeMetric("render.backend", 0.0);
-                getContext()->setRuntimeMetric("render.totalCommands", static_cast<double>(totalCommandCount));
-                getContext()->setRuntimeMetric("render.mappedDepthFunc", 0.0);
-                getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", 0.0);
-                getContext()->setRuntimeMetric("vulkan.submitCpuMs", submitCpuMs);
-                getContext()->setRuntimeMetric("vulkan.presentCpuMs", presentCpuMs);
-                getContext()->setRuntimeMetric("vulkan.offscreenDraws", static_cast<double>(frameOffscreenDrawCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.backbufferDraws", static_cast<double>(frameBackbufferDrawCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.offscreenCommands", static_cast<double>(frameOffscreenCommandCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedDrawCommands", static_cast<double>(frameCapturedDrawCommandCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedOffscreenDrawCommands", static_cast<double>(frameCapturedOffscreenDrawCommandCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedBackbufferDrawCommands", static_cast<double>(frameCapturedBackbufferDrawCommandCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedBackbufferAfterOffscreenBind", static_cast<double>(frameCapturedBackbufferAfterOffscreenBindCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoProgram", static_cast<double>(frameCapturedDiscardedNoProgramCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoVertexProgram", static_cast<double>(frameCapturedDiscardedNoVertexProgramCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoPixelProgram", static_cast<double>(frameCapturedDiscardedNoPixelProgramCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.capturedDiscardedNoVertexOrPixelProgram", static_cast<double>(frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.vsProgramSets", static_cast<double>(frameVertexProgramSetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.psProgramSets", static_cast<double>(framePixelProgramSetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.vsProgramNullSets", static_cast<double>(frameVertexProgramNullSetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.psProgramNullSets", static_cast<double>(framePixelProgramNullSetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.vsProgramTypeMismatch", static_cast<double>(frameVertexProgramTypeMismatchCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.psProgramTypeMismatch", static_cast<double>(framePixelProgramTypeMismatchCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.pipelineFails", static_cast<double>(framePipelineFailCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.invalidTargets", static_cast<double>(frameInvalidTargetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.emptyDescriptors", static_cast<double>(frameEmptyDescriptorCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.rtBindCalls", static_cast<double>(frameRenderTargetBindCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.rtOffscreenBindCalls", static_cast<double>(frameOffscreenTargetBindCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.offscreenSkipNoTargets", static_cast<double>(frameOffscreenSkippedNoTargetCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.offscreenSkipNullRenderPass", static_cast<double>(frameOffscreenSkippedNullRenderPassCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.offscreenSkipNullFramebuffer", static_cast<double>(frameOffscreenSkippedNullFramebufferCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.backbufferAccumulatePipelineFails", static_cast<double>(frameBackbufferAccumulatePipelineFailCountSnapshot));
-                getContext()->setRuntimeMetric("vulkan.backbufferAccumulateSkips", static_cast<double>(frameBackbufferAccumulateSkipCountSnapshot));
-                getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
-                const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
-                getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
-                getContext()->setRuntimeMetric("vulkan.deferredContextQueues", 0.0);
-                getContext()->setRuntimeMetric("vulkan.deferredCommandLists", 0.0);
-
-                const bool pipelineFailStateChanged = (framePipelineFailCountSnapshot != lastLoggedPipelineFailCount);
-                const bool invalidTargetStateChanged = (frameInvalidTargetCountSnapshot != lastLoggedInvalidTargetCount);
-                const bool shouldLogFrameSummary =
-                    (presentFrameIndex <= 8) ||
-                    ((presentFrameIndex % 120) == 0) ||
-                    pipelineFailStateChanged ||
-                    invalidTargetStateChanged;
-                if (shouldLogFrameSummary)
-                {
-                    getContext()->log(
-                        Gek::Context::Info,
-                        "Vulkan frame summary: frame={} commands={} capturedDraws={} capturedOffscreenDraws={} capturedBackbufferDraws={} capturedBackbufferAfterOffscreenBind={} capturedDiscardedNoProgram={} capturedDiscardedNoVS={} capturedDiscardedNoPS={} capturedDiscardedNoVSPs={} vsProgramSets={} psProgramSets={} vsProgramNullSets={} psProgramNullSets={} vsProgramTypeMismatch={} psProgramTypeMismatch={} offscreenCommands={} offscreenDraws={} backbufferDraws={} rtBinds={} rtOffscreenBinds={} skipNoTargets={} skipNullRenderPass={} skipNullFramebuffer={} pipelineFails={} backbufferAccumulateFails={} backbufferAccumulateSkips={} invalidTargets={} emptyDescriptors={} fallbackOffscreenToBackbuffer={} skipBackbufferAccumulate={}",
-                        presentFrameIndex,
-                        totalCommandCount,
-                        frameCapturedDrawCommandCountSnapshot,
-                        frameCapturedOffscreenDrawCommandCountSnapshot,
-                        frameCapturedBackbufferDrawCommandCountSnapshot,
-                        frameCapturedBackbufferAfterOffscreenBindCountSnapshot,
-                        frameCapturedDiscardedNoProgramCountSnapshot,
-                        frameCapturedDiscardedNoVertexProgramCountSnapshot,
-                        frameCapturedDiscardedNoPixelProgramCountSnapshot,
-                        frameCapturedDiscardedNoVertexOrPixelProgramCountSnapshot,
-                        frameVertexProgramSetCountSnapshot,
-                        framePixelProgramSetCountSnapshot,
-                        frameVertexProgramNullSetCountSnapshot,
-                        framePixelProgramNullSetCountSnapshot,
-                        frameVertexProgramTypeMismatchCountSnapshot,
-                        framePixelProgramTypeMismatchCountSnapshot,
-                        frameOffscreenCommandCountSnapshot,
-                        frameOffscreenDrawCountSnapshot,
-                        frameBackbufferDrawCountSnapshot,
-                        frameRenderTargetBindCountSnapshot,
-                        frameOffscreenTargetBindCountSnapshot,
-                        frameOffscreenSkippedNoTargetCountSnapshot,
-                        frameOffscreenSkippedNullRenderPassCountSnapshot,
-                        frameOffscreenSkippedNullFramebufferCountSnapshot,
-                        framePipelineFailCountSnapshot,
-                        frameBackbufferAccumulatePipelineFailCountSnapshot,
-                        frameBackbufferAccumulateSkipCountSnapshot,
-                        frameInvalidTargetCountSnapshot,
-                        frameEmptyDescriptorCountSnapshot,
-                        useBackbufferFallbackForOffscreen ? 1 : 0,
-                        skipBackbufferAccumulateLightingPass ? 1 : 0);
-
-                    lastLoggedPipelineFailCount = framePipelineFailCountSnapshot;
-                    lastLoggedInvalidTargetCount = frameInvalidTargetCountSnapshot;
                 }
             }
         };

@@ -116,6 +116,40 @@ namespace Gek
             return String::GetLower(normalizedPath.getString());
         }
 
+        std::string normalizeTextureLookupKey(FileSystem::Path const &path)
+        {
+            auto normalized = String::GetLower(path.getString());
+            String::Replace(normalized, "\\", "/");
+            return normalized;
+        }
+
+        FileSystem::Path getPathUnderDirectory(FileSystem::Path const &path, std::string_view directoryName)
+        {
+            auto parentPath = path.getParentPath();
+            while (parentPath.isDirectory() && parentPath != path.getRootPath())
+            {
+                if (String::GetLower(parentPath.getFileName()) == String::GetLower(std::string(directoryName)))
+                {
+                    return path.lexicallyRelative(parentPath);
+                }
+
+                parentPath = parentPath.getParentPath();
+            }
+
+            return path;
+        }
+
+        void clearTexturePathLookupCache(void)
+        {
+            static std::mutex textureLookupMutex;
+            static std::unordered_map<std::string, FileSystem::Path> textureLookupMap;
+            static bool textureLookupReady = false;
+
+            std::lock_guard<std::mutex> lock(textureLookupMutex);
+            textureLookupMap.clear();
+            textureLookupReady = false;
+        }
+
         bool findTexturePathCaseInsensitive(Context *context, std::string_view textureName, FileSystem::Path &resolvedPath)
         {
             static std::mutex textureLookupMutex;
@@ -132,6 +166,13 @@ namespace Gek
                         return true;
                     }
 
+                    const FileSystem::Path relativeTexturePath = getPathUnderDirectory(filePath, "textures");
+                    const std::string relativeKey = normalizeTextureLookupKey(relativeTexturePath);
+                    textureLookupMap.try_emplace(relativeKey, filePath);
+
+                    const std::string relativeNoExtensionKey = normalizeTextureLookupKey(relativeTexturePath.withoutExtension());
+                    textureLookupMap.try_emplace(relativeNoExtensionKey, filePath);
+
                     const std::string fileNameKey = String::GetLower(filePath.getFileName());
                     textureLookupMap.try_emplace(fileNameKey, filePath);
 
@@ -143,6 +184,22 @@ namespace Gek
             }
 
             const FileSystem::Path requestedPath(textureName);
+            const std::string relativeKey = normalizeTextureLookupKey(requestedPath);
+            auto relativeSearch = textureLookupMap.find(relativeKey);
+            if (relativeSearch != std::end(textureLookupMap))
+            {
+                resolvedPath = relativeSearch->second;
+                return true;
+            }
+
+            const std::string relativeNoExtensionKey = normalizeTextureLookupKey(requestedPath.withoutExtension());
+            auto relativeNoExtensionSearch = textureLookupMap.find(relativeNoExtensionKey);
+            if (relativeNoExtensionSearch != std::end(textureLookupMap))
+            {
+                resolvedPath = relativeNoExtensionSearch->second;
+                return true;
+            }
+
             const std::string fileNameKey = String::GetLower(requestedPath.getFileName());
             auto fileNameSearch = textureLookupMap.find(fileNameKey);
             if (fileNameSearch != std::end(textureLookupMap))
@@ -800,119 +857,6 @@ namespace Gek
             bool showResources = false;
             void onShowUserInterface(void)
             {
-                getContext()->setRuntimeMetric("resources.drawAttempts", static_cast<double>(drawCallAttemptCount));
-                getContext()->setRuntimeMetric("resources.drawSubmitted", static_cast<double>(drawCallSubmittedCount));
-                getContext()->setRuntimeMetric("resources.drawSuppressed", static_cast<double>(drawCallSuppressedCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingMaterial", static_cast<double>(drawSuppressedMissingMaterialCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingMaterialData", static_cast<double>(drawSuppressedMissingMaterialDataCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingVisual", static_cast<double>(drawSuppressedMissingVisualCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingProgram", static_cast<double>(drawSuppressedMissingProgramCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingIndexBuffer", static_cast<double>(drawSuppressedMissingIndexBufferCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingVertexBuffer", static_cast<double>(drawSuppressedMissingVertexBufferCount));
-                getContext()->setRuntimeMetric("resources.suppressedInvalidRenderTarget", static_cast<double>(drawSuppressedInvalidRenderTargetCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingRenderState", static_cast<double>(drawSuppressedMissingRenderStateCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingDepthState", static_cast<double>(drawSuppressedMissingDepthStateCount));
-                getContext()->setRuntimeMetric("resources.suppressedMissingBlendState", static_cast<double>(drawSuppressedMissingBlendStateCount));
-
-                static uint64_t resourceSummaryFrame = 0;
-                ++resourceSummaryFrame;
-                const bool suppressionIncreased = (drawCallSuppressedCount != lastSuppressedLogCount);
-                const bool missingMaterialIncreased = (drawSuppressedMissingMaterialCount != lastMissingMaterialCount);
-                const bool shouldLogSummary =
-                    (resourceSummaryFrame <= 8) ||
-                    ((resourceSummaryFrame % 120) == 0) ||
-                    suppressionIncreased;
-                if (shouldLogSummary)
-                {
-                    getContext()->log(
-                        Context::Debug,
-                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingProgramLastVisual='{}' missingProgramLastHandle={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={} missingRenderState={} missingDepthState={} missingBlendState={}",
-                        drawCallAttemptCount,
-                        drawCallSubmittedCount,
-                        drawCallSuppressedCount,
-                        drawSuppressedMissingMaterialCount,
-                        drawSuppressedMissingMaterialDataCount,
-                        drawSuppressedMissingVisualCount,
-                        drawSuppressedMissingProgramCount,
-                        lastMissingProgramVisualName,
-                        lastMissingProgramVisualHandle,
-                        drawSuppressedMissingIndexBufferCount,
-                        drawSuppressedMissingVertexBufferCount,
-                        drawSuppressedInvalidRenderTargetCount,
-                        drawSuppressedMissingRenderStateCount,
-                        drawSuppressedMissingDepthStateCount,
-                        drawSuppressedMissingBlendStateCount);
-
-                    if (suppressionIncreased)
-                    {
-                        const uint64_t suppressedDelta = (drawCallSuppressedCount - lastSuppressedLogCount);
-                        const uint64_t missingMaterialDelta = (drawSuppressedMissingMaterialCount - lastMissingMaterialCount);
-                        const uint64_t missingMaterialDataDelta = (drawSuppressedMissingMaterialDataCount - lastMissingMaterialDataCount);
-                        const uint64_t missingVisualDelta = (drawSuppressedMissingVisualCount - lastMissingVisualCount);
-                        const uint64_t missingProgramDelta = (drawSuppressedMissingProgramCount - lastMissingProgramCount);
-                        const uint64_t missingIndexBufferDelta = (drawSuppressedMissingIndexBufferCount - lastMissingIndexBufferCount);
-                        const uint64_t missingVertexBufferDelta = (drawSuppressedMissingVertexBufferCount - lastMissingVertexBufferCount);
-                        const uint64_t invalidRenderTargetDelta = (drawSuppressedInvalidRenderTargetCount - lastInvalidRenderTargetCount);
-                        const uint64_t missingRenderStateDelta = (drawSuppressedMissingRenderStateCount - lastMissingRenderStateCount);
-                        const uint64_t missingDepthStateDelta = (drawSuppressedMissingDepthStateCount - lastMissingDepthStateCount);
-                        const uint64_t missingBlendStateDelta = (drawSuppressedMissingBlendStateCount - lastMissingBlendStateCount);
-                        const uint64_t classifiedDelta =
-                            missingMaterialDelta +
-                            missingMaterialDataDelta +
-                            missingVisualDelta +
-                            missingProgramDelta +
-                            missingIndexBufferDelta +
-                            missingVertexBufferDelta +
-                            invalidRenderTargetDelta +
-                            missingRenderStateDelta +
-                            missingDepthStateDelta +
-                            missingBlendStateDelta;
-                        const uint64_t unattributedDelta = (suppressedDelta > classifiedDelta) ? (suppressedDelta - classifiedDelta) : 0;
-
-                        getContext()->log(
-                            Context::Debug,
-                            "Resources suppression delta: suppressedDelta={} missingMaterialDelta={} missingMaterialDataDelta={} missingVisualDelta={} missingProgramDelta={} missingIndexBufferDelta={} missingVertexBufferDelta={} invalidRenderTargetDelta={} missingRenderStateDelta={} missingDepthStateDelta={} missingBlendStateDelta={} unattributedDelta={}",
-                            suppressedDelta,
-                            missingMaterialDelta,
-                            missingMaterialDataDelta,
-                            missingVisualDelta,
-                            missingProgramDelta,
-                            missingIndexBufferDelta,
-                            missingVertexBufferDelta,
-                            invalidRenderTargetDelta,
-                            missingRenderStateDelta,
-                            missingDepthStateDelta,
-                            missingBlendStateDelta,
-                            unattributedDelta);
-
-                        lastMissingMaterialDataCount = drawSuppressedMissingMaterialDataCount;
-                        lastMissingVisualCount = drawSuppressedMissingVisualCount;
-                        lastMissingProgramCount = drawSuppressedMissingProgramCount;
-                        lastMissingIndexBufferCount = drawSuppressedMissingIndexBufferCount;
-                        lastMissingVertexBufferCount = drawSuppressedMissingVertexBufferCount;
-                        lastInvalidRenderTargetCount = drawSuppressedInvalidRenderTargetCount;
-                        lastMissingRenderStateCount = drawSuppressedMissingRenderStateCount;
-                        lastMissingDepthStateCount = drawSuppressedMissingDepthStateCount;
-                        lastMissingBlendStateCount = drawSuppressedMissingBlendStateCount;
-                    }
-
-                    lastSuppressedLogCount = drawCallSuppressedCount;
-                }
-
-                if (missingMaterialIncreased)
-                {
-                    const uint64_t delta = (drawSuppressedMissingMaterialCount - lastMissingMaterialCount);
-                    getContext()->log(
-                        Context::Warning,
-                        "Resources missingMaterial counter increased: total={} delta={} (drawAttempts={} submitted={} suppressed={})",
-                        drawSuppressedMissingMaterialCount,
-                        delta,
-                        drawCallAttemptCount,
-                        drawCallSubmittedCount,
-                        drawCallSuppressedCount);
-                    lastMissingMaterialCount = drawSuppressedMissingMaterialCount;
-                }
-
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
                 auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
@@ -1802,6 +1746,7 @@ namespace Gek
             // Engine::Resources
             void clear(void)
             {
+                clearTexturePathLookupCache();
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
                 materialNameMap.clear();
