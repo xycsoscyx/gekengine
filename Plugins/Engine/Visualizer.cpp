@@ -1520,7 +1520,7 @@ float4 main(PixelInput input) : SV_Target
                 };
 
                 auto finalHandle = resources->getResourceHandle("finalBuffer");
-                if (finalHandle && processedCameras > 0)
+                if (finalHandle)
                 {
                     auto alternateHandle = resources->getResourceHandle("alternateBuffer");
                     if (!alternateHandle)
