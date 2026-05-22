@@ -3444,7 +3444,12 @@ namespace Gek
                      (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
 
                 CandidateDevice selectedCandidate = bestCandidate;
-                if (bestCandidate.isDozen && !allowDozen && bestNonDozenCandidate.device != VK_NULL_HANDLE && bestNonDozenCandidate.score > 0)
+                const bool hasUsableNonDozenCandidate =
+                    (bestNonDozenCandidate.device != VK_NULL_HANDLE) &&
+                    (bestNonDozenCandidate.score > 0) &&
+                    (bestNonDozenCandidate.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU);
+
+                if (bestCandidate.isDozen && !allowDozen && hasUsableNonDozenCandidate)
                 {
                     selectedCandidate = bestNonDozenCandidate;
                     physicalDevice = selectedCandidate.device;
@@ -3453,6 +3458,14 @@ namespace Gek
                         "Vulkan auto-fallback: selected candidate '{}' uses Dozen; preferring non-Dozen device '{}' (set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen)",
                         bestCandidate.properties.deviceName,
                         selectedCandidate.properties.deviceName);
+                }
+                else if (bestCandidate.isDozen && !allowDozen && bestNonDozenCandidate.device != VK_NULL_HANDLE && bestNonDozenCandidate.score > 0)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan candidate '{}' uses Dozen and only CPU non-Dozen adapter '{}' is available; keeping Dozen (set GEK_VULKAN_ALLOW_DOZEN=1 to silence this warning)",
+                        bestCandidate.properties.deviceName,
+                        bestNonDozenCandidate.properties.deviceName);
                 }
 
                 VkPhysicalDeviceProperties selectedProperties = selectedCandidate.properties;
