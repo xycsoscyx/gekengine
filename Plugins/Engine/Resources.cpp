@@ -1751,6 +1751,7 @@ namespace Gek
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
                 constexpr uint32_t SHADER_CACHE_VERSION = 1;
+                const uint32_t shaderCacheVersion = (String::GetLower(renderDeviceName) == "vulkan") ? 2u : SHADER_CACHE_VERSION;
                 auto hash = GetHash(renderDeviceName, name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shaders", renderDeviceName, name));
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
@@ -1773,7 +1774,7 @@ namespace Gek
                         uint64_t fileHash = 0;
                         cacheFile.read(reinterpret_cast<char *>(&fileVersion), sizeof(fileVersion));
                         cacheFile.read(reinterpret_cast<char *>(&fileHash), sizeof(fileHash));
-                        if (fileVersion == SHADER_CACHE_VERSION && fileHash == hash)
+                        if (fileVersion == shaderCacheVersion && fileHash == hash)
                         {
                             std::vector<uint8_t> cachedShader((std::istreambuf_iterator<char>(cacheFile)), std::istreambuf_iterator<char>());
                             if (!cachedShader.empty())
@@ -1785,7 +1786,7 @@ namespace Gek
                         }
                         else
                         {
-                            getContext()->log(Context::Info, "Shader cache invalidated: {} (found version {} hash {}, expected version {} hash {})", compiledPath.getString(), fileVersion, fileHash, SHADER_CACHE_VERSION, hash);
+                            getContext()->log(Context::Info, "Shader cache invalidated: {} (found version {} hash {}, expected version {} hash {})", compiledPath.getString(), fileVersion, fileHash, shaderCacheVersion, hash);
                         }
                     }
                 }
@@ -1847,12 +1848,12 @@ namespace Gek
                         std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
                         if (outFile)
                         {
-                            outFile.write(reinterpret_cast<const char *>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
+                                outFile.write(reinterpret_cast<const char *>(&shaderCacheVersion), sizeof(shaderCacheVersion));
                             outFile.write(reinterpret_cast<const char *>(&hash), sizeof(hash));
                             outFile.write(reinterpret_cast<const char *>(information.compiledData.data()), information.compiledData.size());
                             outFile.close();
 
-                            getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), SHADER_CACHE_VERSION, hash, information.compiledData.size());
+                                getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), shaderCacheVersion, hash, information.compiledData.size());
                         }
                     }
                 }
