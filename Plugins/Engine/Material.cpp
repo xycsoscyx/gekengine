@@ -120,7 +120,6 @@ namespace Gek
             std::unordered_map<size_t, Data> dataMap;
             RenderStateHandle renderState;
 
-
           public:
             Material(Context * context, Engine::Resources * resources, std::string materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context), resources(resources), materialName(normalizeMaterialName(materialName))
