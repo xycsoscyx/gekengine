@@ -10389,6 +10389,10 @@ float4 main(PixelInput input) : SV_Target
                 !drawCommand.hasOffscreenTarget &&
                 isAccumulateLightingPixelProgram(pipelineCommand->pixelProgram);
 
+            const bool isOffscreenAccumulateLightingPass =
+                drawCommand.hasOffscreenTarget &&
+                isAccumulateLightingPixelProgram(drawCommand.pixelProgram);
+
             const bool isDeferredBackbufferCompositionPass =
                 drawToBackBuffer &&
                 !drawCommand.hasOffscreenTarget &&
@@ -10555,9 +10559,27 @@ float4 main(PixelInput input) : SV_Target
             if (pipeline == VK_NULL_HANDLE)
             {
                 ++framePipelineFailCount;
+                if (preferSpirv13Profile && drawCommand.hasOffscreenTarget)
+                {
+                    useBackbufferFallbackForOffscreen = true;
+                    if (!loggedOffscreenBackbufferFallbackEnabled)
+                    {
+                        loggedOffscreenBackbufferFallbackEnabled = true;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan compatibility mode enabled: rerouting offscreen draws to backbuffer after offscreen pipeline failure (pixelProgram='{}', offscreenTargetCount={})",
+                            drawCommand.pixelProgram ? drawCommand.pixelProgram->getInformation().name : "<null>",
+                            drawCommand.offscreenTargetCount);
+                    }
+                }
+
                 if (isBackbufferAccumulateLightingPass)
                 {
                     ++frameBackbufferAccumulatePipelineFailCount;
+                }
+                if (preferSpirv13Profile && isOffscreenAccumulateLightingPass)
+                {
+                    ++consecutiveOffscreenPipelineFailFrames;
                 }
                 if (!loggedGraphicsPipelineNull)
                 {
