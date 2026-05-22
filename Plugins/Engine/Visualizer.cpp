@@ -487,25 +487,19 @@ namespace Gek
                 lightBufferList = { lightConstantBuffer.get() };
 
                 static constexpr std::string_view vertexProgram =
-                    R"(struct VertexInput
+                    R"(struct Output
 {
-    float2 position : POSITION;
+    float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
 };
 
-struct Output
-{
-	float4 screen : SV_POSITION;
-	float2 texCoord : TEXCOORD0;
-};
-
 [shader("vertex")]
-Output mainVertexProgram(in VertexInput input)
+Output mainVertexProgram(in uint vertexID : SV_VertexID)
 {
-	Output output;
-    output.texCoord = input.texCoord;
-    output.screen = float4(input.position, 0.0f, 1.0f);
-	return output;
+    Output output;
+    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
+    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
+    return output;
 }
 )";
 
@@ -529,9 +523,9 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 }
 )";
 
-                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v4", "mainVertexProgram", vertexProgram);
+                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v6", "mainVertexProgram", vertexProgram);
 
-                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v4", "mainPixelProgram", pixelProgram);
+                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v6", "mainPixelProgram", pixelProgram);
 
                 std::vector<Render::InputElement> deferredElementList;
                 Render::InputElement deferredElement;
