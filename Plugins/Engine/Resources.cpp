@@ -1751,7 +1751,8 @@ namespace Gek
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
                 constexpr uint32_t SHADER_CACHE_VERSION = 1;
-                const uint32_t shaderCacheVersion = (String::GetLower(renderDeviceName) == "vulkan") ? 2u : SHADER_CACHE_VERSION;
+                const bool isVulkanDevice = (String::GetLower(renderDeviceName) == "vulkan");
+                const uint32_t shaderCacheVersion = isVulkanDevice ? 3u : SHADER_CACHE_VERSION;
                 auto hash = GetHash(renderDeviceName, name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shaders", renderDeviceName, name));
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
@@ -1776,12 +1777,96 @@ namespace Gek
                         cacheFile.read(reinterpret_cast<char *>(&fileHash), sizeof(fileHash));
                         if (fileVersion == shaderCacheVersion && fileHash == hash)
                         {
-                            std::vector<uint8_t> cachedShader((std::istreambuf_iterator<char>(cacheFile)), std::istreambuf_iterator<char>());
-                            if (!cachedShader.empty())
+                            bool cacheReadSucceeded = true;
+
+                            if (fileVersion >= 3)
                             {
+                                uint32_t signatureCount = 0;
+                                cacheFile.read(reinterpret_cast<char *>(&signatureCount), sizeof(signatureCount));
+                                if (!cacheFile)
+                                {
+                                    cacheReadSucceeded = false;
+                                }
+
+                                information.vertexInputSignatures.clear();
+                                information.vertexInputSignatures.reserve(signatureCount);
+                                for (uint32_t signatureIndex = 0; cacheReadSucceeded && signatureIndex < signatureCount; ++signatureIndex)
+                                {
+                                    uint32_t semanticNameLength = 0;
+                                    cacheFile.read(reinterpret_cast<char *>(&semanticNameLength), sizeof(semanticNameLength));
+                                    if (!cacheFile)
+                                    {
+                                        cacheReadSucceeded = false;
+                                        break;
+                                    }
+
+                                    std::string semanticName;
+                                    semanticName.resize(semanticNameLength);
+                                    if (semanticNameLength > 0)
+                                    {
+                                        cacheFile.read(semanticName.data(), semanticNameLength);
+                                        if (!cacheFile)
+                                        {
+                                            cacheReadSucceeded = false;
+                                            break;
+                                        }
+                                    }
+
+                                    uint32_t semanticIndex = 0;
+                                    uint32_t shaderLocation = 0;
+                                    cacheFile.read(reinterpret_cast<char *>(&semanticIndex), sizeof(semanticIndex));
+                                    cacheFile.read(reinterpret_cast<char *>(&shaderLocation), sizeof(shaderLocation));
+                                    if (!cacheFile)
+                                    {
+                                        cacheReadSucceeded = false;
+                                        break;
+                                    }
+
+                                    Render::Program::Information::VertexInputSignature signature;
+                                    signature.semanticName = std::move(semanticName);
+                                    signature.semanticIndex = semanticIndex;
+                                    signature.shaderLocation = shaderLocation;
+                                    information.vertexInputSignatures.push_back(std::move(signature));
+                                }
+
+                                uint64_t compiledShaderSize = 0;
+                                if (cacheReadSucceeded)
+                                {
+                                    cacheFile.read(reinterpret_cast<char *>(&compiledShaderSize), sizeof(compiledShaderSize));
+                                    if (!cacheFile)
+                                    {
+                                        cacheReadSucceeded = false;
+                                    }
+                                    else
+                                    {
+                                        information.compiledData.resize(static_cast<size_t>(compiledShaderSize));
+                                        if (compiledShaderSize > 0)
+                                        {
+                                            cacheFile.read(reinterpret_cast<char *>(information.compiledData.data()), static_cast<std::streamsize>(compiledShaderSize));
+                                            if (!cacheFile)
+                                            {
+                                                cacheReadSucceeded = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                std::vector<uint8_t> cachedShader((std::istreambuf_iterator<char>(cacheFile)), std::istreambuf_iterator<char>());
                                 information.compiledData = std::move(cachedShader);
+                            }
+
+                            if (cacheReadSucceeded && !information.compiledData.empty())
+                            {
                                 information.compiledData.shrink_to_fit();
                                 getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {}) [size={}]", compiledPath.getString(), fileVersion, fileHash, information.compiledData.size());
+                            }
+                            else
+                            {
+                                information.compiledData.clear();
+                                information.vertexInputSignatures.clear();
+                                getContext()->log(Context::Warning, "Shader cache read failed, recompiling: {}", compiledPath.getString());
                             }
                         }
                         else
@@ -1850,6 +1935,28 @@ namespace Gek
                         {
                             outFile.write(reinterpret_cast<const char *>(&shaderCacheVersion), sizeof(shaderCacheVersion));
                             outFile.write(reinterpret_cast<const char *>(&hash), sizeof(hash));
+
+                            if (shaderCacheVersion >= 3)
+                            {
+                                const uint32_t signatureCount = static_cast<uint32_t>(information.vertexInputSignatures.size());
+                                outFile.write(reinterpret_cast<const char *>(&signatureCount), sizeof(signatureCount));
+                                for (auto const &signature : information.vertexInputSignatures)
+                                {
+                                    const uint32_t semanticNameLength = static_cast<uint32_t>(signature.semanticName.size());
+                                    outFile.write(reinterpret_cast<const char *>(&semanticNameLength), sizeof(semanticNameLength));
+                                    if (semanticNameLength > 0)
+                                    {
+                                        outFile.write(signature.semanticName.data(), semanticNameLength);
+                                    }
+
+                                    outFile.write(reinterpret_cast<const char *>(&signature.semanticIndex), sizeof(signature.semanticIndex));
+                                    outFile.write(reinterpret_cast<const char *>(&signature.shaderLocation), sizeof(signature.shaderLocation));
+                                }
+
+                                const uint64_t compiledShaderSize = static_cast<uint64_t>(information.compiledData.size());
+                                outFile.write(reinterpret_cast<const char *>(&compiledShaderSize), sizeof(compiledShaderSize));
+                            }
+
                             outFile.write(reinterpret_cast<const char *>(information.compiledData.data()), information.compiledData.size());
                             outFile.close();
 
