@@ -1848,12 +1848,12 @@ namespace Gek
                         std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
                         if (outFile)
                         {
-                                outFile.write(reinterpret_cast<const char *>(&shaderCacheVersion), sizeof(shaderCacheVersion));
+                            outFile.write(reinterpret_cast<const char *>(&shaderCacheVersion), sizeof(shaderCacheVersion));
                             outFile.write(reinterpret_cast<const char *>(&hash), sizeof(hash));
                             outFile.write(reinterpret_cast<const char *>(information.compiledData.data()), information.compiledData.size());
                             outFile.close();
 
-                                getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), shaderCacheVersion, hash, information.compiledData.size());
+                            getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), shaderCacheVersion, hash, information.compiledData.size());
                         }
                     }
                 }
