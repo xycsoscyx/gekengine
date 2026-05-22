@@ -569,7 +569,9 @@ namespace Gek
 
                 modeChangeTimer -= frameTime;
 
-                const float updateFrameTime = (!windowActive || enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
+                // Keep simulation/render updates running even if compositor focus briefly drops.
+                // Focus should only gate direct input handling (mouse-look), not frame progression.
+                const float updateFrameTime = (enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
                 if (population)
                 {
                     population->update(updateFrameTime);
