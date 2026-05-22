@@ -2722,6 +2722,7 @@ namespace Gek
             uint64_t presentFrameIndex = 0;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
             bool deviceLost = false;
+            std::atomic_bool swapChainRecreatePending{ false };
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
@@ -4902,7 +4903,7 @@ namespace Gek
 
             void handleResize(void)
             {
-                recreateSwapChain();
+                swapChainRecreatePending.store(true);
             }
 
             Render::Target *const getBackBuffer(void)
@@ -7659,6 +7660,11 @@ namespace Gek
             static uint64_t frameRecordTraceCounter = 0;
             ++frameRecordTraceCounter;
             const bool traceFrameRecord = (frameRecordTraceCounter <= 8) || ((frameRecordTraceCounter % 600) == 0);
+
+            if (swapChainRecreatePending.exchange(false))
+            {
+                recreateSwapChain();
+            }
 
             if (device != VK_NULL_HANDLE)
             {
