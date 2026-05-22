@@ -27,6 +27,11 @@ namespace Gek
 #else
             std::filesystem::path ResolveExistingPath(std::filesystem::path const &path)
             {
+                if (path.empty())
+                {
+                    return path;
+                }
+
                 std::error_code errorCode;
                 if (std::filesystem::exists(path, errorCode))
                 {
@@ -58,6 +63,12 @@ namespace Gek
                     const std::filesystem::path requestedPart = *iterator;
                     if (requestedPart.empty() || requestedPart == ".")
                     {
+                        continue;
+                    }
+
+                    if (requestedPart == "..")
+                    {
+                        currentPath = currentPath.parent_path();
                         continue;
                     }
 
