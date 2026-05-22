@@ -1451,7 +1451,6 @@ float4 main(PixelInput input) : SV_Target
                                 auto &shader = shaderDrawCall.shader;
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
                                 {
-                                    resources->startResourceBlock();
                                     auto passMode = pass->prepare();
                                     if (passMode != Engine::Shader::Pass::Mode::None)
                                     {
@@ -1464,7 +1463,6 @@ float4 main(PixelInput input) : SV_Target
                                             ++forwardPassCount;
                                             for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                             {
-                                                resources->startResourceBlock();
                                                 // Some paths can clear vertex-stage state between draws.
                                                 // Rebind visual every draw so the vertex program is always restored.
                                                 resources->setVisual(videoContext, drawCall->plugin);
@@ -1590,7 +1588,6 @@ float4 main(PixelInput input) : SV_Target
                             }
                             for (auto pass = filter->begin(videoContext, currentBuffer, targetBuffer); pass; pass = pass->next())
                             {
-                                resources->startResourceBlock();
                                 auto passMode = pass->prepare();
                                 if (passMode != Engine::Filter::Pass::Mode::None)
                                 {
@@ -1670,7 +1667,6 @@ float4 main(PixelInput input) : SV_Target
 
                 videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
-                resources->startResourceBlock();
                 resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
                 videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
                 videoContext->pixelPipeline()->setProgram(deferredPixelProgram);

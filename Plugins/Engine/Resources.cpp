@@ -748,12 +748,8 @@ namespace Gek
             tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             tbb::concurrent_unordered_map<MaterialHandle, std::string> materialNameMap;
             tbb::concurrent_unordered_map<VisualHandle, std::string> visualNameMap;
-            tbb::concurrent_unordered_set<MaterialHandle> permanentlyFailedMaterials;
-            tbb::concurrent_unordered_set<VisualHandle> permanentlyFailedVisualVertexPrograms;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Texture::Description> textureDescriptionMap;
             tbb::concurrent_unordered_map<ResourceHandle, Render::Buffer::Description> bufferDescriptionMap;
-            uint64_t lastMissingProgramVisualHandle = 0;
-            std::string lastMissingProgramVisualName;
 
             struct Validate
             {
@@ -775,43 +771,6 @@ namespace Gek
                 }
             };
 
-            Validate drawPrimitiveValid;
-            Validate dispatchValid;
-            uint64_t drawCallAttemptCount = 0;
-            uint64_t drawCallSubmittedCount = 0;
-            uint64_t drawCallSuppressedCount = 0;
-            uint64_t drawSuppressedMissingMaterialCount = 0;
-            uint64_t drawSuppressedMissingMaterialDataCount = 0;
-            uint64_t drawSuppressedMissingVisualCount = 0;
-            uint64_t drawSuppressedMissingProgramCount = 0;
-            uint64_t drawSuppressedMissingIndexBufferCount = 0;
-            uint64_t drawSuppressedMissingVertexBufferCount = 0;
-            uint64_t drawSuppressedInvalidRenderTargetCount = 0;
-            uint64_t drawSuppressedMissingRenderStateCount = 0;
-            uint64_t drawSuppressedMissingDepthStateCount = 0;
-            uint64_t drawSuppressedMissingBlendStateCount = 0;
-            uint64_t lastSuppressedLogCount = 0;
-            uint64_t lastMissingMaterialCount = 0;
-            uint64_t lastMissingMaterialDataCount = 0;
-            uint64_t lastMissingVisualCount = 0;
-            uint64_t lastMissingProgramCount = 0;
-            uint64_t lastMissingIndexBufferCount = 0;
-            uint64_t lastMissingVertexBufferCount = 0;
-            uint64_t lastInvalidRenderTargetCount = 0;
-            uint64_t lastMissingRenderStateCount = 0;
-            uint64_t lastMissingDepthStateCount = 0;
-            uint64_t lastMissingBlendStateCount = 0;
-            bool loggedMissingMaterial = false;
-            bool loggedMissingMaterialData = false;
-            bool loggedMissingVisual = false;
-            bool loggedMissingProgram = false;
-            bool loggedMissingIndexBuffer = false;
-            bool loggedMissingVertexBufferList = false;
-            bool loggedInvalidRenderTargetList = false;
-            bool loggedMissingRenderState = false;
-            bool loggedMissingDepthState = false;
-            bool loggedMissingBlendState = false;
-            bool loggedMissingResource = false;
             std::atomic<bool> shuttingDown = false;
 
           public:
@@ -844,13 +803,6 @@ namespace Gek
                 }
 
                 renderer = nullptr;
-            }
-
-            Validate &getValid(Render::Device::Context::Pipeline * videoPipeline)
-            {
-                assert(videoPipeline);
-
-                return (videoPipeline->getType() == Render::Device::Context::Pipeline::Type::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
             // Renderer
@@ -1496,22 +1448,10 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid)
+                auto resource = getResource(resourceHandle);
+                if (resource != nullptr)
                 {
-                    auto resource = getResource(resourceHandle);
-                    if (drawPrimitiveValid = (resource != nullptr))
-                    {
-                        videoContext->setIndexBuffer(dynamic_cast<Render::Buffer *>(resource), offset);
-                    }
-                    else if (!loggedMissingIndexBuffer)
-                    {
-                        ++drawSuppressedMissingIndexBufferCount;
-                        loggedMissingIndexBuffer = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources index buffer missing: handle={}",
-                            static_cast<uint64_t>(resourceHandle.identifier));
-                    }
+                    videoContext->setIndexBuffer(dynamic_cast<Render::Buffer *>(resource), offset);
                 }
             }
 
@@ -1520,32 +1460,9 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (!drawPrimitiveValid)
-                {
-                    return;
-                }
-
                 if (vertexBufferCache.set(resourceHandleList, dynamicCache))
                 {
                     videoContext->setVertexBufferList(vertexBufferCache.get(), firstSlot, offsetList);
-                }
-                else
-                {
-                    drawPrimitiveValid = false;
-                    ++drawSuppressedMissingVertexBufferCount;
-
-                    // Keep the draw block alive even if VB resources are missing for this call.
-                    videoContext->clearVertexBufferList(static_cast<uint32_t>(resourceHandleList.size()), firstSlot);
-
-                    if (!loggedMissingVertexBufferList)
-                    {
-                        loggedMissingVertexBufferList = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources vertex buffer list invalid: firstSlot={} count={}",
-                            firstSlot,
-                            static_cast<uint32_t>(resourceHandleList.size()));
-                    }
                 }
             }
 
@@ -1554,8 +1471,7 @@ namespace Gek
             {
                 assert(videoPipeline);
 
-                auto &valid = getValid(videoPipeline);
-                if (valid && (valid = constantBufferCache.set(resourceHandleList, dynamicCache)))
+                if (constantBufferCache.set(resourceHandleList, dynamicCache))
                 {
                     videoPipeline->setConstantBufferList(constantBufferCache.get(), firstStage);
                 }
@@ -1566,12 +1482,11 @@ namespace Gek
             {
                 assert(videoPipeline);
 
-                auto &valid = getValid(videoPipeline);
-                if (valid && (valid = resourceCache.set(resourceHandleList, dynamicCache, videoDevice->getBackBuffer())))
+                if (resourceCache.set(resourceHandleList, dynamicCache, videoDevice->getBackBuffer()))
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
-                else if (valid)
+                else
                 {
                     // Keep draw/dispatch alive while async resources stream in by binding
                     // safe fallback resources for missing handles.
@@ -1601,22 +1516,6 @@ namespace Gek
                     }
 
                     videoPipeline->setResourceList(fallbackResourceList, firstStage);
-
-                    if (hadMissingResource && !loggedMissingResource)
-                    {
-                        loggedMissingResource = true;
-                        for (uint32_t i = 0; i < static_cast<uint32_t>(resourceHandleList.size()); ++i)
-                        {
-                            const auto &h = resourceHandleList[i];
-                            if (h && !dynamicCache.getResource(h))
-                            {
-                                getContext()->log(Context::Warning,
-                                                  "Resources::setResourceList null resource at pixel slot {}: handle={} (using fallback)",
-                                                  firstStage + i,
-                                                  static_cast<uint64_t>(h.identifier));
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1625,8 +1524,7 @@ namespace Gek
             {
                 assert(videoPipeline);
 
-                auto &valid = getValid(videoPipeline);
-                if (valid && (valid = unorderedAccessCache.set(resourceHandleList, dynamicCache)))
+                if (unorderedAccessCache.set(resourceHandleList, dynamicCache))
                 {
                     videoPipeline->setUnorderedAccessList(unorderedAccessCache.get(), firstStage);
                 }
@@ -1671,76 +1569,35 @@ namespace Gek
             {
                 assert(videoContext);
 
-                ++drawCallAttemptCount;
-
-                if (drawPrimitiveValid)
-                {
-                    videoContext->drawPrimitive(vertexCount, firstVertex);
-                    ++drawCallSubmittedCount;
-                }
-                else
-                {
-                    ++drawCallSuppressedCount;
-                }
+                videoContext->drawPrimitive(vertexCount, firstVertex);
             }
 
             void drawInstancedPrimitive(Render::Device::Context * videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
             {
-                ++drawCallAttemptCount;
+                assert(videoContext);
 
-                if (drawPrimitiveValid)
-                {
-                    videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
-                    ++drawCallSubmittedCount;
-                }
-                else
-                {
-                    ++drawCallSuppressedCount;
-                }
+                videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
             }
 
             void drawIndexedPrimitive(Render::Device::Context * videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
-                ++drawCallAttemptCount;
-
-                if (drawPrimitiveValid)
-                {
-                    videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
-                    ++drawCallSubmittedCount;
-                }
-                else
-                {
-                    ++drawCallSuppressedCount;
-                }
+                videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
             }
 
             void drawInstancedIndexedPrimitive(Render::Device::Context * videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
-                ++drawCallAttemptCount;
-
-                if (drawPrimitiveValid)
-                {
-                    videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
-                    ++drawCallSubmittedCount;
-                }
-                else
-                {
-                    ++drawCallSuppressedCount;
-                }
+                videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
             }
 
             void dispatch(Render::Device::Context * videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
                 assert(videoContext);
 
-                if (dispatchValid)
-                {
-                    videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
-                }
+                videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
             }
 
             // Engine::Resources
@@ -1751,10 +1608,6 @@ namespace Gek
                 bufferDescriptionMap.clear();
                 materialNameMap.clear();
                 visualNameMap.clear();
-                permanentlyFailedMaterials.clear();
-                permanentlyFailedVisualVertexPrograms.clear();
-                lastMissingProgramVisualHandle = 0;
-                lastMissingProgramVisualName.clear();
                 loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -2142,58 +1995,15 @@ namespace Gek
                 assert(videoContext);
                 assert(pass);
 
-                if (!drawPrimitiveValid)
-                {
-                    return;
-                }
-
                 auto material = materialCache.getResource(handle);
                 if (!material)
                 {
-                    ++drawSuppressedMissingMaterialCount;
-
-                    const bool isNewFailure = permanentlyFailedMaterials.insert(handle).second;
-                    if (isNewFailure)
-                    {
-                        std::string expectedMaterialName;
-                        auto expectedMaterialSearch = materialNameMap.find(handle);
-                        if (expectedMaterialSearch != std::end(materialNameMap))
-                        {
-                            expectedMaterialName = expectedMaterialSearch->second;
-                        }
-
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources material permanently missing (first occurrence): handle={} expectedMaterial='{}' pass='{}' passHash={} — draw block suppressed for this material",
-                            static_cast<uint64_t>(handle.identifier),
-                            expectedMaterialName,
-                            pass->getName(),
-                            pass->getMaterialHash());
-                    }
-
-                    drawPrimitiveValid = false;
-
                     return;
                 }
 
                 auto data = material->getData(pass->getMaterialHash());
                 if (!data)
                 {
-                    drawPrimitiveValid = false;
-                    ++drawSuppressedMissingMaterialDataCount;
-
-                    if (!loggedMissingMaterialData)
-                    {
-                        loggedMissingMaterialData = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources material data missing: material='{}' pass='{}' passHash={} firstResourceStage={} (likely shader/material key mismatch or case mismatch in shader JSON)",
-                            material->getName(),
-                            pass->getName(),
-                            pass->getMaterialHash(),
-                            pass->getFirstResourceStage());
-                    }
-
                     return;
                 }
 
@@ -2209,52 +2019,12 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid)
+                auto visual = visualCache.getResource(handle);
+                if (visual != nullptr)
                 {
-                    auto visual = visualCache.getResource(handle);
-                    if (drawPrimitiveValid = (visual != nullptr))
+                    if (visual->hasVertexProgram())
                     {
-                        if (!visual->hasVertexProgram())
-                        {
-                            drawPrimitiveValid = false;
-                            ++drawSuppressedMissingProgramCount;
-
-                            lastMissingProgramVisualHandle = static_cast<uint64_t>(handle.identifier);
-                            auto visualNameSearch = visualNameMap.find(handle);
-                            if (visualNameSearch != std::end(visualNameMap))
-                            {
-                                lastMissingProgramVisualName = visualNameSearch->second;
-                            }
-                            else
-                            {
-                                lastMissingProgramVisualName = std::string(visual->getName());
-                            }
-
-                            const bool isNewFailure = permanentlyFailedVisualVertexPrograms.insert(handle).second;
-                            if (isNewFailure)
-                            {
-                                getContext()->log(
-                                    Context::Warning,
-                                    "Resources visual missing vertex program (first occurrence): visual='{}' handle={} (draw block suppressed)",
-                                    visual->getName(),
-                                    static_cast<uint64_t>(handle.identifier));
-                            }
-                            return;
-                        }
-
                         visual->enable(videoContext);
-                    }
-                    else
-                    {
-                        ++drawSuppressedMissingVisualCount;
-                        if (!loggedMissingVisual)
-                        {
-                            loggedMissingVisual = true;
-                            getContext()->log(
-                                Context::Warning,
-                                "Resources visual missing: handle={}",
-                                static_cast<uint64_t>(handle.identifier));
-                        }
                     }
                 }
             }
@@ -2263,25 +2033,10 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid)
+                auto renderState = renderStateCache.getResource(renderStateHandle);
+                if (renderState != nullptr)
                 {
-                    auto renderState = renderStateCache.getResource(renderStateHandle);
-                    if (drawPrimitiveValid = (renderState != nullptr))
-                    {
-                        videoContext->setRenderState(renderState);
-                    }
-                    else
-                    {
-                        ++drawSuppressedMissingRenderStateCount;
-                        if (!loggedMissingRenderState)
-                        {
-                            loggedMissingRenderState = true;
-                            getContext()->log(
-                                Context::Warning,
-                                "Resources render state missing: handle={}",
-                                static_cast<uint64_t>(renderStateHandle.identifier));
-                        }
-                    }
+                    videoContext->setRenderState(renderState);
                 }
             }
 
@@ -2289,25 +2044,10 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid)
+                auto depthState = depthStateCache.getResource(depthStateHandle);
+                if (depthState != nullptr)
                 {
-                    auto depthState = depthStateCache.getResource(depthStateHandle);
-                    if (drawPrimitiveValid = (depthState != nullptr))
-                    {
-                        videoContext->setDepthState(depthState, stencilReference);
-                    }
-                    else
-                    {
-                        ++drawSuppressedMissingDepthStateCount;
-                        if (!loggedMissingDepthState)
-                        {
-                            loggedMissingDepthState = true;
-                            getContext()->log(
-                                Context::Warning,
-                                "Resources depth state missing: handle={}",
-                                static_cast<uint64_t>(depthStateHandle.identifier));
-                        }
-                    }
+                    videoContext->setDepthState(depthState, stencilReference);
                 }
             }
 
@@ -2315,25 +2055,10 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid)
+                auto blendState = blendStateCache.getResource(blendStateHandle);
+                if (blendState != nullptr)
                 {
-                    auto blendState = blendStateCache.getResource(blendStateHandle);
-                    if (drawPrimitiveValid = (blendState != nullptr))
-                    {
-                        videoContext->setBlendState(blendState, blendFactor, sampleMask);
-                    }
-                    else
-                    {
-                        ++drawSuppressedMissingBlendStateCount;
-                        if (!loggedMissingBlendState)
-                        {
-                            loggedMissingBlendState = true;
-                            getContext()->log(
-                                Context::Warning,
-                                "Resources blend state missing: handle={}",
-                                static_cast<uint64_t>(blendStateHandle.identifier));
-                        }
-                    }
+                    videoContext->setBlendState(blendState, blendFactor, sampleMask);
                 }
             }
 
@@ -2341,24 +2066,10 @@ namespace Gek
             {
                 assert(videoPipeline);
 
-                auto &valid = getValid(videoPipeline);
-                if (valid)
+                auto program = programCache.getResource(programHandle);
+                if (program != nullptr)
                 {
-                    auto program = programCache.getResource(programHandle);
-                    if (valid && (valid = (program != nullptr)))
-                    {
-                        videoPipeline->setProgram(program);
-                    }
-                    else if (!loggedMissingProgram)
-                    {
-                        ++drawSuppressedMissingProgramCount;
-                        loggedMissingProgram = true;
-                        getContext()->log(
-                            Context::Warning,
-                            "Resources program missing: pipelineType={} handle={}",
-                            static_cast<uint32_t>(videoPipeline->getType()),
-                            static_cast<uint64_t>(programHandle.identifier));
-                    }
+                    videoPipeline->setProgram(program);
                 }
             }
 
@@ -2408,15 +2119,13 @@ namespace Gek
                     if (!renderTarget)
                     {
                         failedHandleIdentifier = renderTargetHandle.identifier;
-                        drawPrimitiveValid = false;
-                        ++drawSuppressedInvalidRenderTargetCount;
                         break;
                     }
 
                     resolvedRenderTargets.push_back(renderTarget);
                 }
 
-                if (drawPrimitiveValid && !resolvedRenderTargets.empty())
+                if (!resolvedRenderTargets.empty())
                 {
                     const uint32_t renderTargetCount = static_cast<uint32_t>(resolvedRenderTargets.size());
                     viewPortCache.resize(renderTargetCount);
@@ -2428,15 +2137,6 @@ namespace Gek
                     videoContext->setRenderTargetList(resolvedRenderTargets, (depthBuffer ? getResource(*depthBuffer) : nullptr));
                     videoContext->setViewportList(viewPortCache);
                 }
-                else if (!drawPrimitiveValid && !loggedInvalidRenderTargetList)
-                {
-                    loggedInvalidRenderTargetList = true;
-                    getContext()->log(
-                        Context::Warning,
-                        "Resources render target list invalid: count={} failedHandle={}",
-                        static_cast<uint32_t>(renderTargetHandleList.size()),
-                        failedHandleIdentifier);
-                }
             }
 
             void clearRenderTargetList(Render::Device::Context * videoContext, int32_t count, bool depthBuffer)
@@ -2444,24 +2144,6 @@ namespace Gek
                 assert(videoContext);
 
                 videoContext->clearRenderTargetList(count, depthBuffer);
-            }
-
-            void startResourceBlock(void)
-            {
-                drawPrimitiveValid = true;
-                dispatchValid = true;
-                // Re-enable one-shot warnings every ~300 frames so they fire again
-                // after resources finish async loading (and the problem persists).
-                static uint64_t resourceBlockCounter = 0;
-                if ((++resourceBlockCounter % 300) == 0)
-                {
-                    loggedMissingResource = false;
-                    loggedMissingIndexBuffer = false;
-                    loggedMissingVertexBufferList = false;
-                    loggedMissingRenderState = false;
-                    loggedMissingDepthState = false;
-                    loggedMissingBlendState = false;
-                }
             }
         };
 

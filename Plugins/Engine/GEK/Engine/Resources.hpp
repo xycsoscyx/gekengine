@@ -66,8 +66,6 @@ namespace Gek
             virtual void setRenderTargetList(Render::Device::Context * videoContext, std::vector<ResourceHandle> const &renderTargetHandleList, ResourceHandle const *depthBuffer) = 0;
 
             virtual void clearRenderTargetList(Render::Device::Context * videoContext, int32_t count, bool depthBuffer) = 0;
-
-            virtual void startResourceBlock(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

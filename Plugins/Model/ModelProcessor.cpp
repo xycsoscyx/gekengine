@@ -583,7 +583,6 @@ namespace Gek
         {
             getContext()->log(Context::Info, "Queueing group for load: {}", name);
 
-            co_await loadPool.schedule();
             if (shuttingDown || !group)
             {
                 co_return;
@@ -727,6 +726,11 @@ namespace Gek
 
             group->boundingBox = loadedGroup.boundingBox;
             group->modelList = std::move(loadedGroup.modelList);
+
+            // Wait for the queued mesh/material load tasks to finish before exposing the group
+            // as ready. This prevents draw submission from racing ahead of material creation.
+            loadPool.join();
+
             group->ready.store(true, std::memory_order_release);
 
             getContext()->log(Context::Info, "Group {} successfully queued", name);
