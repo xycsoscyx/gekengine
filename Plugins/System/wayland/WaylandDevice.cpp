@@ -704,10 +704,8 @@ namespace Gek
                     device->onSizeChanged(device->isMinimized);
                 }
 
-                if (activated)
-                {
-                    device->onActivate(true);
-                }
+                // Activation should follow compositor toplevel state instead of transient input focus.
+                device->onActivate(activated);
 
                 device->getContext()->log(Context::Debug,
                                           "Wayland xdg_toplevel state: activated={} minimized={} size={}x{}",
@@ -846,7 +844,6 @@ namespace Gek
                 device->cursorPosition.x = wl_fixed_to_int(x);
                 device->cursorPosition.y = wl_fixed_to_int(y);
                 device->getContext()->log(Context::Debug, "Wayland pointer enter: position={}x{}", device->cursorPosition.x, device->cursorPosition.y);
-                device->onActivate(true);
                 device->onMousePosition(device->cursorPosition.x, device->cursorPosition.y);
             }
 
@@ -981,7 +978,9 @@ namespace Gek
 
                 auto *device = reinterpret_cast<Device *>(data);
                 device->getContext()->log(Context::Debug, "Wayland keyboard enter");
+#if !GEK_WAYLAND_HAS_XDG_SHELL
                 device->onActivate(true);
+#endif
             }
 
             static void keyboardLeave(void *data, wl_keyboard *keyboard, uint32_t serial, wl_surface *surface)
@@ -992,7 +991,9 @@ namespace Gek
 
                 auto *device = reinterpret_cast<Device *>(data);
                 device->getContext()->log(Context::Debug, "Wayland keyboard leave");
+#if !GEK_WAYLAND_HAS_XDG_SHELL
                 device->onActivate(false);
+#endif
             }
 
             static void keyboardKey(void *data, wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
