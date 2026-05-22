@@ -2788,6 +2788,7 @@ namespace Gek
             };
 
             std::map<PipelineKey, VkPipeline> graphicsPipelineCache;
+            std::set<PipelineKey> failedGraphicsPipelineKeys;
             std::map<VkShaderModule, VkPipeline> computePipelineCache;
             std::map<FramebufferKey, VkFramebuffer> offscreenFramebufferCache;
 
@@ -3833,6 +3834,7 @@ namespace Gek
                 }
 
                 graphicsPipelineCache.clear();
+                failedGraphicsPipelineKeys.clear();
                 for (auto pipelinePair : computePipelineCache)
                 {
                     if (pipelinePair.second != VK_NULL_HANDLE)
@@ -4257,6 +4259,11 @@ namespace Gek
                     return pipelineSearch->second;
                 }
 
+                if (failedGraphicsPipelineKeys.contains(key))
+                {
+                    return VK_NULL_HANDLE;
+                }
+
                 if (key.vertexModule == VK_NULL_HANDLE || key.pixelModule == VK_NULL_HANDLE)
                 {
                     return VK_NULL_HANDLE;
@@ -4470,9 +4477,31 @@ namespace Gek
                 VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                 if (pipelineResult != VK_SUCCESS)
                 {
+                    failedGraphicsPipelineKeys.insert(key);
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
+                        static_cast<int32_t>(pipelineResult),
+                        vertexInfo.name,
+                        pixelInfo.name,
+                        vertexEntryName,
+                        pixelEntryName,
+                        reinterpret_cast<uint64_t>(activeRenderPass),
+                        key.depthEnabled ? 1 : 0,
+                        key.depthWrite ? 1 : 0,
+                        key.blendEnabled ? 1 : 0,
+                        static_cast<uint32_t>(attributeDescriptions.size()),
+                        static_cast<uint32_t>(bindingDescriptions.size()),
+                        colorAttachmentCount,
+                        static_cast<uint32_t>(key.primitiveType),
+                        static_cast<uint32_t>(key.cullMode),
+                        static_cast<uint32_t>(key.depthCompareFunction),
+                        command.hasOffscreenTarget ? 1 : 0,
+                        command.offscreenTargetCount);
                     return VK_NULL_HANDLE;
                 }
 
+                failedGraphicsPipelineKeys.erase(key);
                 graphicsPipelineCache[key] = pipeline;
                 return pipeline;
             }
