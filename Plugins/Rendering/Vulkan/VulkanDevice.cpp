@@ -2842,6 +2842,27 @@ namespace Gek
             bool frameHasLastDescriptor = false;
             VkDescriptorSet frameLastDescriptorSet = VK_NULL_HANDLE;
 
+            struct FrameDebugStats
+            {
+                uint32_t totalCommands = 0;
+                uint32_t drawCommands = 0;
+                uint32_t drawCallsIssued = 0;
+                uint32_t computeDispatches = 0;
+                uint32_t clearCommands = 0;
+                uint32_t copyCommands = 0;
+                uint32_t mipCommands = 0;
+                uint32_t droppedEnsureFrame = 0;
+                uint32_t droppedInvalidTargets = 0;
+                uint32_t droppedRenderPass = 0;
+                uint32_t droppedFramebuffer = 0;
+                uint32_t droppedPipeline = 0;
+                uint32_t droppedScissor = 0;
+                uint32_t droppedDescriptorAlloc = 0;
+            };
+
+            FrameDebugStats frameDebugStats{};
+            uint64_t frameDebugSerial = 0;
+
             Render::BufferVersioningPolicy constantBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             Render::BufferVersioningPolicy vertexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             Render::BufferVersioningPolicy indexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
@@ -7660,6 +7681,38 @@ namespace Gek
                     recreateSwapChain();
                     return;
                 }
+
+                const bool drawWorkMissing = (frameDebugStats.drawCommands > 0) && (frameDebugStats.drawCallsIssued == 0);
+                const bool hasDrops =
+                    (frameDebugStats.droppedEnsureFrame > 0) ||
+                    (frameDebugStats.droppedInvalidTargets > 0) ||
+                    (frameDebugStats.droppedRenderPass > 0) ||
+                    (frameDebugStats.droppedFramebuffer > 0) ||
+                    (frameDebugStats.droppedPipeline > 0) ||
+                    (frameDebugStats.droppedScissor > 0) ||
+                    (frameDebugStats.droppedDescriptorAlloc > 0);
+
+                if (drawWorkMissing || hasDrops)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan frame stats [{}]: total={} drawCommands={} drawCalls={} compute={} clears={} copies={} mips={} drops(ensure={} targets={} renderPass={} framebuffer={} pipeline={} scissor={} descriptors={})",
+                        frameDebugSerial,
+                        frameDebugStats.totalCommands,
+                        frameDebugStats.drawCommands,
+                        frameDebugStats.drawCallsIssued,
+                        frameDebugStats.computeDispatches,
+                        frameDebugStats.clearCommands,
+                        frameDebugStats.copyCommands,
+                        frameDebugStats.mipCommands,
+                        frameDebugStats.droppedEnsureFrame,
+                        frameDebugStats.droppedInvalidTargets,
+                        frameDebugStats.droppedRenderPass,
+                        frameDebugStats.droppedFramebuffer,
+                        frameDebugStats.droppedPipeline,
+                        frameDebugStats.droppedScissor,
+                        frameDebugStats.droppedDescriptorAlloc);
+                }
             }
         };
         void Device::enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture)
@@ -8142,6 +8195,8 @@ namespace Gek
                                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
             frameRecordingActive = true;
+            frameDebugStats = {};
+            ++frameDebugSerial;
             return true;
         }
 
@@ -8168,11 +8223,15 @@ namespace Gek
         {
             if (!ensureFrameRecording())
             {
+                ++frameDebugStats.droppedEnsureFrame;
                 return;
             }
 
+            ++frameDebugStats.totalCommands;
+
             if (drawCommand.commandType == DrawCommand::Type::ClearRenderTarget)
             {
+                ++frameDebugStats.clearCommands;
                 auto *targetTexture = drawCommand.clearRenderTarget;
                 if (!targetTexture || targetTexture->image == VK_NULL_HANDLE)
                 {
@@ -8251,6 +8310,7 @@ namespace Gek
 
             if (drawCommand.commandType == DrawCommand::Type::ClearDepthStencil)
             {
+                ++frameDebugStats.clearCommands;
                 auto *depthTexture = drawCommand.clearDepthTarget;
                 if (!depthTexture || depthTexture->image == VK_NULL_HANDLE)
                 {
@@ -8368,6 +8428,7 @@ namespace Gek
 
             if (drawCommand.commandType == DrawCommand::Type::CopyResource)
             {
+                ++frameDebugStats.copyCommands;
                 bool usedNamedSourceForCopy = false;
                 bool usedNamedDestinationForCopy = false;
                 auto *destinationBuffer = getObject<Buffer>(drawCommand.copyDestination);
@@ -8764,6 +8825,7 @@ namespace Gek
 
             if (drawCommand.commandType == DrawCommand::Type::GenerateMipMaps)
             {
+                ++frameDebugStats.mipCommands;
                 auto *targetTexture = getObject<TargetTexture>(drawCommand.mipmapTexture);
                 auto *viewTexture = getObject<ViewTexture>(drawCommand.mipmapTexture);
                 VkImage image = VK_NULL_HANDLE;
@@ -9017,6 +9079,7 @@ namespace Gek
 
             if (drawCommand.commandType == DrawCommand::Type::ComputeDispatch)
             {
+                ++frameDebugStats.computeDispatches;
                 if (!drawCommand.computeProgram)
                 {
                     return;
@@ -9302,6 +9365,7 @@ namespace Gek
             }
 
             // Graphics draw command
+            ++frameDebugStats.drawCommands;
             const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
             if (!drawToBackBuffer && drawCommand.renderTarget)
             {
@@ -9354,6 +9418,7 @@ namespace Gek
             {
                 if (offscreenTargetCount == 0)
                 {
+                    ++frameDebugStats.droppedInvalidTargets;
                     return;
                 }
 
@@ -9373,6 +9438,7 @@ namespace Gek
 
                 if (!validTargets)
                 {
+                    ++frameDebugStats.droppedInvalidTargets;
                     return;
                 }
 
@@ -9411,6 +9477,7 @@ namespace Gek
                 activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats, needsDepth ? offscreenDepthFormat : VK_FORMAT_UNDEFINED);
                 if (activeRenderPass == VK_NULL_HANDLE)
                 {
+                    ++frameDebugStats.droppedRenderPass;
                     return;
                 }
 
@@ -9575,6 +9642,7 @@ namespace Gek
                 activeFramebuffer = getOrCreateOffscreenFramebuffer(activeRenderPass, framebufferAttachmentViews, activeExtent);
                 if (activeFramebuffer == VK_NULL_HANDLE)
                 {
+                    ++frameDebugStats.droppedFramebuffer;
                     return;
                 }
             }
@@ -9694,6 +9762,7 @@ namespace Gek
             VkPipeline pipeline = getOrCreateGraphicsPipeline(*pipelineCommand, activeRenderPass);
             if (pipeline == VK_NULL_HANDLE)
             {
+                ++frameDebugStats.droppedPipeline;
                 endRenderPassForCurrentTarget();
                 return;
             }
@@ -9734,6 +9803,7 @@ namespace Gek
                 int32_t bottom = std::clamp(scissor.offset.y + static_cast<int32_t>(scissor.extent.height), 0, maxHeight);
                 if (right <= left || bottom <= top)
                 {
+                    ++frameDebugStats.droppedScissor;
                     endRenderPassForCurrentTarget();
                     return;
                 }
@@ -9925,6 +9995,7 @@ namespace Gek
                     }
                     else
                     {
+                        ++frameDebugStats.droppedDescriptorAlloc;
                         endRenderPassForCurrentTarget();
                         return;
                     }
@@ -9934,10 +10005,12 @@ namespace Gek
             if (drawCommand.indexed)
             {
                 vkCmdDrawIndexed(commandBuffer, drawCommand.indexCount, std::max(drawCommand.instanceCount, 1u), 0, drawCommand.firstVertex, drawCommand.firstInstance);
+                ++frameDebugStats.drawCallsIssued;
             }
             else if (drawCommand.vertexCount > 0)
             {
                 vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
+                ++frameDebugStats.drawCallsIssued;
             }
 
             endRenderPassForCurrentTarget();
