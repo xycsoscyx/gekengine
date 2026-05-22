@@ -1241,8 +1241,7 @@ namespace Gek
                 auto hash = GetHash(visualName);
                 auto loggedVisualName = std::string(visualName);
                 auto resource = visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
-                                             { return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName); })
-                    ;
+                                                      { return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName); });
 
                 if (resource.first)
                 {
@@ -1264,8 +1263,7 @@ namespace Gek
                                                             {
                                                                 context->log(Context::Error, "Material creation failed for '{}' (handle={}): createClass returned null — check prior Engine::Material error log", materialName, static_cast<uint64_t>(handle.identifier));
                                                             }
-                                                            return result;
-                                                        });
+                                                            return result; });
                 if (resource.first)
                 {
                     materialNameMap.insert(std::make_pair(resource.second, std::move(loggedMaterialName)));
