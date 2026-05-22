@@ -730,6 +730,9 @@ namespace Gek
             uint64_t drawSuppressedMissingIndexBufferCount = 0;
             uint64_t drawSuppressedMissingVertexBufferCount = 0;
             uint64_t drawSuppressedInvalidRenderTargetCount = 0;
+            uint64_t drawSuppressedMissingRenderStateCount = 0;
+            uint64_t drawSuppressedMissingDepthStateCount = 0;
+            uint64_t drawSuppressedMissingBlendStateCount = 0;
             uint64_t lastSuppressedLogCount = 0;
             uint64_t lastMissingMaterialCount = 0;
             uint64_t lastMissingMaterialDataCount = 0;
@@ -738,6 +741,9 @@ namespace Gek
             uint64_t lastMissingIndexBufferCount = 0;
             uint64_t lastMissingVertexBufferCount = 0;
             uint64_t lastInvalidRenderTargetCount = 0;
+            uint64_t lastMissingRenderStateCount = 0;
+            uint64_t lastMissingDepthStateCount = 0;
+            uint64_t lastMissingBlendStateCount = 0;
             bool loggedMissingMaterial = false;
             bool loggedMissingMaterialData = false;
             bool loggedMissingVisual = false;
@@ -745,6 +751,9 @@ namespace Gek
             bool loggedMissingIndexBuffer = false;
             bool loggedMissingVertexBufferList = false;
             bool loggedInvalidRenderTargetList = false;
+            bool loggedMissingRenderState = false;
+            bool loggedMissingDepthState = false;
+            bool loggedMissingBlendState = false;
             bool loggedMissingResource = false;
             std::atomic<bool> shuttingDown = false;
 
@@ -801,6 +810,9 @@ namespace Gek
                 getContext()->setRuntimeMetric("resources.suppressedMissingIndexBuffer", static_cast<double>(drawSuppressedMissingIndexBufferCount));
                 getContext()->setRuntimeMetric("resources.suppressedMissingVertexBuffer", static_cast<double>(drawSuppressedMissingVertexBufferCount));
                 getContext()->setRuntimeMetric("resources.suppressedInvalidRenderTarget", static_cast<double>(drawSuppressedInvalidRenderTargetCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingRenderState", static_cast<double>(drawSuppressedMissingRenderStateCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingDepthState", static_cast<double>(drawSuppressedMissingDepthStateCount));
+                getContext()->setRuntimeMetric("resources.suppressedMissingBlendState", static_cast<double>(drawSuppressedMissingBlendStateCount));
 
                 static uint64_t resourceSummaryFrame = 0;
                 ++resourceSummaryFrame;
@@ -814,7 +826,7 @@ namespace Gek
                 {
                     getContext()->log(
                         Context::Debug,
-                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingProgramLastVisual='{}' missingProgramLastHandle={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={}",
+                        "Resources draw summary: attempts={} submitted={} suppressed={} missingMaterial={} missingMaterialData={} missingVisual={} missingProgram={} missingProgramLastVisual='{}' missingProgramLastHandle={} missingIndexBuffer={} missingVertexBuffer={} invalidRenderTarget={} missingRenderState={} missingDepthState={} missingBlendState={}",
                         drawCallAttemptCount,
                         drawCallSubmittedCount,
                         drawCallSuppressedCount,
@@ -826,7 +838,10 @@ namespace Gek
                         lastMissingProgramVisualHandle,
                         drawSuppressedMissingIndexBufferCount,
                         drawSuppressedMissingVertexBufferCount,
-                        drawSuppressedInvalidRenderTargetCount);
+                        drawSuppressedInvalidRenderTargetCount,
+                        drawSuppressedMissingRenderStateCount,
+                        drawSuppressedMissingDepthStateCount,
+                        drawSuppressedMissingBlendStateCount);
 
                     if (suppressionIncreased)
                     {
@@ -838,6 +853,9 @@ namespace Gek
                         const uint64_t missingIndexBufferDelta = (drawSuppressedMissingIndexBufferCount - lastMissingIndexBufferCount);
                         const uint64_t missingVertexBufferDelta = (drawSuppressedMissingVertexBufferCount - lastMissingVertexBufferCount);
                         const uint64_t invalidRenderTargetDelta = (drawSuppressedInvalidRenderTargetCount - lastInvalidRenderTargetCount);
+                        const uint64_t missingRenderStateDelta = (drawSuppressedMissingRenderStateCount - lastMissingRenderStateCount);
+                        const uint64_t missingDepthStateDelta = (drawSuppressedMissingDepthStateCount - lastMissingDepthStateCount);
+                        const uint64_t missingBlendStateDelta = (drawSuppressedMissingBlendStateCount - lastMissingBlendStateCount);
                         const uint64_t classifiedDelta =
                             missingMaterialDelta +
                             missingMaterialDataDelta +
@@ -845,12 +863,15 @@ namespace Gek
                             missingProgramDelta +
                             missingIndexBufferDelta +
                             missingVertexBufferDelta +
-                            invalidRenderTargetDelta;
+                            invalidRenderTargetDelta +
+                            missingRenderStateDelta +
+                            missingDepthStateDelta +
+                            missingBlendStateDelta;
                         const uint64_t unattributedDelta = (suppressedDelta > classifiedDelta) ? (suppressedDelta - classifiedDelta) : 0;
 
                         getContext()->log(
                             Context::Debug,
-                            "Resources suppression delta: suppressedDelta={} missingMaterialDelta={} missingMaterialDataDelta={} missingVisualDelta={} missingProgramDelta={} missingIndexBufferDelta={} missingVertexBufferDelta={} invalidRenderTargetDelta={} unattributedDelta={}",
+                            "Resources suppression delta: suppressedDelta={} missingMaterialDelta={} missingMaterialDataDelta={} missingVisualDelta={} missingProgramDelta={} missingIndexBufferDelta={} missingVertexBufferDelta={} invalidRenderTargetDelta={} missingRenderStateDelta={} missingDepthStateDelta={} missingBlendStateDelta={} unattributedDelta={}",
                             suppressedDelta,
                             missingMaterialDelta,
                             missingMaterialDataDelta,
@@ -859,6 +880,9 @@ namespace Gek
                             missingIndexBufferDelta,
                             missingVertexBufferDelta,
                             invalidRenderTargetDelta,
+                            missingRenderStateDelta,
+                            missingDepthStateDelta,
+                            missingBlendStateDelta,
                             unattributedDelta);
 
                         lastMissingMaterialDataCount = drawSuppressedMissingMaterialDataCount;
@@ -867,6 +891,9 @@ namespace Gek
                         lastMissingIndexBufferCount = drawSuppressedMissingIndexBufferCount;
                         lastMissingVertexBufferCount = drawSuppressedMissingVertexBufferCount;
                         lastInvalidRenderTargetCount = drawSuppressedInvalidRenderTargetCount;
+                        lastMissingRenderStateCount = drawSuppressedMissingRenderStateCount;
+                        lastMissingDepthStateCount = drawSuppressedMissingDepthStateCount;
+                        lastMissingBlendStateCount = drawSuppressedMissingBlendStateCount;
                     }
 
                     lastSuppressedLogCount = drawCallSuppressedCount;
@@ -2300,6 +2327,18 @@ namespace Gek
                     {
                         videoContext->setRenderState(renderState);
                     }
+                    else
+                    {
+                        ++drawSuppressedMissingRenderStateCount;
+                        if (!loggedMissingRenderState)
+                        {
+                            loggedMissingRenderState = true;
+                            getContext()->log(
+                                Context::Warning,
+                                "Resources render state missing: handle={}",
+                                static_cast<uint64_t>(renderStateHandle.identifier));
+                        }
+                    }
                 }
             }
 
@@ -2314,6 +2353,18 @@ namespace Gek
                     {
                         videoContext->setDepthState(depthState, stencilReference);
                     }
+                    else
+                    {
+                        ++drawSuppressedMissingDepthStateCount;
+                        if (!loggedMissingDepthState)
+                        {
+                            loggedMissingDepthState = true;
+                            getContext()->log(
+                                Context::Warning,
+                                "Resources depth state missing: handle={}",
+                                static_cast<uint64_t>(depthStateHandle.identifier));
+                        }
+                    }
                 }
             }
 
@@ -2327,6 +2378,18 @@ namespace Gek
                     if (drawPrimitiveValid = (blendState != nullptr))
                     {
                         videoContext->setBlendState(blendState, blendFactor, sampleMask);
+                    }
+                    else
+                    {
+                        ++drawSuppressedMissingBlendStateCount;
+                        if (!loggedMissingBlendState)
+                        {
+                            loggedMissingBlendState = true;
+                            getContext()->log(
+                                Context::Warning,
+                                "Resources blend state missing: handle={}",
+                                static_cast<uint64_t>(blendStateHandle.identifier));
+                        }
                     }
                 }
             }
@@ -2452,6 +2515,9 @@ namespace Gek
                     loggedMissingResource = false;
                     loggedMissingIndexBuffer = false;
                     loggedMissingVertexBufferList = false;
+                    loggedMissingRenderState = false;
+                    loggedMissingDepthState = false;
+                    loggedMissingBlendState = false;
                 }
             }
         };
