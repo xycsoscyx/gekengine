@@ -487,18 +487,24 @@ namespace Gek
                 lightBufferList = { lightConstantBuffer.get() };
 
                 static constexpr std::string_view vertexProgram =
-                    R"(struct Output
+                                    R"(struct Input
+                {
+                    float2 position : POSITION;
+                    float2 texCoord : TEXCOORD0;
+                };
+
+                struct Output
 {
     float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
 };
 
 [shader("vertex")]
-Output mainVertexProgram(in uint vertexID : SV_VertexID)
+                Output mainVertexProgram(in Input input)
 {
     Output output;
-    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
-    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
+                    output.texCoord = input.texCoord;
+                    output.screen = float4(input.position, 0.0f, 1.0f);
     return output;
 }
 )";
@@ -511,21 +517,18 @@ Output mainVertexProgram(in uint vertexID : SV_VertexID)
 };
 
 Texture2D<float4> inputBuffer : register(t0);
+SamplerState inputSampler : register(s0);
 
 [shader("fragment")]
 float4 mainPixelProgram(in Input input) : SV_TARGET0
 {
-    uint width, height, mipMapCount;
-    inputBuffer.GetDimensions(0, width, height, mipMapCount);
-	const int2 maxCoord = int2(int(max(width, 1u)) - 1, int(max(height, 1u)) - 1);
-	const uint2 screenCoord = uint2(clamp(int2(input.texCoord * float2(width, height)), int2(0, 0), maxCoord));
-	return inputBuffer[screenCoord];
+	return inputBuffer.SampleLevel(inputSampler, input.texCoord, 0.0f);
 }
 )";
 
-                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v11", "mainVertexProgram", vertexProgram);
+                deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v13", "mainVertexProgram", vertexProgram);
 
-                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v11", "mainPixelProgram", pixelProgram);
+                deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v13", "mainPixelProgram", pixelProgram);
 
                 std::vector<Render::InputElement> deferredElementList;
                 Render::InputElement deferredElement;
