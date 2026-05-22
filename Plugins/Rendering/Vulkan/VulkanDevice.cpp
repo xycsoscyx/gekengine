@@ -9692,22 +9692,6 @@ namespace Gek
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            if (drawToBackBuffer)
-            {
-                VkClearAttachment clearAttachment{};
-                clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                clearAttachment.colorAttachment = 0;
-                clearAttachment.clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-
-                VkClearRect clearRect{};
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = activeExtent;
-                clearRect.baseArrayLayer = 0;
-                clearRect.layerCount = 1;
-
-                vkCmdClearAttachments(commandBuffer, 1, &clearAttachment, 1, &clearRect);
-            }
-
             auto endRenderPassForCurrentTarget = [&]()
             {
                 vkCmdEndRenderPass(commandBuffer);
