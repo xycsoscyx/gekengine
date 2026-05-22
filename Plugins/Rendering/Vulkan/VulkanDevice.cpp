@@ -2720,11 +2720,11 @@ namespace Gek
             VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
             static constexpr uint32_t PixelResourceSlotCount = 16;
             static constexpr uint32_t DescriptorSampledImageBase = 0;
-            static constexpr uint32_t DescriptorStorageBufferBase = 64;
-            static constexpr uint32_t DescriptorVertexUniformBufferBase = 128;
-            static constexpr uint32_t DescriptorPixelUniformBufferBase = 144;
-            static constexpr uint32_t DescriptorSamplerBase = 192;
-            static constexpr uint32_t DescriptorStorageImageBase = 224;
+            static constexpr uint32_t DescriptorStorageBufferBase = DescriptorSampledImageBase + PixelResourceSlotCount;
+            static constexpr uint32_t DescriptorVertexUniformBufferBase = DescriptorStorageBufferBase + PixelResourceSlotCount;
+            static constexpr uint32_t DescriptorPixelUniformBufferBase = DescriptorVertexUniformBufferBase + PixelResourceSlotCount;
+            static constexpr uint32_t DescriptorSamplerBase = DescriptorPixelUniformBufferBase + PixelResourceSlotCount;
+            static constexpr uint32_t DescriptorStorageImageBase = DescriptorSamplerBase + PixelResourceSlotCount;
 
             struct DrawCommand
             {
@@ -4809,19 +4809,49 @@ namespace Gek
                     }
 
                     // Log vertex attribute VkFormat values for diagnosing unsupported vertex formats
+                    // Log binding strides to diagnose stride/offset mismatches
+                    for (uint32_t bi = 0; bi < bindingDescriptions.size(); ++bi)
+                    {
+                        const auto &bind = bindingDescriptions[bi];
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan binding[{}]: binding={} stride={} inputRate={}",
+                            bi,
+                            bind.binding,
+                            bind.stride,
+                            static_cast<uint32_t>(bind.inputRate));
+                    }
+
                     for (uint32_t ai = 0; ai < attributeDescriptions.size(); ++ai)
                     {
                         const auto &attr = attributeDescriptions[ai];
                         VkFormatProperties fmtProps{};
                         vkGetPhysicalDeviceFormatProperties(physicalDevice, attr.format, &fmtProps);
                         const bool supportsVertexBuffer = (fmtProps.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0;
+                        uint32_t bindingStride = 0;
+                        for (const auto &bind : bindingDescriptions)
+                        {
+                            if (bind.binding == attr.binding)
+                            {
+                                bindingStride = bind.stride;
+                                break;
+                            }
+                        }
+                        const uint32_t formatSize = (command.inputLayout && ai < command.inputLayout->elementList.size())
+                            ? GetFormatStride(command.inputLayout->elementList[ai].format)
+                            : 0u;
+                        const bool offsetInBounds = (bindingStride == 0) || (formatSize == 0) || ((attr.offset + formatSize) <= bindingStride);
                         getContext()->log(
                             Gek::Context::Error,
-                            "Vulkan attr[{}]: location={} binding={} vkFormat={} vertexBuffer={}",
+                            "Vulkan attr[{}]: location={} binding={} vkFormat={} offset={} size={} bindingStride={} offsetOK={} vertexBuffer={}",
                             ai,
                             attr.location,
                             attr.binding,
                             static_cast<uint32_t>(attr.format),
+                            attr.offset,
+                            formatSize,
+                            bindingStride,
+                            offsetInBounds ? 1 : 0,
                             supportsVertexBuffer ? 1 : 0);
                     }
 

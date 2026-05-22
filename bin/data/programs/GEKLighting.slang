@@ -27,6 +27,7 @@ uint getClusterOffset(const float2 screenPosition, const float surfaceDepth)
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
 
+[noinline]
 float3 getLightIrradiance(
     const float3 materialAlbedo,
     const float3 diffuseContribution,
