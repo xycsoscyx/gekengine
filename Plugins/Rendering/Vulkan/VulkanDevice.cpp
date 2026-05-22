@@ -494,6 +494,57 @@ namespace Gek
             }
         }
 
+        static const char *GetVkResultName(VkResult result)
+        {
+            switch (result)
+            {
+            case VK_SUCCESS:
+                return "VK_SUCCESS";
+            case VK_NOT_READY:
+                return "VK_NOT_READY";
+            case VK_TIMEOUT:
+                return "VK_TIMEOUT";
+            case VK_EVENT_SET:
+                return "VK_EVENT_SET";
+            case VK_EVENT_RESET:
+                return "VK_EVENT_RESET";
+            case VK_INCOMPLETE:
+                return "VK_INCOMPLETE";
+            case VK_ERROR_OUT_OF_HOST_MEMORY:
+                return "VK_ERROR_OUT_OF_HOST_MEMORY";
+            case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+                return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+            case VK_ERROR_INITIALIZATION_FAILED:
+                return "VK_ERROR_INITIALIZATION_FAILED";
+            case VK_ERROR_DEVICE_LOST:
+                return "VK_ERROR_DEVICE_LOST";
+            case VK_ERROR_MEMORY_MAP_FAILED:
+                return "VK_ERROR_MEMORY_MAP_FAILED";
+            case VK_ERROR_LAYER_NOT_PRESENT:
+                return "VK_ERROR_LAYER_NOT_PRESENT";
+            case VK_ERROR_EXTENSION_NOT_PRESENT:
+                return "VK_ERROR_EXTENSION_NOT_PRESENT";
+            case VK_ERROR_FEATURE_NOT_PRESENT:
+                return "VK_ERROR_FEATURE_NOT_PRESENT";
+            case VK_ERROR_INCOMPATIBLE_DRIVER:
+                return "VK_ERROR_INCOMPATIBLE_DRIVER";
+            case VK_ERROR_TOO_MANY_OBJECTS:
+                return "VK_ERROR_TOO_MANY_OBJECTS";
+            case VK_ERROR_FORMAT_NOT_SUPPORTED:
+                return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+            case VK_ERROR_FRAGMENTED_POOL:
+                return "VK_ERROR_FRAGMENTED_POOL";
+            case VK_ERROR_UNKNOWN:
+                return "VK_ERROR_UNKNOWN";
+            case VK_ERROR_OUT_OF_DATE_KHR:
+                return "VK_ERROR_OUT_OF_DATE_KHR";
+            case VK_SUBOPTIMAL_KHR:
+                return "VK_SUBOPTIMAL_KHR";
+            default:
+                return "VK_RESULT_UNRECOGNIZED";
+            }
+        }
+
         const std::vector<const char *> validationLayers = {
             "VK_LAYER_KHRONOS_validation",
         };
@@ -4485,8 +4536,9 @@ namespace Gek
                     failedGraphicsPipelineKeys.insert(key);
                     getContext()->log(
                         Gek::Context::Error,
-                        "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} expectsVertexInputs={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
+                        "Failed Vulkan graphics pipeline (result={} '{}') vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={} expectsVertexInputs={} colorAttachments={} topology={} cullMode={} depthCompare={} offscreen={} offscreenTargetCount={}",
                         static_cast<int32_t>(pipelineResult),
+                        GetVkResultName(pipelineResult),
                         vertexInfo.name,
                         pixelInfo.name,
                         vertexEntryName,
@@ -4504,6 +4556,71 @@ namespace Gek
                         static_cast<uint32_t>(key.depthCompareFunction),
                         command.hasOffscreenTarget ? 1 : 0,
                         command.offscreenTargetCount);
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan pipeline context: activeRenderPass={} deviceRenderPass={} pipelineLayout={} descriptorSetLayout={} swapChainFormat={} depthFormat={} validationLayer={} spirv13={} resizePending={} inputLayout={} inputElements={} inputShaderLocations={} vertexModule={} pixelModule={}",
+                        reinterpret_cast<uint64_t>(activeRenderPass),
+                        reinterpret_cast<uint64_t>(renderPass),
+                        reinterpret_cast<uint64_t>(graphicsPipelineLayout),
+                        reinterpret_cast<uint64_t>(descriptorSetLayout),
+                        static_cast<uint32_t>(swapChainImageFormat),
+                        static_cast<uint32_t>(depthFormat),
+                        enableValidationLayer ? 1 : 0,
+                        preferSpirv13Profile ? 1 : 0,
+                        swapChainRecreatePending.load() ? 1 : 0,
+                        reinterpret_cast<uint64_t>(command.inputLayout),
+                        command.inputLayout ? static_cast<uint32_t>(command.inputLayout->elementList.size()) : 0,
+                        command.inputLayout ? static_cast<uint32_t>(command.inputLayout->shaderLocationList.size()) : 0,
+                        reinterpret_cast<uint64_t>(key.vertexModule),
+                        reinterpret_cast<uint64_t>(key.pixelModule));
+
+                    if (command.inputLayout)
+                    {
+                        uint32_t semanticIndices[static_cast<uint32_t>(Render::InputElement::Semantic::Count)] = { 0 };
+                        const uint32_t inputCount = std::min<uint32_t>(static_cast<uint32_t>(command.inputLayout->elementList.size()), 16u);
+                        for (uint32_t index = 0; index < inputCount; ++index)
+                        {
+                            const auto &element = command.inputLayout->elementList[index];
+                            const uint32_t semanticValue = static_cast<uint32_t>(element.semantic);
+                            const uint32_t semanticIndex = (semanticValue < static_cast<uint32_t>(Render::InputElement::Semantic::Count))
+                                                               ? semanticIndices[semanticValue]++
+                                                               : 0;
+                            const uint32_t shaderLocation = (index < command.inputLayout->shaderLocationList.size())
+                                                                ? command.inputLayout->shaderLocationList[index]
+                                                                : index;
+                            const char *semanticName = (semanticValue < static_cast<uint32_t>(Render::InputElement::Semantic::Count))
+                                                           ? SemanticNameList[semanticValue].data()
+                                                           : "UNKNOWN";
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan input[{}]: semantic={}{} format={} source={} sourceIndex={} alignedOffset={} shaderLocation={}",
+                                index,
+                                semanticName,
+                                semanticIndex,
+                                static_cast<uint32_t>(element.format),
+                                static_cast<uint32_t>(element.source),
+                                element.sourceIndex,
+                                element.alignedByteOffset,
+                                shaderLocation);
+                        }
+                    }
+
+                    if (!vertexInfo.vertexInputSignatures.empty())
+                    {
+                        const uint32_t signatureCount = std::min<uint32_t>(static_cast<uint32_t>(vertexInfo.vertexInputSignatures.size()), 16u);
+                        for (uint32_t index = 0; index < signatureCount; ++index)
+                        {
+                            const auto &signature = vertexInfo.vertexInputSignatures[index];
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan vertex signature[{}]: semantic={}{} location={}",
+                                index,
+                                signature.semanticName,
+                                signature.semanticIndex,
+                                signature.shaderLocation);
+                        }
+                    }
                     return VK_NULL_HANDLE;
                 }
 
