@@ -1750,9 +1750,8 @@ namespace Gek
                 auto programDirectory(filePath.getParentPath());
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
-                constexpr uint32_t SHADER_CACHE_VERSION = 1;
-                const bool isVulkanDevice = (String::GetLower(renderDeviceName) == "vulkan");
-                const uint32_t shaderCacheVersion = isVulkanDevice ? 3u : SHADER_CACHE_VERSION;
+                constexpr uint32_t SHADER_CACHE_VERSION = 10;
+                const uint32_t shaderCacheVersion = SHADER_CACHE_VERSION;
                 auto hash = GetHash(renderDeviceName, name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shaders", renderDeviceName, name));
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
