@@ -4901,6 +4901,32 @@ namespace Gek
 
                 VkPipeline pipeline = VK_NULL_HANDLE;
                 VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+                if ((pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) || (pipelineResult == VK_ERROR_OUT_OF_DEVICE_MEMORY))
+                {
+                    VkGraphicsPipelineCreateInfo retryPipelineInfo = pipelineInfo;
+                    retryPipelineInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+
+                    VkResult retryResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &retryPipelineInfo, nullptr, &pipeline);
+                    if (retryResult == VK_SUCCESS)
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan graphics pipeline retry succeeded with VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT after initial result={} ('{}')",
+                            static_cast<int32_t>(pipelineResult),
+                            GetVkResultName(pipelineResult));
+                        pipelineResult = VK_SUCCESS;
+                    }
+                    else
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan graphics pipeline retry failed with result={} ('{}') after initial result={} ('{}')",
+                            static_cast<int32_t>(retryResult),
+                            GetVkResultName(retryResult),
+                            static_cast<int32_t>(pipelineResult),
+                            GetVkResultName(pipelineResult));
+                    }
+                }
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const HostMemorySnapshot hostMemorySnapshot = getHostMemorySnapshot();
