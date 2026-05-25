@@ -6885,6 +6885,15 @@ namespace Gek
                     return false;
                 }
 
+                // Program entry names are canonicalized to SPIR-V exports (often 'main')
+                // for module creation, but source recompilation needs the original source
+                // entry symbol (stored in Program::Information::name after the last ':').
+                const size_t entrySeparator = recompiledInformation.name.find_last_of(':');
+                if ((entrySeparator != std::string::npos) && ((entrySeparator + 1) < recompiledInformation.name.size()))
+                {
+                    recompiledInformation.entryFunction = recompiledInformation.name.substr(entrySeparator + 1);
+                }
+
                 const bool previousRuntimePreferSpirv12 = runtimePreferSpirv12Profile;
                 if (std::strcmp(profileName, "spirv_1_2") == 0)
                 {
