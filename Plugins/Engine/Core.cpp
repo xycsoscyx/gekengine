@@ -436,6 +436,13 @@ namespace Gek
 
                 // Use the selected render device module (class name can be mapped as needed)
                 renderDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
+                if (!renderDevice)
+                {
+                    getContext()->log(Context::Error, "Unable to create render device: Default::Device::Video");
+                    ignoredFirstCloseRequest = true;
+                    forceClose();
+                    return;
+                }
 
                 uint32_t preferredDisplayMode = 0;
                 auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
