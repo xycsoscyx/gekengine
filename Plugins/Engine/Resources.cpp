@@ -1750,7 +1750,7 @@ namespace Gek
                 auto programDirectory(filePath.getParentPath());
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
-                constexpr uint32_t SHADER_CACHE_VERSION = 10;
+                constexpr uint32_t SHADER_CACHE_VERSION = 11;
                 const uint32_t shaderCacheVersion = SHADER_CACHE_VERSION;
                 auto hash = GetHash(renderDeviceName, name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shaders", renderDeviceName, name));
@@ -1859,6 +1859,16 @@ namespace Gek
                             if (cacheReadSucceeded && !information.compiledData.empty())
                             {
                                 information.compiledData.shrink_to_fit();
+
+                                if (uncompiledPath.isFile())
+                                {
+                                    std::string cachedResolvedSource = FileSystem::Read(uncompiledPath);
+                                    if (!cachedResolvedSource.empty())
+                                    {
+                                        information.shaderData = std::move(cachedResolvedSource);
+                                    }
+                                }
+
                                 getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {}) [size={}]", compiledPath.getString(), fileVersion, fileHash, information.compiledData.size());
                             }
                             else
