@@ -65,6 +65,92 @@ namespace Gek
             uint32_t memoryLoadPercent = 0;
         };
 
+        struct VulkanMemoryHeapSnapshot
+        {
+            bool available = false;
+            bool budgetAvailable = false;
+            uint32_t heapCount = 0;
+            std::array<uint64_t, VK_MAX_MEMORY_HEAPS> heapSizeBytes = {};
+            std::array<uint64_t, VK_MAX_MEMORY_HEAPS> heapBudgetBytes = {};
+            std::array<uint64_t, VK_MAX_MEMORY_HEAPS> heapUsageBytes = {};
+            std::array<uint32_t, VK_MAX_MEMORY_HEAPS> heapFlags = {};
+        };
+
+        static bool hasDeviceExtension(VkPhysicalDevice physicalDevice, const char *extensionName)
+        {
+            if ((physicalDevice == VK_NULL_HANDLE) || (extensionName == nullptr))
+            {
+                return false;
+            }
+
+            uint32_t extensionCount = 0;
+            if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) != VK_SUCCESS)
+            {
+                return false;
+            }
+
+            std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+            if ((extensionCount > 0) && (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data()) != VK_SUCCESS))
+            {
+                return false;
+            }
+
+            for (const auto &extension : availableExtensions)
+            {
+                if (std::strcmp(extension.extensionName, extensionName) == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        static VulkanMemoryHeapSnapshot getVulkanMemoryHeapSnapshot(VkPhysicalDevice physicalDevice)
+        {
+            VulkanMemoryHeapSnapshot snapshot;
+            if (physicalDevice == VK_NULL_HANDLE)
+            {
+                return snapshot;
+            }
+
+            snapshot.available = true;
+            const bool hasMemoryBudget = hasDeviceExtension(physicalDevice, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+            if (hasMemoryBudget)
+            {
+                VkPhysicalDeviceMemoryBudgetPropertiesEXT budgetProperties{};
+                budgetProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+
+                VkPhysicalDeviceMemoryProperties2 memoryProperties{};
+                memoryProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+                memoryProperties.pNext = &budgetProperties;
+                vkGetPhysicalDeviceMemoryProperties2(physicalDevice, &memoryProperties);
+
+                snapshot.heapCount = memoryProperties.memoryProperties.memoryHeapCount;
+                snapshot.budgetAvailable = true;
+                for (uint32_t index = 0; index < snapshot.heapCount; ++index)
+                {
+                    snapshot.heapSizeBytes[index] = memoryProperties.memoryProperties.memoryHeaps[index].size;
+                    snapshot.heapFlags[index] = memoryProperties.memoryProperties.memoryHeaps[index].flags;
+                    snapshot.heapBudgetBytes[index] = budgetProperties.heapBudget[index];
+                    snapshot.heapUsageBytes[index] = budgetProperties.heapUsage[index];
+                }
+            }
+            else
+            {
+                VkPhysicalDeviceMemoryProperties memoryProperties{};
+                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+                snapshot.heapCount = memoryProperties.memoryHeapCount;
+                for (uint32_t index = 0; index < snapshot.heapCount; ++index)
+                {
+                    snapshot.heapSizeBytes[index] = memoryProperties.memoryHeaps[index].size;
+                    snapshot.heapFlags[index] = memoryProperties.memoryHeaps[index].flags;
+                }
+            }
+
+            return snapshot;
+        }
+
         static HostMemorySnapshot getHostMemorySnapshot(void)
         {
             HostMemorySnapshot snapshot;
@@ -4818,6 +4904,7 @@ namespace Gek
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const HostMemorySnapshot hostMemorySnapshot = getHostMemorySnapshot();
+                    const VulkanMemoryHeapSnapshot memoryHeapSnapshot = getVulkanMemoryHeapSnapshot(physicalDevice);
                     failedGraphicsPipelineKeys.insert(key);
                     getContext()->log(
                         Gek::Context::Error,
@@ -4888,6 +4975,40 @@ namespace Gek
                     else
                     {
                         getContext()->log(Gek::Context::Error, "Vulkan host memory snapshot: unavailable");
+                    }
+
+                    if (memoryHeapSnapshot.available)
+                    {
+                        constexpr uint64_t MiB = 1024ull * 1024ull;
+                        for (uint32_t heapIndex = 0; heapIndex < memoryHeapSnapshot.heapCount; ++heapIndex)
+                        {
+                            if (memoryHeapSnapshot.budgetAvailable)
+                            {
+                                getContext()->log(
+                                    Gek::Context::Error,
+                                    "Vulkan heap[{}]: sizeMiB={} budgetMiB={} usageMiB={} flags=0x{:X} deviceLocal={}",
+                                    heapIndex,
+                                    memoryHeapSnapshot.heapSizeBytes[heapIndex] / MiB,
+                                    memoryHeapSnapshot.heapBudgetBytes[heapIndex] / MiB,
+                                    memoryHeapSnapshot.heapUsageBytes[heapIndex] / MiB,
+                                    memoryHeapSnapshot.heapFlags[heapIndex],
+                                    (memoryHeapSnapshot.heapFlags[heapIndex] & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? 1 : 0);
+                            }
+                            else
+                            {
+                                getContext()->log(
+                                    Gek::Context::Error,
+                                    "Vulkan heap[{}]: sizeMiB={} flags=0x{:X} deviceLocal={} budget=unavailable",
+                                    heapIndex,
+                                    memoryHeapSnapshot.heapSizeBytes[heapIndex] / MiB,
+                                    memoryHeapSnapshot.heapFlags[heapIndex],
+                                    (memoryHeapSnapshot.heapFlags[heapIndex] & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? 1 : 0);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan heap snapshot: unavailable");
                     }
 
                     if (command.inputLayout)
