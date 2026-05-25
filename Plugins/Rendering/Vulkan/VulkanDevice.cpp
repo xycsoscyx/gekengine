@@ -776,6 +776,21 @@ namespace Gek
             return joined;
         }
 
+        static uint64_t HashBytesFnv1a64(std::vector<uint8_t> const &bytes)
+        {
+            constexpr uint64_t FnvOffsetBasis = 14695981039346656037ull;
+            constexpr uint64_t FnvPrime = 1099511628211ull;
+
+            uint64_t hash = FnvOffsetBasis;
+            for (uint8_t byte : bytes)
+            {
+                hash ^= static_cast<uint64_t>(byte);
+                hash *= FnvPrime;
+            }
+
+            return hash;
+        }
+
         const std::vector<const char *> validationLayers = {
             "VK_LAYER_KHRONOS_validation",
         };
@@ -4984,6 +4999,212 @@ namespace Gek
                         static_cast<uint32_t>(pixelInfo.compiledData.size()),
                         selectedDriverName,
                         selectedDriverId);
+
+                    VkPhysicalDeviceProperties deviceProperties{};
+                    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+                    VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
+                    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+
+                    bool heapHasHostVisibleType[VK_MAX_MEMORY_HEAPS] = { false };
+                    for (uint32_t typeIndex = 0; typeIndex < deviceMemoryProperties.memoryTypeCount; ++typeIndex)
+                    {
+                        const VkMemoryType &memoryType = deviceMemoryProperties.memoryTypes[typeIndex];
+                        if (((memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) &&
+                            (memoryType.heapIndex < deviceMemoryProperties.memoryHeapCount))
+                        {
+                            heapHasHostVisibleType[memoryType.heapIndex] = true;
+                        }
+                    }
+
+                    constexpr uint64_t DiagMiB = 1024ull * 1024ull;
+                    uint64_t totalDeviceLocalBytes = 0;
+                    uint64_t totalHostVisibleHeapBytes = 0;
+                    for (uint32_t heapIndex = 0; heapIndex < deviceMemoryProperties.memoryHeapCount; ++heapIndex)
+                    {
+                        const VkMemoryHeap &heap = deviceMemoryProperties.memoryHeaps[heapIndex];
+                        if ((heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0)
+                        {
+                            totalDeviceLocalBytes += heap.size;
+                        }
+
+                        if (heapHasHostVisibleType[heapIndex])
+                        {
+                            totalHostVisibleHeapBytes += heap.size;
+                        }
+                    }
+
+                    const uint64_t vertexCompiledHash = HashBytesFnv1a64(vertexInfo.compiledData);
+                    const uint64_t pixelCompiledHash = HashBytesFnv1a64(pixelInfo.compiledData);
+
+                    const uint32_t usedVertexConstantBuffers = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.vertexConstantBuffers),
+                        std::end(command.vertexConstantBuffers),
+                        [](Buffer const *buffer)
+                        { return (buffer != nullptr); }));
+
+                    const uint32_t usedPixelConstantBuffers = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.pixelConstantBuffers),
+                        std::end(command.pixelConstantBuffers),
+                        [](Buffer const *buffer)
+                        { return (buffer != nullptr); }));
+
+                    const uint32_t usedPixelResourceImageViews = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.pixelResourceImageViews),
+                        std::end(command.pixelResourceImageViews),
+                        [](VkImageView imageView)
+                        { return (imageView != VK_NULL_HANDLE); }));
+
+                    const uint32_t usedPixelResourceSamplers = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.pixelResourceSamplers),
+                        std::end(command.pixelResourceSamplers),
+                        [](VkSampler sampler)
+                        { return (sampler != VK_NULL_HANDLE); }));
+
+                    const uint32_t usedPixelResourceBuffers = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.pixelResourceBuffers),
+                        std::end(command.pixelResourceBuffers),
+                        [](Buffer const *buffer)
+                        { return (buffer != nullptr); }));
+
+                    const uint32_t usedPixelSamplerStates = static_cast<uint32_t>(std::count_if(
+                        std::begin(command.pixelSamplerStates),
+                        std::end(command.pixelSamplerStates),
+                        [](VkSampler sampler)
+                        { return (sampler != VK_NULL_HANDLE); }));
+
+                    bool heapBudgetDataExists = memoryHeapSnapshot.available && memoryHeapSnapshot.budgetAvailable;
+                    bool heapHeadroomAvailable = false;
+                    uint64_t minHeapBudgetHeadroomMiB = 0;
+                    if (heapBudgetDataExists)
+                    {
+                        for (uint32_t heapIndex = 0; heapIndex < memoryHeapSnapshot.heapCount; ++heapIndex)
+                        {
+                            const uint64_t budgetBytes = memoryHeapSnapshot.heapBudgetBytes[heapIndex];
+                            const uint64_t usageBytes = memoryHeapSnapshot.heapUsageBytes[heapIndex];
+                            if (budgetBytes < usageBytes)
+                            {
+                                continue;
+                            }
+
+                            const uint64_t headroomMiB = (budgetBytes - usageBytes) / DiagMiB;
+                            if (!heapHeadroomAvailable || (headroomMiB < minHeapBudgetHeadroomMiB))
+                            {
+                                minHeapBudgetHeadroomMiB = headroomMiB;
+                                heapHeadroomAvailable = true;
+                            }
+                        }
+                    }
+
+                    if (!heapHeadroomAvailable)
+                    {
+                        heapBudgetDataExists = false;
+                    }
+
+                    const bool reportedHostOrDeviceOom =
+                        (pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) ||
+                        (pipelineResult == VK_ERROR_OUT_OF_DEVICE_MEMORY);
+
+                    const bool hostLooksHealthy =
+                        hostMemorySnapshot.available &&
+                        ((hostMemorySnapshot.availablePhysicalBytes / DiagMiB) >= 2048ull) &&
+                        ((hostMemorySnapshot.freePageFileBytes / DiagMiB) >= 512ull);
+
+                    const bool heapLooksHealthy = heapBudgetDataExists && (minHeapBudgetHeadroomMiB >= 256ull);
+
+                    const bool isDozenDriver =
+                        (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
+                        (selectedDriverName.find("Dozen") != std::string::npos);
+
+                    const bool likelyDriverCompilerFailure =
+                        reportedHostOrDeviceOom &&
+                        hostLooksHealthy &&
+                        (!heapBudgetDataExists || heapLooksHealthy);
+
+                    const char *failureReason = "pipeline_creation_failed";
+                    if (likelyDriverCompilerFailure)
+                    {
+                        failureReason = isDozenDriver ? "likely_driver_compiler_failure_dozen" : "likely_driver_compiler_failure";
+                    }
+                    else if (reportedHostOrDeviceOom)
+                    {
+                        failureReason = "likely_real_memory_pressure";
+                    }
+
+                    const int64_t minHeapBudgetHeadroomLogMiB = heapBudgetDataExists ? static_cast<int64_t>(minHeapBudgetHeadroomMiB) : -1;
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan shader metadata: vp(programId={}, sourceBytes={}, compiledBytes={}, hash=0x{:016X}, path='{}') pp(programId={}, sourceBytes={}, compiledBytes={}, hash=0x{:016X}, path='{}')",
+                        vertexInfo.programId,
+                        static_cast<uint32_t>(vertexInfo.shaderData.size()),
+                        static_cast<uint32_t>(vertexInfo.compiledData.size()),
+                        vertexCompiledHash,
+                        vertexInfo.shaderPath.getString(),
+                        pixelInfo.programId,
+                        static_cast<uint32_t>(pixelInfo.shaderData.size()),
+                        static_cast<uint32_t>(pixelInfo.compiledData.size()),
+                        pixelCompiledHash,
+                        pixelInfo.shaderPath.getString());
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan device snapshot: name='{}' vendorId=0x{:X} deviceId=0x{:X} type={} api={}.{}.{} driver={}.{}.{} heaps={} memTypes={} deviceLocalMiB={} hostVisibleHeapMiB={}",
+                        deviceProperties.deviceName,
+                        deviceProperties.vendorID,
+                        deviceProperties.deviceID,
+                        static_cast<uint32_t>(deviceProperties.deviceType),
+                        VK_VERSION_MAJOR(deviceProperties.apiVersion),
+                        VK_VERSION_MINOR(deviceProperties.apiVersion),
+                        VK_VERSION_PATCH(deviceProperties.apiVersion),
+                        VK_VERSION_MAJOR(deviceProperties.driverVersion),
+                        VK_VERSION_MINOR(deviceProperties.driverVersion),
+                        VK_VERSION_PATCH(deviceProperties.driverVersion),
+                        deviceMemoryProperties.memoryHeapCount,
+                        deviceMemoryProperties.memoryTypeCount,
+                        totalDeviceLocalBytes / DiagMiB,
+                        totalHostVisibleHeapBytes / DiagMiB);
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan fixed-function state: ia(topology={}, restart={}) rs(cull={}, frontFace={}, polyMode={}, lineWidth={}, discard={}) ms(samples={}, sampleShading={}) ds(depthTest={}, depthWrite={}, compare={}, stencil={}) cb(attachments={}, logicOp={})",
+                        static_cast<uint32_t>(inputAssembly.topology),
+                        inputAssembly.primitiveRestartEnable ? 1 : 0,
+                        static_cast<uint32_t>(rasterizer.cullMode),
+                        static_cast<uint32_t>(rasterizer.frontFace),
+                        static_cast<uint32_t>(rasterizer.polygonMode),
+                        rasterizer.lineWidth,
+                        rasterizer.rasterizerDiscardEnable ? 1 : 0,
+                        static_cast<uint32_t>(multisampling.rasterizationSamples),
+                        multisampling.sampleShadingEnable ? 1 : 0,
+                        depthStencil.depthTestEnable ? 1 : 0,
+                        depthStencil.depthWriteEnable ? 1 : 0,
+                        static_cast<uint32_t>(depthStencil.depthCompareOp),
+                        depthStencil.stencilTestEnable ? 1 : 0,
+                        colorBlending.attachmentCount,
+                        colorBlending.logicOpEnable ? 1 : 0);
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan descriptor occupancy: vCB={} pCB={} pImages={} pSamplers={} pBuffers={} pSamplerStates={}",
+                        usedVertexConstantBuffers,
+                        usedPixelConstantBuffers,
+                        usedPixelResourceImageViews,
+                        usedPixelResourceSamplers,
+                        usedPixelResourceBuffers,
+                        usedPixelSamplerStates);
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan failure classification: reportedOom={} hostHealthy={} heapBudgetData={} heapHealthy={} isDozen={} likelyDriverCompilerFailure={} minHeapHeadroomMiB={} reason='{}'",
+                        reportedHostOrDeviceOom ? 1 : 0,
+                        hostLooksHealthy ? 1 : 0,
+                        heapBudgetDataExists ? 1 : 0,
+                        heapLooksHealthy ? 1 : 0,
+                        isDozenDriver ? 1 : 0,
+                        likelyDriverCompilerFailure ? 1 : 0,
+                        minHeapBudgetHeadroomLogMiB,
+                        failureReason);
 
                     if (hostMemorySnapshot.available)
                     {
