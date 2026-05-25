@@ -2889,6 +2889,8 @@ namespace Gek
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
+            std::string selectedDriverName;
+            uint32_t selectedDriverId = 0;
 
             struct PipelineKey
             {
@@ -3645,9 +3647,43 @@ namespace Gek
                     (std::strstr(selectedDriverProperties.driverName, "llvmpipe") != nullptr) ||
                     (std::strstr(selectedProperties.deviceName, "Microsoft Direct3D12") != nullptr);
 
+                selectedDriverName = selectedDriverProperties.driverName;
+                selectedDriverId = static_cast<uint32_t>(selectedDriverProperties.driverID);
+
+                const char *forceSpirv13Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV13");
+                const bool forceSpirv13 =
+                    (forceSpirv13Environment != nullptr) &&
+                    ((std::strcmp(forceSpirv13Environment, "1") == 0) ||
+                     (std::strcmp(forceSpirv13Environment, "true") == 0) ||
+                     (std::strcmp(forceSpirv13Environment, "TRUE") == 0));
+
+                const char *forceSpirv12Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV12");
+                const bool forceSpirv12 =
+                    (forceSpirv12Environment != nullptr) &&
+                    ((std::strcmp(forceSpirv12Environment, "1") == 0) ||
+                     (std::strcmp(forceSpirv12Environment, "true") == 0) ||
+                     (std::strcmp(forceSpirv12Environment, "TRUE") == 0));
+
+                if (forceSpirv13)
+                {
+                    preferSpirv13Profile = true;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan SPIR-V profile override: GEK_VULKAN_FORCE_SPIRV13=1 -> forcing profile '{}'",
+                        "spirv_1_3");
+                }
+                else if (forceSpirv12)
+                {
+                    preferSpirv13Profile = false;
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan SPIR-V profile override: GEK_VULKAN_FORCE_SPIRV12=1 -> forcing profile '{}'",
+                        "spirv_1_2");
+                }
+
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X}",
+                    "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X} driverName='{}' driverId={} spirvProfile='{}'",
                     selectedProperties.deviceName,
                     getDeviceTypeName(selectedProperties.deviceType),
                     getVendorName(selectedProperties.vendorID),
@@ -3656,7 +3692,10 @@ namespace Gek
                     VK_VERSION_MAJOR(selectedProperties.apiVersion),
                     VK_VERSION_MINOR(selectedProperties.apiVersion),
                     VK_VERSION_PATCH(selectedProperties.apiVersion),
-                    selectedProperties.driverVersion);
+                    selectedProperties.driverVersion,
+                    selectedDriverName,
+                    selectedDriverId,
+                    preferSpirv13Profile ? "spirv_1_3" : "spirv_1_2");
 
                 if (preferSpirv13Profile)
                 {
@@ -4738,7 +4777,7 @@ namespace Gek
 
                     getContext()->log(
                         Gek::Context::Error,
-                        "Vulkan pipeline context: activeRenderPass={} deviceRenderPass={} pipelineLayout={} descriptorSetLayout={} swapChainFormat={} depthFormat={} validationLayer={} spirv13={} resizePending={} inputLayout={} inputElements={} inputShaderLocations={} vertexModule={} pixelModule={}",
+                        "Vulkan pipeline context: activeRenderPass={} deviceRenderPass={} pipelineLayout={} descriptorSetLayout={} swapChainFormat={} depthFormat={} validationLayer={} spirv13={} resizePending={} inputLayout={} inputElements={} inputShaderLocations={} vertexModule={} pixelModule={} vertexSpirvBytes={} pixelSpirvBytes={} driverName='{}' driverId={}",
                         reinterpret_cast<uint64_t>(activeRenderPass),
                         reinterpret_cast<uint64_t>(renderPass),
                         reinterpret_cast<uint64_t>(graphicsPipelineLayout),
@@ -4752,7 +4791,11 @@ namespace Gek
                         command.inputLayout ? static_cast<uint32_t>(command.inputLayout->elementList.size()) : 0,
                         command.inputLayout ? static_cast<uint32_t>(command.inputLayout->shaderLocationList.size()) : 0,
                         reinterpret_cast<uint64_t>(key.vertexModule),
-                        reinterpret_cast<uint64_t>(key.pixelModule));
+                        reinterpret_cast<uint64_t>(key.pixelModule),
+                        static_cast<uint32_t>(vertexInfo.compiledData.size()),
+                        static_cast<uint32_t>(pixelInfo.compiledData.size()),
+                        selectedDriverName,
+                        selectedDriverId);
 
                     if (command.inputLayout)
                     {

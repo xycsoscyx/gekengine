@@ -4,6 +4,12 @@
 #include <GEKUtility.slang>
 #include <GEKLighting.slang>
 
+// Linux Vulkan pipeline bisect toggles.
+// Set one at a time to isolate the construct that triggers driver compile failure.
+static const bool kBisectDisableLighting = false;
+static const bool kBisectDisableBicubic = false;
+static const bool kBisectDisableChromatic = false;
+
 // from http://www.java-gaming.org/index.php?topic=35123.0
 float4 GetCubicFactors(float v)
 {
@@ -57,6 +63,17 @@ float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
         lerp(sample1, sample0, sx), sy);
 }
 
+float3 GetSimpleGlassSample(in float2 glassPixelCoord, float glassLevel)
+{
+    uint width, height, mipMapCount;
+    Resources::glassBuffer.GetDimensions(0, width, height, mipMapCount);
+
+    float maxMipMapLevel = ((mipMapCount > 0) ? float(mipMapCount - 1) : 0.0);
+    float mipMapLevel = floor(glassLevel * maxMipMapLevel);
+    float2 uv = saturate(glassPixelCoord / max(float2(width, height), float2(1.0, 1.0)));
+    return Resources::glassBuffer.SampleLevel(Global::MipMapSampler, uv, mipMapLevel);
+}
+
 [shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
@@ -93,25 +110,30 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
+    float3 surfaceIrradiance = 0.0;
+    if (!kBisectDisableLighting)
+    {
+        surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
+    }
 
     float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float glassLevel = (1.0f - materialClarity);
-    if (Options::UseChromaticAbberation)
+    const bool useChromaticAbberation = Options::UseChromaticAbberation && !kBisectDisableChromatic;
+    if (useChromaticAbberation)
     {
         float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
         float2 screenCoordRed = (glassPixelCoord + (surfaceNormal.xy * materialThickness * -60.0f));
         float2 screenCoordGreen = (glassPixelCoord + surfaceNormal.xy);
         float2 screenCoordBlue = (glassPixelCoord + (surfaceNormal.xy * materialThickness * 60.0f));
 
-        float glassColorRed = GetBiCubicSample(screenCoordRed, glassLevel).r;
-        float glassColorGreen = GetBiCubicSample(screenCoordGreen, glassLevel).g;
-        float glassColorBlue = GetBiCubicSample(screenCoordBlue, glassLevel).b;
+        float glassColorRed = (kBisectDisableBicubic ? GetSimpleGlassSample(screenCoordRed, glassLevel) : GetBiCubicSample(screenCoordRed, glassLevel)).r;
+        float glassColorGreen = (kBisectDisableBicubic ? GetSimpleGlassSample(screenCoordGreen, glassLevel) : GetBiCubicSample(screenCoordGreen, glassLevel)).g;
+        float glassColorBlue = (kBisectDisableBicubic ? GetSimpleGlassSample(screenCoordBlue, glassLevel) : GetBiCubicSample(screenCoordBlue, glassLevel)).b;
         return (surfaceIrradiance + (float3(glassColorRed, glassColorGreen, glassColorBlue) * materialAlbedo));
     }
     else
     {
-        float3 glassColor = GetBiCubicSample(glassPixelCoord, glassLevel);
+        float3 glassColor = kBisectDisableBicubic ? GetSimpleGlassSample(glassPixelCoord, glassLevel) : GetBiCubicSample(glassPixelCoord, glassLevel);
         return (surfaceIrradiance + (glassColor * materialAlbedo));
     }
 }
