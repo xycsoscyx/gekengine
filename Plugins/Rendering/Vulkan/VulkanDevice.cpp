@@ -2889,7 +2889,6 @@ namespace Gek
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
-            bool disablePipelineOptimization = false;
             std::string selectedDriverName;
             uint32_t selectedDriverId = 0;
 
@@ -3617,23 +3616,26 @@ namespace Gek
                     (bestNonDozenCandidate.score > 0) &&
                     (bestNonDozenCandidate.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU);
 
-                if (bestCandidate.isDozen && !allowDozen && hasUsableNonDozenCandidate)
+                if (bestCandidate.isDozen && !allowDozen)
                 {
-                    selectedCandidate = bestNonDozenCandidate;
-                    physicalDevice = selectedCandidate.device;
-                    getContext()->log(
-                        Gek::Context::Warning,
-                        "Vulkan auto-fallback: selected candidate '{}' uses Dozen; preferring non-Dozen device '{}' (set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen)",
-                        bestCandidate.properties.deviceName,
-                        selectedCandidate.properties.deviceName);
-                }
-                else if (bestCandidate.isDozen && !allowDozen && bestNonDozenCandidate.device != VK_NULL_HANDLE && bestNonDozenCandidate.score > 0)
-                {
-                    getContext()->log(
-                        Gek::Context::Warning,
-                        "Vulkan candidate '{}' uses Dozen and only CPU non-Dozen adapter '{}' is available; keeping Dozen (set GEK_VULKAN_ALLOW_DOZEN=1 to silence this warning)",
-                        bestCandidate.properties.deviceName,
-                        bestNonDozenCandidate.properties.deviceName);
+                    if (hasUsableNonDozenCandidate)
+                    {
+                        selectedCandidate = bestNonDozenCandidate;
+                        physicalDevice = selectedCandidate.device;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan auto-fallback: selected candidate '{}' uses Dozen; preferring non-Dozen device '{}' (set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen)",
+                            bestCandidate.properties.deviceName,
+                            selectedCandidate.properties.deviceName);
+                    }
+                    else
+                    {
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan selected candidate '{}' uses Dozen and no suitable non-Dozen GPU is available; install native Vulkan drivers or set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen",
+                            bestCandidate.properties.deviceName);
+                        throw std::runtime_error("Dozen adapter rejected: install native Vulkan driver or set GEK_VULKAN_ALLOW_DOZEN=1");
+                    }
                 }
 
                 VkPhysicalDeviceProperties selectedProperties = selectedCandidate.properties;
@@ -3648,9 +3650,7 @@ namespace Gek
                     (std::strstr(selectedProperties.deviceName, "Microsoft Direct3D12") != nullptr);
                 const bool isLlvmPipeDriver = (std::strstr(selectedDriverProperties.driverName, "llvmpipe") != nullptr);
 
-                // Default Dozen to SPIR-V 1.2; SPIR-V 1.3 has proven unstable for graphics pipeline creation.
-                preferSpirv13Profile = isLlvmPipeDriver;
-                disablePipelineOptimization = isDozenDriver;
+                preferSpirv13Profile = isDozenDriver || isLlvmPipeDriver;
 
                 selectedDriverName = selectedDriverProperties.driverName;
                 selectedDriverId = static_cast<uint32_t>(selectedDriverProperties.driverID);
@@ -3688,7 +3688,7 @@ namespace Gek
 
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X} driverName='{}' driverId={} spirvProfile='{}' disablePipelineOptimization={}",
+                    "Vulkan selected device: name='{}' type={} vendor={} (0x{:X}) score={} api={}.{}.{} driver=0x{:X} driverName='{}' driverId={} spirvProfile='{}'",
                     selectedProperties.deviceName,
                     getDeviceTypeName(selectedProperties.deviceType),
                     getVendorName(selectedProperties.vendorID),
@@ -3700,8 +3700,7 @@ namespace Gek
                     selectedProperties.driverVersion,
                     selectedDriverName,
                     selectedDriverId,
-                    preferSpirv13Profile ? "spirv_1_3" : "spirv_1_2",
-                    disablePipelineOptimization ? 1 : 0);
+                    preferSpirv13Profile ? "spirv_1_3" : "spirv_1_2");
 
                 if (preferSpirv13Profile)
                 {
@@ -3713,12 +3712,6 @@ namespace Gek
                         "spirv_1_3");
                 }
 
-                if (disablePipelineOptimization)
-                {
-                    getContext()->log(
-                        Gek::Context::Warning,
-                        "Vulkan Dozen compatibility mode active: disabling pipeline optimization during create");
-                }
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -4751,7 +4744,6 @@ namespace Gek
                 pipelineInfo.layout = graphicsPipelineLayout;
                 pipelineInfo.renderPass = activeRenderPass;
                 pipelineInfo.subpass = 0;
-                pipelineInfo.flags = disablePipelineOptimization ? VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT : 0;
 
                 VkPipeline pipeline = VK_NULL_HANDLE;
                 VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
@@ -4960,7 +4952,6 @@ namespace Gek
                 createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
                 createInfo.stage = stageInfo;
                 createInfo.layout = graphicsPipelineLayout;
-                createInfo.flags = disablePipelineOptimization ? VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT : 0;
 
                 VkPipeline pipeline = VK_NULL_HANDLE;
                 VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
@@ -6262,10 +6253,6 @@ namespace Gek
                 }
 
                 const std::string debugFileName(information.shaderPath.getFileName());
-                const bool isDozenDriver =
-                    (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
-                    (selectedDriverName.find("Dozen") != std::string::npos);
-                resolvedProgram = std::format("#define GEK_VULKAN_DOZEN {}\n", isDozenDriver ? 1 : 0) + resolvedProgram;
 
                 slang::IBlob *outDiagnosticsRaw = nullptr;
                 slang::IModule *slangModule = session->loadModuleFromSourceString(information.name.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
