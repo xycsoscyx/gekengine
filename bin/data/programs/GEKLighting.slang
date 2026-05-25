@@ -53,39 +53,154 @@ float3 getLightIrradiance(
 
     float3 F0 = lerp(1.0, materialAlbedo, materialMetallic);
 
-    // Keep BRDF evaluation compact for Vulkan shader compile stability on Mesa.
     float normalDistribution;
+    switch (Options::BRDF::NormalDistribution::Selection)
     {
+    case Options::BRDF::NormalDistribution::Beckmann: {
         float NdotHSquared = square(NdotH);
-        float roughnessSquared = max(Math::Epsilon, materialAlpha);
-        float distribution = (NdotHSquared * (roughnessSquared - 1.0) + 1.0);
-        normalDistribution = roughnessSquared / max(Math::Epsilon, (Math::Pi * square(distribution)));
-    }
+        normalDistribution = max(0.000001, (1.0 / (Math::Pi * materialAlpha * NdotHSquared * NdotHSquared)) * exp((NdotHSquared - 1.0) / (materialAlpha * NdotHSquared)));
+        break; }
+
+    case Options::BRDF::NormalDistribution::Gaussian: {
+        float thetaH = acos(NdotH);
+        normalDistribution = exp(-thetaH * thetaH / materialAlpha);
+        break; }
+
+    case Options::BRDF::NormalDistribution::GGX: {
+        float NdotHSquared = square(NdotH);
+        float TangentNdotHSquared = (1.0 - NdotHSquared) / NdotHSquared;
+        normalDistribution = Math::ReciprocalPi * square(materialRoughness / (NdotHSquared * (materialAlpha + TangentNdotHSquared)));
+        break; }
+
+    case Options::BRDF::NormalDistribution::TrowbridgeReitz: {
+        float NdotHSquared = square(NdotH);
+        float Distribution = (NdotHSquared * (materialAlpha - 1.0) + 1.0);
+        normalDistribution = materialAlpha / (Math::Pi * square(Distribution));
+        break; }
+
+    default:
+        normalDistribution = 0.0;
+        break;
+    };
 
     float geometricShadowing;
+    switch (Options::BRDF::GeometricShadowing::Selection)
     {
-        float k = materialRoughness * 0.5;
-        float gV = NdotV / max(Math::Epsilon, (NdotV * (1.0 - k) + k));
-        float gL = NdotL / max(Math::Epsilon, (NdotL * (1.0 - k) + k));
-        geometricShadowing = gV * gL;
-    }
+    case Options::BRDF::GeometricShadowing::AshikhminShirley: {
+        geometricShadowing = NdotL * NdotV / (LdotH * max(NdotL, NdotV));
+        break; }
+
+    case Options::BRDF::GeometricShadowing::AshikhminPremoze: {
+        geometricShadowing = NdotL * NdotV / (NdotL + NdotV - NdotL * NdotV);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Duer: {
+        float3 LplusV = (lightDirection + viewDirection);
+        geometricShadowing = dot(LplusV, LplusV) * pow(dot(LplusV, surfaceNormal), 4.0);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Neumann: {
+        geometricShadowing = (NdotL * NdotV) / max(NdotL, NdotV);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Kelemen: {
+        //geometricShadowing = (NdotL * NdotV) / square(LdotH);
+        geometricShadowing = (NdotL * NdotV) / square(VdotH);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::ModifiedKelemen: {
+        static const float SqureRoot2OverPi = 0.797884560802865; // SqureRoot2OverPi = sqrt(2 / Pi)
+        float k = materialAlpha * SqureRoot2OverPi;
+        float gH = NdotV * k + (1.0 - k);
+        geometricShadowing = (square(gH) * NdotL);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::CookTorrence: {
+        float NdotVProduct = 2.0 * NdotH * NdotV / VdotH;
+        float NdotLProduct = 2.0 * NdotH * NdotL / VdotH;
+        geometricShadowing = min(1.0, min(NdotVProduct, NdotLProduct));
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Ward: {
+        geometricShadowing = pow(NdotL * NdotV, 0.5);
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Kurt: {
+        //geometricShadowing = NdotL * NdotV / (VdotH * pow(NdotL * NdotV, materialRoughness));
+        geometricShadowing = (VdotH * pow(NdotL * NdotV, materialRoughness)) / NdotL * NdotV;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::WalterEtAl: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float2 calculation = 2.0 / (1.0 + sqrt(1.0 + materialAlpha * (1.0 - angleSquared) / angleSquared));
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Beckman: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float2 calculation = angle / (materialAlpha * sqrt(1 - angleSquared));
+        float2 beckmanTerm = ((3.535 * calculation) + (2.181 * square(calculation))) / (1.0 + (2.276 * calculation) + (2.577 * square(calculation)));
+        calculation = lerp(beckmanTerm, 1.0.xx, step(1.6.xx, calculation));
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::GGX: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float2 calculation = (2.0 * angle) / (angle + sqrt(materialAlpha + (1.0 - materialAlpha) * angleSquared));
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Schlick: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float2 calculation = angle / (angle * (1.0 - materialAlpha) + materialAlpha);
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::SchlickBeckman: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float k = materialAlpha * 0.797884560802865;
+        float2 calculation = angle / (angle * (1.0 - k) + k);
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::SchlickGGX: {
+        float2 angle = float2(NdotL, NdotV);
+        float2 angleSquared = square(angle);
+        float k = materialRoughness / 2.0;
+        float2 calculation = angle / (angle * (1.0 - k) + k);
+        geometricShadowing = calculation.x * calculation.y;
+        break; }
+
+    case Options::BRDF::GeometricShadowing::Implicit: {
+        geometricShadowing = (NdotL * NdotV);
+        break; }
+
+    default:
+        geometricShadowing = 0.0;
+        break;
+    };
 
     float fresnelFactor;
+    switch (Options::BRDF::Fresnel::Selection)
     {
-        switch (Options::BRDF::Fresnel::Selection)
-        {
-        case Options::BRDF::Fresnel::SphericalGaussian:
-        {
-            float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-            fresnelFactor = pow(2.0, power);
-            break;
-        }
+    case Options::BRDF::Fresnel::Schlick: {
+        fresnelFactor = pow(1.0 - LdotH, 5.0);
+        break; }
 
-        default:
-            fresnelFactor = pow(1.0 - LdotH, 5.0);
-            break;
-        };
-    }
+    case Options::BRDF::Fresnel::SphericalGaussian: {
+        float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
+        fresnelFactor = pow(2.0, power);
+        break; }
+
+    default:
+        fresnelFactor = 0.0;
+        break;
+    };
 
     float3 fresnel = F0 + (1.0 - F0) * fresnelFactor;
     float3 kd = lerp(1.0 - fresnelFactor, 0.0, materialMetallic);
