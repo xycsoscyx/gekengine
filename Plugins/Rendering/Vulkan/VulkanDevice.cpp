@@ -4446,6 +4446,12 @@ namespace Gek
                     std::array<VkVertexInputRate, 8> bindingRate{};
                     std::array<uint32_t, 8> bindingStride{};
                     std::set<uint32_t> usedLocations;
+                    std::set<uint32_t> requiredLocations;
+                    for (auto const &signature : vertexInfo.vertexInputSignatures)
+                    {
+                        requiredLocations.insert(signature.shaderLocation);
+                    }
+                    const bool filterToReflectedLocations = !requiredLocations.empty();
 
                     std::array<uint32_t, 8> runningOffset{};
                     for (uint32_t index = 0; index < command.inputLayout->elementList.size(); ++index)
@@ -4459,17 +4465,26 @@ namespace Gek
                         }
 
                         const uint32_t slot = std::min<uint32_t>(element.sourceIndex, 7u);
-                        bindingUsed[slot] = true;
-                        bindingRate[slot] = (element.source == Render::InputElement::Source::Instance) ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-                        if (command.vertexBuffers[slot])
-                        {
-                            bindingStride[slot] = command.vertexBuffers[slot]->getDescription().stride;
-                        }
 
                         uint32_t shaderLocation = index;
                         if (index < command.inputLayout->shaderLocationList.size())
                         {
                             shaderLocation = command.inputLayout->shaderLocationList[index];
+                        }
+
+                        const uint32_t attributeOffset = (element.alignedByteOffset == Render::InputElement::AppendAligned) ? runningOffset[slot] : element.alignedByteOffset;
+                        runningOffset[slot] = attributeOffset + formatStride;
+
+                        if (filterToReflectedLocations && !requiredLocations.contains(shaderLocation))
+                        {
+                            continue;
+                        }
+
+                        bindingUsed[slot] = true;
+                        bindingRate[slot] = (element.source == Render::InputElement::Source::Instance) ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+                        if (command.vertexBuffers[slot])
+                        {
+                            bindingStride[slot] = command.vertexBuffers[slot]->getDescription().stride;
                         }
 
                         if (usedLocations.contains(shaderLocation))
@@ -4487,9 +4502,8 @@ namespace Gek
                         attribute.location = shaderLocation;
                         attribute.binding = slot;
                         attribute.format = format;
-                        attribute.offset = (element.alignedByteOffset == Render::InputElement::AppendAligned) ? runningOffset[slot] : element.alignedByteOffset;
+                        attribute.offset = attributeOffset;
                         attributeDescriptions.push_back(attribute);
-                        runningOffset[slot] = attribute.offset + formatStride;
                     }
 
                     for (uint32_t slot = 0; slot < bindingUsed.size(); ++slot)
