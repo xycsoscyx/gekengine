@@ -3610,11 +3610,25 @@ namespace Gek
                      (std::strcmp(allowDozenEnvironment, "true") == 0) ||
                      (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
 
+                getContext()->log(
+                    Gek::Context::Info,
+                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={})",
+                    allowDozen ? 1 : 0,
+                    (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"));
+
                 CandidateDevice selectedCandidate = bestCandidate;
                 const bool hasUsableNonDozenCandidate =
                     (bestNonDozenCandidate.device != VK_NULL_HANDLE) &&
                     (bestNonDozenCandidate.score > 0) &&
                     (bestNonDozenCandidate.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU);
+
+                if (bestCandidate.isDozen && allowDozen)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan Dozen policy: Dozen allowed by environment; using candidate '{}'",
+                        bestCandidate.properties.deviceName);
+                }
 
                 if (bestCandidate.isDozen && !allowDozen)
                 {
@@ -5810,8 +5824,21 @@ namespace Gek
                 for (uint32_t elementIndex = 0; elementIndex < elementList.size(); ++elementIndex)
                 {
                     const auto &element = elementList[elementIndex];
-                    const uint32_t semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
-                    const std::string semanticName = ToUpperAscii(SemanticNameList[static_cast<uint8_t>(element.semantic)]);
+                    const uint32_t semanticValue = static_cast<uint8_t>(element.semantic);
+                    if (semanticValue >= static_cast<uint8_t>(Render::InputElement::Semantic::Count))
+                    {
+                        shaderLocations[elementIndex] = elementIndex;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan input-layout: semantic value {} out of range for program '{}'; using positional location {}",
+                            semanticValue,
+                            information.name,
+                            elementIndex);
+                        continue;
+                    }
+
+                    const uint32_t semanticIndex = semanticIndexList[semanticValue]++;
+                    const std::string semanticName = ToUpperAscii(SemanticNameList[semanticValue]);
 
                     for (auto const &signature : information.vertexInputSignatures)
                     {
