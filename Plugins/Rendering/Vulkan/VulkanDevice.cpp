@@ -5016,6 +5016,64 @@ namespace Gek
                             runtimeSpirvProfileOverride.clear();
                         }
                     }
+
+                    if (isDozenDriver && ((pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) || (pipelineResult == VK_ERROR_OUT_OF_DEVICE_MEMORY)))
+                    {
+                        struct FixedFunctionFallback
+                        {
+                            const char *name;
+                            bool disableCull = false;
+                            bool disableDepth = false;
+                        };
+
+                        static constexpr FixedFunctionFallback fixedFunctionFallbacks[] = {
+                            { "disable_cull", true, false },
+                            { "disable_depth", false, true },
+                            { "disable_cull_and_depth", true, true },
+                        };
+
+                        for (const FixedFunctionFallback &fallback : fixedFunctionFallbacks)
+                        {
+                            VkPipelineRasterizationStateCreateInfo fallbackRasterizer = rasterizer;
+                            if (fallback.disableCull)
+                            {
+                                fallbackRasterizer.cullMode = VK_CULL_MODE_NONE;
+                            }
+
+                            VkPipelineDepthStencilStateCreateInfo fallbackDepthStencil = depthStencil;
+                            if (fallback.disableDepth)
+                            {
+                                fallbackDepthStencil.depthTestEnable = VK_FALSE;
+                                fallbackDepthStencil.depthWriteEnable = VK_FALSE;
+                                fallbackDepthStencil.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+                            }
+
+                            VkGraphicsPipelineCreateInfo fixedFunctionFallbackPipelineInfo = pipelineInfo;
+                            fixedFunctionFallbackPipelineInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+                            fixedFunctionFallbackPipelineInfo.pRasterizationState = &fallbackRasterizer;
+                            fixedFunctionFallbackPipelineInfo.pDepthStencilState = &fallbackDepthStencil;
+
+                            VkResult fixedFunctionFallbackResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &fixedFunctionFallbackPipelineInfo, nullptr, &pipeline);
+                            if (fixedFunctionFallbackResult == VK_SUCCESS)
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: fixed-function fallback '{}' succeeded (disableCull={}, disableDepth={}).",
+                                    fallback.name,
+                                    fallback.disableCull ? 1 : 0,
+                                    fallback.disableDepth ? 1 : 0);
+                                pipelineResult = VK_SUCCESS;
+                                break;
+                            }
+
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan Dozen fallback: fixed-function fallback '{}' failed with result={} ('{}').",
+                                fallback.name,
+                                static_cast<int32_t>(fixedFunctionFallbackResult),
+                                GetVkResultName(fixedFunctionFallbackResult));
+                        }
+                    }
                 }
 
                 if (pipelineResult != VK_SUCCESS)
