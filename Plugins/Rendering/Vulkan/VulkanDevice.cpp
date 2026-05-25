@@ -3045,6 +3045,7 @@ namespace Gek
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
             bool runtimePreferSpirv12Profile = false;
+            std::string runtimeSpirvProfileOverride;
             std::string selectedDriverName;
             uint32_t selectedDriverId = 0;
 
@@ -4952,11 +4953,33 @@ namespace Gek
 
                     if (isDozenDriver && command.vertexProgram && command.pixelProgram)
                     {
-                        const bool vertexRecompiled = recompileProgramWithProfile(command.vertexProgram, "spirv_1_2");
-                        const bool pixelRecompiled = recompileProgramWithProfile(command.pixelProgram, "spirv_1_2");
-                        if (vertexRecompiled && pixelRecompiled)
+                        bool fallbackSucceeded = false;
+                        static constexpr const char *fallbackProfiles[] = {
+                            "spirv_1_2",
+                            "spirv_1_1",
+                            "spirv_1_0",
+                        };
+
+                        for (const char *fallbackProfile : fallbackProfiles)
                         {
-                            runtimePreferSpirv12Profile = true;
+                            const bool vertexRecompiled = recompileProgramWithProfile(command.vertexProgram, fallbackProfile);
+                            const bool pixelRecompiled = recompileProgramWithProfile(command.pixelProgram, fallbackProfile);
+                            if (!(vertexRecompiled && pixelRecompiled))
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: unable to recompile both shaders to profile '{}' (vertexRecompiled={}, pixelRecompiled={}).",
+                                    fallbackProfile,
+                                    vertexRecompiled ? 1 : 0,
+                                    pixelRecompiled ? 1 : 0);
+                                continue;
+                            }
+
+                            runtimeSpirvProfileOverride = fallbackProfile;
+                            if (std::strcmp(fallbackProfile, "spirv_1_2") == 0)
+                            {
+                                runtimePreferSpirv12Profile = true;
+                            }
 
                             key.vertexModule = command.vertexProgram->shaderModule;
                             key.pixelModule = command.pixelProgram->shaderModule;
@@ -4971,25 +4994,26 @@ namespace Gek
                             {
                                 getContext()->log(
                                     Gek::Context::Warning,
-                                    "Vulkan Dozen fallback: pipeline creation succeeded after recompiling shaders to profile 'spirv_1_2'. Future runtime compilations will prefer 'spirv_1_2'.");
+                                    "Vulkan Dozen fallback: pipeline creation succeeded after recompiling shaders to profile '{}'. Future runtime compilations will prefer this profile.",
+                                    fallbackProfile);
                                 pipelineResult = VK_SUCCESS;
+                                fallbackSucceeded = true;
+                                break;
                             }
                             else
                             {
                                 getContext()->log(
                                     Gek::Context::Warning,
-                                    "Vulkan Dozen fallback: profile 'spirv_1_2' recompile retry failed with result={} ('{}').",
+                                    "Vulkan Dozen fallback: profile '{}' recompile retry failed with result={} ('{}').",
+                                    fallbackProfile,
                                     static_cast<int32_t>(profileFallbackResult),
                                     GetVkResultName(profileFallbackResult));
                             }
                         }
-                        else
+
+                        if (!fallbackSucceeded)
                         {
-                            getContext()->log(
-                                Gek::Context::Warning,
-                                "Vulkan Dozen fallback: unable to recompile both shaders to profile 'spirv_1_2' (vertexRecompiled={}, pixelRecompiled={}).",
-                                vertexRecompiled ? 1 : 0,
-                                pixelRecompiled ? 1 : 0);
+                            runtimeSpirvProfileOverride.clear();
                         }
                     }
                 }
@@ -6754,9 +6778,17 @@ namespace Gek
                      (std::strcmp(forceSpirv13Environment, "true") == 0) ||
                      (std::strcmp(forceSpirv13Environment, "TRUE") == 0));
 
-                        const char *spirvProfileName = (forceSpirv12Profile || runtimePreferSpirv12Profile)
-                                                ? "spirv_1_2"
-                                                : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
+                const char *spirvProfileName = nullptr;
+                if (!runtimeSpirvProfileOverride.empty())
+                {
+                    spirvProfileName = runtimeSpirvProfileOverride.c_str();
+                }
+                else
+                {
+                    spirvProfileName = (forceSpirv12Profile || runtimePreferSpirv12Profile)
+                                          ? "spirv_1_2"
+                                          : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
+                }
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
@@ -6895,13 +6927,16 @@ namespace Gek
                 }
 
                 const bool previousRuntimePreferSpirv12 = runtimePreferSpirv12Profile;
+                const std::string previousRuntimeProfileOverride = runtimeSpirvProfileOverride;
                 if (std::strcmp(profileName, "spirv_1_2") == 0)
                 {
                     runtimePreferSpirv12Profile = true;
                 }
+                runtimeSpirvProfileOverride = profileName;
 
                 const bool compileSucceeded = compileProgram(recompiledInformation, nullptr);
                 runtimePreferSpirv12Profile = previousRuntimePreferSpirv12;
+                runtimeSpirvProfileOverride = previousRuntimeProfileOverride;
 
                 if (!compileSucceeded || recompiledInformation.compiledData.empty())
                 {
