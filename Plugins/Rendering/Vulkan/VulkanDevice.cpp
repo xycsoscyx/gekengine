@@ -3044,6 +3044,7 @@ namespace Gek
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
             bool preferSpirv13Profile = false;
+            bool runtimePreferSpirv12Profile = false;
             std::string selectedDriverName;
             uint32_t selectedDriverId = 0;
 
@@ -4942,6 +4943,57 @@ namespace Gek
                             GetVkResultName(pipelineResult));
                     }
                 }
+
+                if ((pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) || (pipelineResult == VK_ERROR_OUT_OF_DEVICE_MEMORY))
+                {
+                    const bool isDozenDriver =
+                        (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
+                        (selectedDriverName.find("Dozen") != std::string::npos);
+
+                    if (isDozenDriver && command.vertexProgram && command.pixelProgram)
+                    {
+                        const bool vertexRecompiled = recompileProgramWithProfile(command.vertexProgram, "spirv_1_2");
+                        const bool pixelRecompiled = recompileProgramWithProfile(command.pixelProgram, "spirv_1_2");
+                        if (vertexRecompiled && pixelRecompiled)
+                        {
+                            runtimePreferSpirv12Profile = true;
+
+                            key.vertexModule = command.vertexProgram->shaderModule;
+                            key.pixelModule = command.pixelProgram->shaderModule;
+                            shaderStages[0].module = key.vertexModule;
+                            shaderStages[1].module = key.pixelModule;
+
+                            VkGraphicsPipelineCreateInfo profileFallbackPipelineInfo = pipelineInfo;
+                            profileFallbackPipelineInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+
+                            VkResult profileFallbackResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &profileFallbackPipelineInfo, nullptr, &pipeline);
+                            if (profileFallbackResult == VK_SUCCESS)
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: pipeline creation succeeded after recompiling shaders to profile 'spirv_1_2'. Future runtime compilations will prefer 'spirv_1_2'.");
+                                pipelineResult = VK_SUCCESS;
+                            }
+                            else
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: profile 'spirv_1_2' recompile retry failed with result={} ('{}').",
+                                    static_cast<int32_t>(profileFallbackResult),
+                                    GetVkResultName(profileFallbackResult));
+                            }
+                        }
+                        else
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan Dozen fallback: unable to recompile both shaders to profile 'spirv_1_2' (vertexRecompiled={}, pixelRecompiled={}).",
+                                vertexRecompiled ? 1 : 0,
+                                pixelRecompiled ? 1 : 0);
+                        }
+                    }
+                }
+
                 if (pipelineResult != VK_SUCCESS)
                 {
                     const HostMemorySnapshot hostMemorySnapshot = getHostMemorySnapshot();
@@ -6698,9 +6750,9 @@ namespace Gek
                      (std::strcmp(forceSpirv13Environment, "true") == 0) ||
                      (std::strcmp(forceSpirv13Environment, "TRUE") == 0));
 
-                const char *spirvProfileName = forceSpirv12Profile
-                                                    ? "spirv_1_2"
-                                                    : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
+                        const char *spirvProfileName = (forceSpirv12Profile || runtimePreferSpirv12Profile)
+                                                ? "spirv_1_2"
+                                                : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
@@ -6807,6 +6859,98 @@ namespace Gek
                 }
 
                 information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t *)spirvCode->getBufferPointer(), (uint8_t *)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();
+                return true;
+            }
+
+            template <class TYPE>
+            bool recompileProgramWithProfile(TYPE *program, const char *profileName)
+            {
+                if (!program || !profileName)
+                {
+                    return false;
+                }
+
+                Render::Program::Information recompiledInformation = program->information;
+                if (recompiledInformation.shaderData.empty())
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan shader recompile skipped: program '{}' has no source data for runtime profile fallback '{}'.",
+                        recompiledInformation.name,
+                        profileName);
+                    return false;
+                }
+
+                const bool previousRuntimePreferSpirv12 = runtimePreferSpirv12Profile;
+                if (std::strcmp(profileName, "spirv_1_2") == 0)
+                {
+                    runtimePreferSpirv12Profile = true;
+                }
+
+                const bool compileSucceeded = compileProgram(recompiledInformation, nullptr);
+                runtimePreferSpirv12Profile = previousRuntimePreferSpirv12;
+
+                if (!compileSucceeded || recompiledInformation.compiledData.empty())
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan shader recompile failed: program '{}' profile='{}'",
+                        recompiledInformation.name,
+                        profileName);
+                    return false;
+                }
+
+                const auto spirvEntryNames = GetSpirvEntryPointNames(recompiledInformation.compiledData);
+                if (!spirvEntryNames.empty())
+                {
+                    const std::string requestedEntryName = recompiledInformation.entryFunction.empty() ? "main" : recompiledInformation.entryFunction;
+                    if (std::find(spirvEntryNames.begin(), spirvEntryNames.end(), requestedEntryName) == spirvEntryNames.end())
+                    {
+                        std::string resolvedEntryName;
+                        auto mainSearch = std::find(spirvEntryNames.begin(), spirvEntryNames.end(), "main");
+                        if (mainSearch != spirvEntryNames.end())
+                        {
+                            resolvedEntryName = *mainSearch;
+                        }
+                        else
+                        {
+                            resolvedEntryName = spirvEntryNames.front();
+                        }
+
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan shader recompile entry canonicalized: program='{}' requested='{}' resolved='{}' available='{}'",
+                            recompiledInformation.name,
+                            requestedEntryName,
+                            resolvedEntryName,
+                            JoinEntryPointNames(spirvEntryNames));
+                        recompiledInformation.entryFunction = resolvedEntryName;
+                    }
+                }
+
+                VkShaderModule newModule = VK_NULL_HANDLE;
+                VkShaderModuleCreateInfo createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+                createInfo.codeSize = recompiledInformation.compiledData.size();
+                createInfo.pCode = reinterpret_cast<const uint32_t *>(recompiledInformation.compiledData.data());
+                if (vkCreateShaderModule(device, &createInfo, nullptr, &newModule) != VK_SUCCESS)
+                {
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan shader recompile module creation failed: program='{}' profile='{}' compiledBytes={}",
+                        recompiledInformation.name,
+                        profileName,
+                        static_cast<uint32_t>(recompiledInformation.compiledData.size()));
+                    return false;
+                }
+
+                if (program->shaderModule != VK_NULL_HANDLE)
+                {
+                    vkDestroyShaderModule(device, program->shaderModule, nullptr);
+                }
+
+                program->shaderModule = newModule;
+                program->information = std::move(recompiledInformation);
                 return true;
             }
 
