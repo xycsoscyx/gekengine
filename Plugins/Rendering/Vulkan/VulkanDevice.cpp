@@ -27,10 +27,12 @@
 
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
+#include <Windows.h>
 #include <dxgiformat.h>
 #include <objbase.h>
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_WAYLAND_KHR
+#include <sys/sysinfo.h>
 #include <wayland-client.h>
 #endif
 
@@ -51,6 +53,58 @@ namespace Gek
     namespace Render::Implementation
     {
         static std::atomic_bool gVulkanDeviceShuttingDown{ false };
+
+        struct HostMemorySnapshot
+        {
+            bool available = false;
+            uint64_t totalPhysicalBytes = 0;
+            uint64_t freePhysicalBytes = 0;
+            uint64_t availablePhysicalBytes = 0;
+            uint64_t totalPageFileBytes = 0;
+            uint64_t freePageFileBytes = 0;
+            uint32_t memoryLoadPercent = 0;
+        };
+
+        static HostMemorySnapshot getHostMemorySnapshot(void)
+        {
+            HostMemorySnapshot snapshot;
+
+#ifdef _WIN32
+            MEMORYSTATUSEX memoryStatus{};
+            memoryStatus.dwLength = sizeof(memoryStatus);
+            if (GlobalMemoryStatusEx(&memoryStatus))
+            {
+                snapshot.available = true;
+                snapshot.totalPhysicalBytes = memoryStatus.ullTotalPhys;
+                snapshot.freePhysicalBytes = memoryStatus.ullAvailPhys;
+                snapshot.availablePhysicalBytes = memoryStatus.ullAvailPhys;
+                snapshot.totalPageFileBytes = memoryStatus.ullTotalPageFile;
+                snapshot.freePageFileBytes = memoryStatus.ullAvailPageFile;
+                snapshot.memoryLoadPercent = static_cast<uint32_t>(memoryStatus.dwMemoryLoad);
+            }
+#elif defined(__linux__)
+            struct sysinfo info
+            {
+            };
+            if (sysinfo(&info) == 0)
+            {
+                const uint64_t unit = static_cast<uint64_t>(info.mem_unit ? info.mem_unit : 1);
+                snapshot.available = true;
+                snapshot.totalPhysicalBytes = static_cast<uint64_t>(info.totalram) * unit;
+                snapshot.freePhysicalBytes = static_cast<uint64_t>(info.freeram) * unit;
+                snapshot.availablePhysicalBytes = static_cast<uint64_t>(info.freeram + info.bufferram) * unit;
+                snapshot.totalPageFileBytes = static_cast<uint64_t>(info.totalswap) * unit;
+                snapshot.freePageFileBytes = static_cast<uint64_t>(info.freeswap) * unit;
+                if (snapshot.totalPhysicalBytes > 0)
+                {
+                    const uint64_t usedPhysicalBytes = snapshot.totalPhysicalBytes - std::min(snapshot.totalPhysicalBytes, snapshot.availablePhysicalBytes);
+                    snapshot.memoryLoadPercent = static_cast<uint32_t>((usedPhysicalBytes * 100u) / snapshot.totalPhysicalBytes);
+                }
+            }
+#endif
+
+            return snapshot;
+        }
 
         static void waitForResourceDestroyIdle(VkDevice device)
         {
@@ -4763,6 +4817,7 @@ namespace Gek
                 VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                 if (pipelineResult != VK_SUCCESS)
                 {
+                    const HostMemorySnapshot hostMemorySnapshot = getHostMemorySnapshot();
                     failedGraphicsPipelineKeys.insert(key);
                     getContext()->log(
                         Gek::Context::Error,
@@ -4816,6 +4871,24 @@ namespace Gek
                         static_cast<uint32_t>(pixelInfo.compiledData.size()),
                         selectedDriverName,
                         selectedDriverId);
+
+                    if (hostMemorySnapshot.available)
+                    {
+                        constexpr uint64_t MiB = 1024ull * 1024ull;
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan host memory snapshot: load={} totalPhysMiB={} availPhysMiB={} freePhysMiB={} totalPageMiB={} freePageMiB={}",
+                            hostMemorySnapshot.memoryLoadPercent,
+                            hostMemorySnapshot.totalPhysicalBytes / MiB,
+                            hostMemorySnapshot.availablePhysicalBytes / MiB,
+                            hostMemorySnapshot.freePhysicalBytes / MiB,
+                            hostMemorySnapshot.totalPageFileBytes / MiB,
+                            hostMemorySnapshot.freePageFileBytes / MiB);
+                    }
+                    else
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan host memory snapshot: unavailable");
+                    }
 
                     if (command.inputLayout)
                     {
