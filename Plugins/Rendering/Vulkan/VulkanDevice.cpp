@@ -6736,6 +6736,10 @@ namespace Gek
 
                 annotateVulkanBindings(resolvedProgram);
 
+                // Keep the include-resolved source so runtime fallback recompiles can succeed
+                // without requiring the original Engine-side include callback.
+                information.shaderData = resolvedProgram;
+
                 const char *forceSpirv12Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV12");
                 const bool forceSpirv12Profile =
                     (forceSpirv12Environment != nullptr) &&
