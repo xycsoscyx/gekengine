@@ -6,7 +6,11 @@
 
 // Linux Vulkan pipeline bisect toggles.
 // Set one at a time to isolate the construct that triggers driver compile failure.
+#if defined(GEK_VULKAN_DOZEN) && (GEK_VULKAN_DOZEN != 0)
+static const bool kBisectDisableLighting = true;
+#else
 static const bool kBisectDisableLighting = false;
+#endif
 static const bool kBisectDisableBicubic = false;
 static const bool kBisectDisableChromatic = false;
 

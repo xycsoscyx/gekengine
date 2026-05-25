@@ -6210,6 +6210,13 @@ namespace Gek
 
                 annotateVulkanBindings(resolvedProgram);
 
+                const char *forceSpirv12Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV12");
+                const bool forceSpirv12Profile =
+                    (forceSpirv12Environment != nullptr) &&
+                    ((std::strcmp(forceSpirv12Environment, "1") == 0) ||
+                     (std::strcmp(forceSpirv12Environment, "true") == 0) ||
+                     (std::strcmp(forceSpirv12Environment, "TRUE") == 0));
+
                 const char *forceSpirv13Environment = std::getenv("GEK_VULKAN_FORCE_SPIRV13");
                 const bool forceSpirv13Profile =
                     (forceSpirv13Environment != nullptr) &&
@@ -6217,7 +6224,9 @@ namespace Gek
                      (std::strcmp(forceSpirv13Environment, "true") == 0) ||
                      (std::strcmp(forceSpirv13Environment, "TRUE") == 0));
 
-                const char *spirvProfileName = (preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4";
+                const char *spirvProfileName = forceSpirv12Profile
+                                                    ? "spirv_1_2"
+                                                    : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
@@ -6238,6 +6247,10 @@ namespace Gek
                 }
 
                 const std::string debugFileName(information.shaderPath.getFileName());
+                const bool isDozenDriver =
+                    (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
+                    (selectedDriverName.find("Dozen") != std::string::npos);
+                resolvedProgram = std::format("#define GEK_VULKAN_DOZEN {}\n", isDozenDriver ? 1 : 0) + resolvedProgram;
 
                 slang::IBlob *outDiagnosticsRaw = nullptr;
                 slang::IModule *slangModule = session->loadModuleFromSourceString(information.name.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
