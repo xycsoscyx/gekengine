@@ -755,6 +755,75 @@ namespace Gek
             return entryNames;
         }
 
+        // Returns "spirv=X.Y caps=[N,...] exts=[name,...]" parsed from the SPIR-V preamble.
+        static std::string FormatSpirvPreamble(std::vector<uint8_t> const &compiledData)
+        {
+            if ((compiledData.size() < (5u * sizeof(uint32_t))) || ((compiledData.size() % sizeof(uint32_t)) != 0))
+            {
+                return "<too_small>";
+            }
+
+            const auto *words = reinterpret_cast<const uint32_t *>(compiledData.data());
+            const size_t wordCount = compiledData.size() / sizeof(uint32_t);
+
+            if (words[0] != 0x07230203u)
+            {
+                return "<invalid_magic>";
+            }
+
+            const uint32_t spirvVersion = words[1];
+            const uint32_t verMajor = (spirvVersion >> 16) & 0xFFu;
+            const uint32_t verMinor = (spirvVersion >> 8) & 0xFFu;
+
+            std::string caps;
+            std::string exts;
+
+            size_t i = 5;
+            while (i < wordCount)
+            {
+                const uint32_t instrWord = words[i];
+                const uint16_t opcode = static_cast<uint16_t>(instrWord & 0xFFFFu);
+                const uint16_t instrLen = static_cast<uint16_t>(instrWord >> 16);
+                if ((instrLen == 0) || ((i + instrLen) > wordCount))
+                {
+                    break;
+                }
+
+                if (opcode == 14u) // OpMemoryModel — end of preamble
+                {
+                    break;
+                }
+
+                if (opcode == 17u && instrLen >= 2u) // OpCapability
+                {
+                    if (!caps.empty())
+                    {
+                        caps += ',';
+                    }
+                    caps += std::to_string(words[i + 1]);
+                }
+                else if (opcode == 10u && instrLen >= 2u) // OpExtension
+                {
+                    if (!exts.empty())
+                    {
+                        exts += ',';
+                    }
+                    const char *extStr = reinterpret_cast<const char *>(&words[i + 1]);
+                    // Safely read extension name (null-terminated within the instruction words)
+                    const size_t maxExtBytes = (instrLen - 1u) * sizeof(uint32_t);
+                    const size_t extLen = strnlen(extStr, maxExtBytes);
+                    exts.append(extStr, extLen);
+                }
+
+                i += instrLen;
+            }
+
+            return std::format("spirv={}.{} caps=[{}] exts=[{}]",
+                verMajor, verMinor,
+                caps.empty() ? "none" : caps,
+                exts.empty() ? "none" : exts);
+        }
+
         static std::string JoinEntryPointNames(std::vector<std::string> const &names)
         {
             if (names.empty())
@@ -5280,6 +5349,16 @@ namespace Gek
                         static_cast<uint32_t>(pixelInfo.compiledData.size()),
                         pixelCompiledHash,
                         pixelInfo.shaderPath.getString());
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan vertex SPIR-V preamble: {}",
+                        FormatSpirvPreamble(vertexInfo.compiledData));
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan pixel SPIR-V preamble: {}",
+                        FormatSpirvPreamble(pixelInfo.compiledData));
 
                     getContext()->log(
                         Gek::Context::Error,
