@@ -6848,10 +6848,20 @@ namespace Gek
                                           : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
                 }
 
+                const bool isDozenDriverCompile =
+                    (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
+                    (selectedDriverName.find("Dozen") != std::string::npos);
+
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = slangGlobalSession->findProfile(spirvProfileName);
-                targetDesc.flags = 0;
+                // When running under Dozen (Vulkan-over-D3D12), Slang's default path goes
+                // through glslang which can emit SPIR-V extensions/constructs that Dozen's
+                // SPIR-V→DXIL translator cannot handle.  Force the direct SPIR-V emitter to
+                // produce a plain, extension-minimal code stream instead.
+                targetDesc.flags = isDozenDriverCompile
+                    ? static_cast<SlangTargetFlags>(SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY)
+                    : static_cast<SlangTargetFlags>(0);
 
                 slang::SessionDesc sessionDesc = {};
                 sessionDesc.targets = &targetDesc;
