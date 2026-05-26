@@ -3836,24 +3836,48 @@ namespace Gek
                      (std::strcmp(allowDozenEnvironment, "true") == 0) ||
                      (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
 
+                const char *preferLlvmPipeEnvironment = std::getenv("GEK_VULKAN_PREFER_LLVMPIPE");
+                const bool preferLlvmPipeOverDozen =
+                    (preferLlvmPipeEnvironment != nullptr) &&
+                    ((std::strcmp(preferLlvmPipeEnvironment, "1") == 0) ||
+                     (std::strcmp(preferLlvmPipeEnvironment, "true") == 0) ||
+                     (std::strcmp(preferLlvmPipeEnvironment, "TRUE") == 0));
+
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={})",
+                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={} (GEK_VULKAN_PREFER_LLVMPIPE={})",
                     allowDozen ? 1 : 0,
-                    (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"));
+                    (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"),
+                    preferLlvmPipeOverDozen ? 1 : 0,
+                    (preferLlvmPipeEnvironment ? preferLlvmPipeEnvironment : "<unset>"));
 
                 CandidateDevice selectedCandidate = bestCandidate;
                 const bool hasUsableNonDozenCandidate =
                     (bestNonDozenCandidate.device != VK_NULL_HANDLE) &&
                     (bestNonDozenCandidate.score > 0) &&
-                    (bestNonDozenCandidate.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU);
+                    ((bestNonDozenCandidate.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) ||
+                     (std::strstr(bestNonDozenCandidate.driverProperties.driverName, "llvmpipe") != nullptr));
 
                 if (bestCandidate.isDozen && allowDozen)
                 {
-                    getContext()->log(
-                        Gek::Context::Warning,
-                        "Vulkan Dozen policy: Dozen allowed by environment; using candidate '{}'",
-                        bestCandidate.properties.deviceName);
+                    if (preferLlvmPipeOverDozen && hasUsableNonDozenCandidate &&
+                        (std::strstr(bestNonDozenCandidate.driverProperties.driverName, "llvmpipe") != nullptr))
+                    {
+                        selectedCandidate = bestNonDozenCandidate;
+                        physicalDevice = selectedCandidate.device;
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan Dozen policy: GEK_VULKAN_PREFER_LLVMPIPE=1 set; preferring llvmpipe '{}' over Dozen candidate '{}'.",
+                            selectedCandidate.properties.deviceName,
+                            bestCandidate.properties.deviceName);
+                    }
+                    else
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan Dozen policy: Dozen allowed by environment; using candidate '{}'",
+                            bestCandidate.properties.deviceName);
+                    }
                 }
 
                 if (bestCandidate.isDozen && !allowDozen)
@@ -3872,7 +3896,7 @@ namespace Gek
                     {
                         getContext()->log(
                             Gek::Context::Error,
-                            "Vulkan selected candidate '{}' uses Dozen and no suitable non-Dozen GPU is available; install native Vulkan drivers or set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen",
+                            "Vulkan selected candidate '{}' uses Dozen and no suitable non-Dozen device is available; install native Vulkan drivers, install llvmpipe Vulkan ICD, or set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen",
                             bestCandidate.properties.deviceName);
                         throw std::runtime_error("Dozen adapter rejected: install native Vulkan driver or set GEK_VULKAN_ALLOW_DOZEN=1");
                     }
