@@ -3836,6 +3836,13 @@ namespace Gek
                      (std::strcmp(allowDozenEnvironment, "true") == 0) ||
                      (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
 
+                const char *forceDozenEnvironment = std::getenv("GEK_VULKAN_FORCE_DOZEN");
+                const bool forceDozen =
+                    (forceDozenEnvironment != nullptr) &&
+                    ((std::strcmp(forceDozenEnvironment, "1") == 0) ||
+                     (std::strcmp(forceDozenEnvironment, "true") == 0) ||
+                     (std::strcmp(forceDozenEnvironment, "TRUE") == 0));
+
                 const char *preferLlvmPipeEnvironment = std::getenv("GEK_VULKAN_PREFER_LLVMPIPE");
                 const bool preferLlvmPipeOverDozen =
                     (preferLlvmPipeEnvironment != nullptr) &&
@@ -3845,9 +3852,11 @@ namespace Gek
 
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={} (GEK_VULKAN_PREFER_LLVMPIPE={})",
+                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) forceDozen={} (GEK_VULKAN_FORCE_DOZEN={}) preferLlvmPipeOverDozen={} (GEK_VULKAN_PREFER_LLVMPIPE={})",
                     allowDozen ? 1 : 0,
                     (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"),
+                    forceDozen ? 1 : 0,
+                    (forceDozenEnvironment ? forceDozenEnvironment : "<unset>"),
                     preferLlvmPipeOverDozen ? 1 : 0,
                     (preferLlvmPipeEnvironment ? preferLlvmPipeEnvironment : "<unset>"));
 
@@ -3860,14 +3869,20 @@ namespace Gek
 
                 if (bestCandidate.isDozen && allowDozen)
                 {
-                    if (preferLlvmPipeOverDozen && hasUsableNonDozenCandidate &&
-                        (std::strstr(bestNonDozenCandidate.driverProperties.driverName, "llvmpipe") != nullptr))
+                    if (forceDozen)
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan Dozen policy: GEK_VULKAN_FORCE_DOZEN=1 set; forcing Dozen candidate '{}' even when alternatives exist.",
+                            bestCandidate.properties.deviceName);
+                    }
+                    else if (hasUsableNonDozenCandidate)
                     {
                         selectedCandidate = bestNonDozenCandidate;
                         physicalDevice = selectedCandidate.device;
                         getContext()->log(
                             Gek::Context::Warning,
-                            "Vulkan Dozen policy: GEK_VULKAN_PREFER_LLVMPIPE=1 set; preferring llvmpipe '{}' over Dozen candidate '{}'.",
+                            "Vulkan Dozen policy: non-Dozen alternative '{}' is available; preferring it over Dozen candidate '{}' (set GEK_VULKAN_FORCE_DOZEN=1 to force Dozen).",
                             selectedCandidate.properties.deviceName,
                             bestCandidate.properties.deviceName);
                     }
