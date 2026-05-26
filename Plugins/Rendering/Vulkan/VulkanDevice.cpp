@@ -5167,6 +5167,50 @@ namespace Gek
                                 GetVkResultName(fixedFunctionFallbackResult));
                         }
                     }
+
+                    if (isDozenDriver && ((pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) || (pipelineResult == VK_ERROR_OUT_OF_DEVICE_MEMORY)))
+                    {
+                        std::vector<VkVertexInputBindingDescription> vertexRateBindingDescriptions = bindingDescriptions;
+                        bool remappedInstanceBindings = false;
+                        uint32_t remappedInstanceBindingCount = 0;
+                        for (auto &bindingDescription : vertexRateBindingDescriptions)
+                        {
+                            if (bindingDescription.inputRate == VK_VERTEX_INPUT_RATE_INSTANCE)
+                            {
+                                bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                                remappedInstanceBindings = true;
+                                ++remappedInstanceBindingCount;
+                            }
+                        }
+
+                        if (remappedInstanceBindings)
+                        {
+                            VkPipelineVertexInputStateCreateInfo vertexRateInputInfo = vertexInputInfo;
+                            vertexRateInputInfo.pVertexBindingDescriptions = vertexRateBindingDescriptions.data();
+
+                            VkGraphicsPipelineCreateInfo vertexRateFallbackPipelineInfo = pipelineInfo;
+                            vertexRateFallbackPipelineInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+                            vertexRateFallbackPipelineInfo.pVertexInputState = &vertexRateInputInfo;
+
+                            VkResult vertexRateFallbackResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &vertexRateFallbackPipelineInfo, nullptr, &pipeline);
+                            if (vertexRateFallbackResult == VK_SUCCESS)
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: instance-rate binding retry succeeded after forcing {} binding(s) to VK_VERTEX_INPUT_RATE_VERTEX.",
+                                    remappedInstanceBindingCount);
+                                pipelineResult = VK_SUCCESS;
+                            }
+                            else
+                            {
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan Dozen fallback: instance-rate binding retry failed with result={} ('{}').",
+                                    static_cast<int32_t>(vertexRateFallbackResult),
+                                    GetVkResultName(vertexRateFallbackResult));
+                            }
+                        }
+                    }
                 }
 
                 if (pipelineResult != VK_SUCCESS)
