@@ -453,22 +453,22 @@ namespace Gek
             }
             catch (std::runtime_error const &exception)
             {
-                log(Error, std::string("Runtime Error raised trying to create class '") + std::string(className) + "': " + exception.what());
+                log(Error, "Runtime Error raised trying to create class '{}': {}", className, exception.what());
                 return nullptr;
             }
             catch (std::exception const &exception)
             {
-                log(Error, std::string("Exception raised trying to create class '") + std::string(className) + "': " + exception.what());
+                log(Error, "Exception raised trying to create class '{}': {}", className, exception.what());
                 return nullptr;
             }
             catch (std::string_view error)
             {
-                log(Error, std::string("Error raised trying to create class '") + std::string(className) + "': " + std::string(error));
+                log(Error, "Error raised trying to create class '{}': {}", className, error);
                 return nullptr;
             }
             catch (...)
             {
-                log(Error, std::string("Unknown exception occurred trying to create class '") + std::string(className) + "'.");
+                log(Error, "Unknown exception occurred trying to create class '{}'", className);
                 return nullptr;
             }
         }
