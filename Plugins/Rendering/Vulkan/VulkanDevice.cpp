@@ -169,9 +169,7 @@ namespace Gek
                 snapshot.memoryLoadPercent = static_cast<uint32_t>(memoryStatus.dwMemoryLoad);
             }
 #elif defined(__linux__)
-            struct sysinfo info
-            {
-            };
+            struct sysinfo info{};
             if (sysinfo(&info) == 0)
             {
                 const uint64_t unit = static_cast<uint64_t>(info.mem_unit ? info.mem_unit : 1);
@@ -819,9 +817,9 @@ namespace Gek
             }
 
             return std::format("spirv={}.{} caps=[{}] exts=[{}]",
-                verMajor, verMinor,
-                caps.empty() ? "none" : caps,
-                exts.empty() ? "none" : exts);
+                               verMajor, verMinor,
+                               caps.empty() ? "none" : caps,
+                               exts.empty() ? "none" : exts);
         }
 
         static std::string JoinEntryPointNames(std::vector<std::string> const &names)
@@ -3836,20 +3834,11 @@ namespace Gek
                      (std::strcmp(allowDozenEnvironment, "true") == 0) ||
                      (std::strcmp(allowDozenEnvironment, "TRUE") == 0));
 
-                const char *preferLlvmPipeEnvironment = std::getenv("GEK_VULKAN_PREFER_LLVMPIPE");
-                const bool preferLlvmPipeOverDozen =
-                    (preferLlvmPipeEnvironment != nullptr) &&
-                    ((std::strcmp(preferLlvmPipeEnvironment, "1") == 0) ||
-                     (std::strcmp(preferLlvmPipeEnvironment, "true") == 0) ||
-                     (std::strcmp(preferLlvmPipeEnvironment, "TRUE") == 0));
-
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={} (GEK_VULKAN_PREFER_LLVMPIPE={})",
+                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={})",
                     allowDozen ? 1 : 0,
-                    (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"),
-                    preferLlvmPipeOverDozen ? 1 : 0,
-                    (preferLlvmPipeEnvironment ? preferLlvmPipeEnvironment : "<unset>"));
+                    (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"));
 
                 CandidateDevice selectedCandidate = bestCandidate;
                 const bool hasUsableNonDozenCandidate =
@@ -3860,24 +3849,10 @@ namespace Gek
 
                 if (bestCandidate.isDozen && allowDozen)
                 {
-                    if (preferLlvmPipeOverDozen && hasUsableNonDozenCandidate &&
-                        (std::strstr(bestNonDozenCandidate.driverProperties.driverName, "llvmpipe") != nullptr))
-                    {
-                        selectedCandidate = bestNonDozenCandidate;
-                        physicalDevice = selectedCandidate.device;
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan Dozen policy: GEK_VULKAN_PREFER_LLVMPIPE=1 set; preferring llvmpipe '{}' over Dozen candidate '{}'.",
-                            selectedCandidate.properties.deviceName,
-                            bestCandidate.properties.deviceName);
-                    }
-                    else
-                    {
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan Dozen policy: Dozen allowed by environment; using candidate '{}'",
-                            bestCandidate.properties.deviceName);
-                    }
+                    getContext()->log(
+                        Gek::Context::Warning,
+                        "Vulkan Dozen policy: Dozen allowed by environment; using candidate '{}'",
+                        bestCandidate.properties.deviceName);
                 }
 
                 if (bestCandidate.isDozen && !allowDozen)
@@ -3975,7 +3950,6 @@ namespace Gek
                         static_cast<uint32_t>(selectedDriverProperties.driverID),
                         "spirv_1_3");
                 }
-
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -5249,20 +5223,6 @@ namespace Gek
                         requestedPixelEntryName,
                         JoinEntryPointNames(pixelSpirvEntryNames));
 
-                    // --- Automatic llvmpipe fallback trigger ---
-                    // If Dozen driver and VK_ERROR_OUT_OF_HOST_MEMORY after all fallbacks, set flag for higher-level handler
-                    static bool gLlvmPipeFallbackTriggered = false;
-                    const bool isDozenDriver =
-                        (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
-                        (selectedDriverName.find("Dozen") != std::string::npos);
-                    if (!gLlvmPipeFallbackTriggered && isDozenDriver && pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) {
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan Dozen: pipeline creation failed with VK_ERROR_OUT_OF_HOST_MEMORY after all fallbacks. Triggering automatic llvmpipe fallback if available.");
-                        gLlvmPipeFallbackTriggered = true;
-                        // Return VK_NULL_HANDLE; higher-level code should detect gLlvmPipeFallbackTriggered and reinit Vulkan with llvmpipe
-                        return VK_NULL_HANDLE;
-                    }
 
                     getContext()->log(
                         Gek::Context::Error,
@@ -5652,8 +5612,8 @@ namespace Gek
                             }
                         }
                         const uint32_t formatSize = (command.inputLayout && ai < command.inputLayout->elementList.size())
-                            ? GetFormatStride(command.inputLayout->elementList[ai].format)
-                            : 0u;
+                                                        ? GetFormatStride(command.inputLayout->elementList[ai].format)
+                                                        : 0u;
                         const bool offsetInBounds = (bindingStride == 0) || (formatSize == 0) || ((attr.offset + formatSize) <= bindingStride);
                         getContext()->log(
                             Gek::Context::Error,
@@ -7006,8 +6966,8 @@ namespace Gek
                 else
                 {
                     spirvProfileName = (forceSpirv12Profile || runtimePreferSpirv12Profile)
-                                          ? "spirv_1_2"
-                                          : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
+                                           ? "spirv_1_2"
+                                           : ((preferSpirv13Profile || forceSpirv13Profile) ? "spirv_1_3" : "spirv_1_4");
                 }
 
                 const bool isDozenDriverCompile =
@@ -7022,8 +6982,8 @@ namespace Gek
                 // SPIR-V→DXIL translator cannot handle.  Force the direct SPIR-V emitter to
                 // produce a plain, extension-minimal code stream instead.
                 targetDesc.flags = isDozenDriverCompile
-                    ? static_cast<SlangTargetFlags>(SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY)
-                    : static_cast<SlangTargetFlags>(0);
+                                       ? static_cast<SlangTargetFlags>(SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY)
+                                       : static_cast<SlangTargetFlags>(0);
 
                 slang::SessionDesc sessionDesc = {};
                 sessionDesc.targets = &targetDesc;
@@ -7129,7 +7089,7 @@ namespace Gek
             }
 
             template <class TYPE>
-            bool recompileProgramWithProfile(TYPE *program, const char *profileName)
+            bool recompileProgramWithProfile(TYPE * program, const char *profileName)
             {
                 if (!program || !profileName)
                 {
