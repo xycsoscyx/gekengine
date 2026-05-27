@@ -103,6 +103,7 @@ namespace Gek
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
+                log(Error, "foobar");
                 log(Error, "Unable to cast {} from base context user to requested class of {}", className, typeid(TYPE).name());
                 return nullptr;
             }
