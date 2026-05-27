@@ -3869,10 +3869,39 @@ namespace Gek
                     }
                     else
                     {
+                        // Extra diagnostics: enumerate all available devices and why they were not selected
+                        std::ostringstream diagnostics;
+                        diagnostics << "Vulkan device selection diagnostics:\n";
+                        for (const auto &device : availableDevices) {
+                            VkPhysicalDeviceProperties deviceProperties{};
+                            vkGetPhysicalDeviceProperties(device, &deviceProperties);
+                            VkPhysicalDeviceDriverProperties driverProperties{};
+                            driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+                            VkPhysicalDeviceProperties2 properties2{};
+                            properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+                            properties2.pNext = &driverProperties;
+                            vkGetPhysicalDeviceProperties2(device, &properties2);
+                            bool isDozen =
+                                (driverProperties.driverID == VK_DRIVER_ID_MESA_DOZEN) ||
+                                (std::strstr(driverProperties.driverName, "Dozen") != nullptr) ||
+                                (std::strstr(deviceProperties.deviceName, "Microsoft Direct3D12") != nullptr);
+                            bool isLlvmPipe = (std::strstr(driverProperties.driverName, "llvmpipe") != nullptr);
+                            diagnostics << "  - name='" << deviceProperties.deviceName << "' type=" << getDeviceTypeName(deviceProperties.deviceType)
+                                << " vendor=" << getVendorName(deviceProperties.vendorID) << " (0x" << std::hex << deviceProperties.vendorID << std::dec << ")"
+                                << " api=" << VK_VERSION_MAJOR(deviceProperties.apiVersion) << "." << VK_VERSION_MINOR(deviceProperties.apiVersion) << "." << VK_VERSION_PATCH(deviceProperties.apiVersion)
+                                << " driver=0x" << std::hex << deviceProperties.driverVersion << std::dec
+                                << " driverName='" << driverProperties.driverName << "' driverId=" << static_cast<uint32_t>(driverProperties.driverID)
+                                << " dozen=" << (isDozen ? 1 : 0)
+                                << " llvmpipe=" << (isLlvmPipe ? 1 : 0)
+                                << " score=" << rateDeviceSuitability(device) << "\n";
+                        }
+                        diagnostics << "Best candidate: '" << bestCandidate.properties.deviceName << "' (score=" << bestCandidate.score << ")\n";
+                        diagnostics << "Best non-Dozen candidate: '" << bestNonDozenCandidate.properties.deviceName << "' (score=" << bestNonDozenCandidate.score << ")\n";
                         getContext()->log(
                             Gek::Context::Error,
-                            "Vulkan selected candidate '{}' uses Dozen and no suitable non-Dozen device is available; install native Vulkan drivers, install llvmpipe Vulkan ICD, or set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen",
-                            bestCandidate.properties.deviceName);
+                            "Vulkan selected candidate '{}' uses Dozen and no suitable non-Dozen device is available; install native Vulkan drivers, install llvmpipe Vulkan ICD, or set GEK_VULKAN_ALLOW_DOZEN=1 to force Dozen.\n{}",
+                            bestCandidate.properties.deviceName,
+                            diagnostics.str());
                         throw std::runtime_error("Dozen adapter rejected: install native Vulkan driver or set GEK_VULKAN_ALLOW_DOZEN=1");
                     }
                 }
