@@ -453,24 +453,24 @@ namespace Gek
             }
             catch (std::runtime_error const &exception)
             {
-                log(Error, "Runtime Error raised trying to create {}: {}", exception.what(), className);
+                log(Error, std::string("Runtime Error raised trying to create class '") + std::string(className) + "': " + exception.what());
                 return nullptr;
             }
             catch (std::exception const &exception)
             {
-                log(Error, "Exception raised trying to create {}: {}", exception.what(), className);
+                log(Error, std::string("Exception raised trying to create class '") + std::string(className) + "': " + exception.what());
                 return nullptr;
             }
             catch (std::string_view error)
             {
-                log(Error, "Error raised trying to create {}: {}", error, className);
+                log(Error, std::string("Error raised trying to create class '") + std::string(className) + "': " + std::string(error));
                 return nullptr;
             }
             catch (...)
             {
-                log(Error, "Unknown exception occurred trying to create {}", className);
+                log(Error, std::string("Unknown exception occurred trying to create class '") + std::string(className) + "'.");
                 return nullptr;
-            };
+            }
         }
 
         void listTypes(std::string_view typeName, std::function<void(std::string_view)> onType) const
