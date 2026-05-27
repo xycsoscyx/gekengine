@@ -5249,6 +5249,21 @@ namespace Gek
                         requestedPixelEntryName,
                         JoinEntryPointNames(pixelSpirvEntryNames));
 
+                    // --- Automatic llvmpipe fallback trigger ---
+                    // If Dozen driver and VK_ERROR_OUT_OF_HOST_MEMORY after all fallbacks, set flag for higher-level handler
+                    static bool gLlvmPipeFallbackTriggered = false;
+                    const bool isDozenDriver =
+                        (selectedDriverId == VK_DRIVER_ID_MESA_DOZEN) ||
+                        (selectedDriverName.find("Dozen") != std::string::npos);
+                    if (!gLlvmPipeFallbackTriggered && isDozenDriver && pipelineResult == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan Dozen: pipeline creation failed with VK_ERROR_OUT_OF_HOST_MEMORY after all fallbacks. Triggering automatic llvmpipe fallback if available.");
+                        gLlvmPipeFallbackTriggered = true;
+                        // Return VK_NULL_HANDLE; higher-level code should detect gLlvmPipeFallbackTriggered and reinit Vulkan with llvmpipe
+                        return VK_NULL_HANDLE;
+                    }
+
                     getContext()->log(
                         Gek::Context::Error,
                         "Vulkan pipeline context: activeRenderPass={} deviceRenderPass={} pipelineLayout={} descriptorSetLayout={} swapChainFormat={} depthFormat={} validationLayer={} spirv13={} resizePending={} inputLayout={} inputElements={} inputShaderLocations={} vertexModule={} pixelModule={} vertexSpirvBytes={} pixelSpirvBytes={} driverName='{}' driverId={}",
