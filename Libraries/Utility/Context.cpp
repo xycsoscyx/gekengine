@@ -282,9 +282,12 @@ namespace Gek
             const auto &location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
             std::string formattedMessage;
-            try {
+            try
+            {
                 formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
-            } catch (const std::format_error &e) {
+            }
+            catch (const std::format_error &e)
+            {
                 formattedMessage = std::format("{}:{}: [format error: {}] raw format='{}'", fileName, location.line(), e.what(), message.format);
             }
 

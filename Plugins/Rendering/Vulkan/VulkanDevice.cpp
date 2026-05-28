@@ -3836,7 +3836,7 @@ namespace Gek
 
                 getContext()->log(
                     Gek::Context::Info,
-                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={})",
+                    "Vulkan Dozen policy: allowDozen={} (GEK_VULKAN_ALLOW_DOZEN={}) preferLlvmPipeOverDozen={}",
                     allowDozen ? 1 : 0,
                     (allowDozenEnvironment ? allowDozenEnvironment : "<unset>"));
 
