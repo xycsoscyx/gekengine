@@ -281,7 +281,12 @@ namespace Gek
             std::lock_guard<std::mutex> lock(logMutex);
             const auto &location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
-            auto formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
+            std::string formattedMessage;
+            try {
+                formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
+            } catch (const std::format_error &e) {
+                formattedMessage = std::format("{}:{}: [format error: {}] raw format='{}'", fileName, location.line(), e.what(), message.format);
+            }
 
             if (logSinkMask & LogSink_File)
             {
