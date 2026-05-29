@@ -1956,7 +1956,7 @@ namespace Gek
                 }
 
                 UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifdef _DEBUG
+#ifdef GEK_DEBUG
                 flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
@@ -2004,7 +2004,7 @@ namespace Gek
 
                 dxgiFactory->MakeWindowAssociation(reinterpret_cast<HWND>(window->getWindowData(0)), 0);
 
-#ifdef _DEBUG
+#ifdef GEK_DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
                 CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
                 // d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);

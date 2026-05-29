@@ -10,7 +10,7 @@
 #include <set>
 #include <unordered_map>
 
-#ifdef _DEBUG
+#ifdef GEK_DEBUG
 const char modulePostfix[] = "_debug";
 #else
 const char modulePostfix[] = "";
