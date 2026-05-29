@@ -23,6 +23,9 @@ get_filename_component(ProjectID ${CMAKE_CURRENT_LIST_DIR} NAME)
 string(REPLACE " " "_" ProjectID ${ProjectID})
 project(${ProjectID})
 
+# Define GEK_DEBUG for all targets in Debug builds (portable debug macro)
+add_compile_definitions($<$<CONFIG:Debug>:GEK_DEBUG>)
+
 if(MSVC)
     add_definitions(/await:strict) # Enable coroutines
     add_definitions(/std:c++20)
@@ -30,8 +33,6 @@ if(MSVC)
     add_compile_options(/FS)
     #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 
-    # Define GEK_DEBUG for all targets in Debug builds (portable debug macro)
-    add_compile_definitions($<$<CONFIG:Debug>:GEK_DEBUG>)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
