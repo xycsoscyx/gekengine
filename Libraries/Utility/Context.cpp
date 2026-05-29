@@ -246,7 +246,9 @@ namespace Gek
             for (auto const &pluginPath : pluginList)
             {
                 // Load root plugin names first, these are the root names, the postfix and extension gets appended in loadPlugin.
-                initializePlugin(FileSystem::Path(std::format("{}{}", pluginPath.getString(), modulePostfix)).withExtension(moduleExtension));
+                auto fullPluginPath = FileSystem::Path(std::format("{}{}", pluginPath.getString(), modulePostfix)).withExtension(moduleExtension);
+                log(Info, "Full plugin path to load: {}", fullPluginPath.getString());
+                initializePlugin(fullPluginPath);
             }
 
             for (auto const &searchPath : pluginSearchList)
