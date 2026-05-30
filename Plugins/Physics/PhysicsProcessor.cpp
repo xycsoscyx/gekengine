@@ -153,19 +153,19 @@ namespace Gek
                 }
             };
 
-                        class NewtonWorld : public ndWorld
-                        {
-                            public:
-                                NewtonWorld(Processor *processor)
-                                {
-                                        std::fprintf(stderr, "[GEK][Physics] NewtonWorld::NewtonWorld() - this=%p processor=%p\n", static_cast<void*>(this), static_cast<void*>(processor));
-                                        SetContactNotify(new ContactNotify(this->GetScene(), processor));
-                                }
-                                ~NewtonWorld()
-                                {
-                                        std::fprintf(stderr, "[GEK][Physics] NewtonWorld::~NewtonWorld() - this=%p\n", static_cast<void*>(this));
-                                }
-                        };
+            class NewtonWorld : public ndWorld
+            {
+              public:
+                NewtonWorld(Processor *processor)
+                {
+                    std::fprintf(stderr, "[GEK][Physics] NewtonWorld::NewtonWorld() - this=%p processor=%p\n", static_cast<void *>(this), static_cast<void *>(processor));
+                    SetContactNotify(new ContactNotify(this->GetScene(), processor));
+                }
+                ~NewtonWorld()
+                {
+                    std::fprintf(stderr, "[GEK][Physics] NewtonWorld::~NewtonWorld() - this=%p\n", static_cast<void *>(this));
+                }
+            };
 
           private:
             Plugin::Core *core = nullptr;
