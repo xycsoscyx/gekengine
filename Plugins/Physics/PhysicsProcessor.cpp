@@ -200,9 +200,15 @@ namespace Gek
                 population->onUpdate[50].connect(this, &Processor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
 
-                std::fprintf(stderr, "[GEK][Physics] Processor::Processor() - calling onReset()\n");
-                onReset();
+                // Do NOT call onReset() here. Call initialize() after construction.
                 std::fprintf(stderr, "[GEK][Physics] Processor::Processor() - end\n");
+            }
+
+            // Call this after construction to safely initialize NewtonWorld and threads
+            void initialize()
+            {
+                std::fprintf(stderr, "[GEK][Physics] Processor::initialize() - calling onReset()\n");
+                onReset();
             }
 
             void clear(void)
