@@ -243,23 +243,34 @@ namespace Gek
         {
             SetThreadPoolLogContext(this);
             configureLogSinkFromEnvironment();
+            // Load root plugins in deterministic order
+            log(Info, "[GEK][Context] Loading root plugins in order:");
             for (auto const &pluginPath : pluginList)
             {
-                // Load root plugin names first, these are the root names, the postfix and extension gets appended in loadPlugin.
                 auto basePluginPath = std::format("{}{}", pluginPath.getString(), modulePostfix);
                 auto fullPluginPath = FileSystem::Path(basePluginPath).withExtension(moduleExtension);
-                log(Info, "Full plugin path to load: {}, {}, {}", basePluginPath, fullPluginPath.getString(), modulePostfix);
+                log(Info, "[GEK][Context]   Plugin: {} (full path: {})", pluginPath.getString(), fullPluginPath.getString());
                 initializePlugin(fullPluginPath);
             }
 
+            // Gather all core plugins, sort for deterministic order, then load
             for (auto const &searchPath : pluginSearchList)
             {
-                log(Info, "Looking for Plugins: {}", searchPath.getString());
+                log(Info, "[GEK][Context] Looking for Plugins in: {}", searchPath.getString());
+                std::vector<FileSystem::Path> foundPlugins;
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                                      {
-                    // Load all core plugins that match the current platform and build configuration.
+                    foundPlugins.push_back(filePath);
+                    return true;
+                });
+                std::sort(foundPlugins.begin(), foundPlugins.end(), [](const FileSystem::Path &a, const FileSystem::Path &b) {
+                    return a.getFileName() < b.getFileName();
+                });
+                log(Info, "[GEK][Context] Sorted core plugins:");
+                for (const auto &filePath : foundPlugins) {
+                    log(Info, "[GEK][Context]   Core Plugin: {}", filePath.getFileName());
                     initializePlugin(filePath);
-                    return true; });
+                }
             }
         }
 

@@ -179,6 +179,7 @@ namespace Gek
             Processor(Context * context, Plugin::Core * core)
                 : ContextRegistration(context), core(core), population(core->getPopulation()), renderer(core->getVisualizer()), loadPool(5)
             {
+                fmt::print(stderr, "[GEK][Physics] Processor::Processor() - begin, this={} core={} population={} renderer={} loadPool={}\n", static_cast<void*>(this), static_cast<void*>(core), static_cast<void*>(population), static_cast<void*>(renderer), loadPool.size());
                 assert(core);
                 assert(population);
                 assert(renderer);
@@ -193,11 +194,14 @@ namespace Gek
                 population->onUpdate[50].connect(this, &Processor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
 
+                fmt::print(stderr, "[GEK][Physics] Processor::Processor() - calling onReset()\n");
                 onReset();
+                fmt::print(stderr, "[GEK][Physics] Processor::Processor() - end\n");
             }
 
             void clear(void)
             {
+                fmt::print(stderr, "[GEK][Physics] Processor::clear() - begin, newtonWorld={} this={}\n", static_cast<void*>(newtonWorld), static_cast<void*>(this));
                 if (newtonWorld)
                 {
                     newtonWorld->Sync();
@@ -212,7 +216,13 @@ namespace Gek
 
                     delete newtonWorld;
                     newtonWorld = nullptr;
+                    fmt::print(stderr, "[GEK][Physics] Processor::clear() - newtonWorld deleted\n");
                 }
+                else
+                {
+                    fmt::print(stderr, "[GEK][Physics] Processor::clear() - newtonWorld already nullptr\n");
+                }
+                fmt::print(stderr, "[GEK][Physics] Processor::clear() - end\n");
             }
 
             Task scheduleLoadShape(std::shared_ptr<std::promise<ndShape *>> promise, Components::Model const &modelComponent)
@@ -610,14 +620,18 @@ namespace Gek
             // Plugin::Population Slots
             void onReset(void)
             {
+                fmt::print(stderr, "[GEK][Physics] Processor::onReset() - begin, this={} newtonWorld={}\n", static_cast<void*>(this), static_cast<void*>(newtonWorld));
                 clear();
+                fmt::print(stderr, "[GEK][Physics] Processor::onReset() - after clear, newtonWorld={}\n", static_cast<void*>(newtonWorld));
                 newtonWorld = new NewtonWorld(this);
+                fmt::print(stderr, "[GEK][Physics] Processor::onReset() - newtonWorld created: {}\n", static_cast<void*>(newtonWorld));
 
                 newtonWorld->Sync();
                 newtonWorld->SetSubSteps(2);
                 newtonWorld->SetSolverIterations(1);
                 newtonWorld->SetThreadCount(4);
                 // newtonWorld->SelectSolver(m_solverMode);
+                fmt::print(stderr, "[GEK][Physics] Processor::onReset() - end\n");
             }
 
             void onEntityCreated(Plugin::Entity *const entity)
