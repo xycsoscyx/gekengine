@@ -180,7 +180,7 @@ namespace Gek
             Processor(Context * context, Plugin::Core * core)
                 : ContextRegistration(context), core(core), population(core->getPopulation()), renderer(core->getVisualizer()), loadPool(5)
             {
-                std::fprintf(stderr, "[GEK][Physics] Processor::Processor() - begin, this=%p core=%p population=%p renderer=%p loadPool=%zu\n", static_cast<void *>(this), static_cast<void *>(core), static_cast<void *>(population), static_cast<void *>(renderer), loadPool.size());
+                std::fprintf(stderr, "[GEK][Physics] Processor::Processor() - begin, this=%p core=%p population=%p renderer=%p\n", static_cast<void *>(this), static_cast<void *>(core), static_cast<void *>(population), static_cast<void *>(renderer));
                 assert(core);
                 assert(population);
                 assert(renderer);
