@@ -261,13 +261,12 @@ namespace Gek
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                                      {
                     foundPlugins.push_back(filePath);
-                    return true;
-                });
-                std::sort(foundPlugins.begin(), foundPlugins.end(), [](const FileSystem::Path &a, const FileSystem::Path &b) {
-                    return a.getFileName() < b.getFileName();
-                });
+                    return true; });
+                std::sort(foundPlugins.begin(), foundPlugins.end(), [](const FileSystem::Path &a, const FileSystem::Path &b)
+                          { return a.getFileName() < b.getFileName(); });
                 log(Info, "[GEK][Context] Sorted core plugins:");
-                for (const auto &filePath : foundPlugins) {
+                for (const auto &filePath : foundPlugins)
+                {
                     log(Info, "[GEK][Context]   Core Plugin: {}", filePath.getFileName());
                     initializePlugin(filePath);
                 }
