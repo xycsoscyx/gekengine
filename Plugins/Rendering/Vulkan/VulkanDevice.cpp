@@ -2896,7 +2896,12 @@ namespace Gek
             Render::Device::ContextPtr defaultContext;
             Render::TargetPtr backBuffer;
 
+            // Always enable validation layers in debug builds
+#if defined(GEK_DEBUG) || defined(_DEBUG)
+            bool enableValidationLayer = true;
+#else
             bool enableValidationLayer = false;
+#endif
             VkDebugUtilsMessengerEXT debugMessenger;
 
             bool kronosBaseSurfaceAvailable = false;
@@ -5873,7 +5878,10 @@ namespace Gek
                 : ContextRegistration(context), window(window)
             {
                 applyBufferVersioningPolicyOverrides(deviceDescription);
-                enableValidationLayer = checkValidationLayerSupport();
+                // Only check for support if validation layers are enabled
+                if (enableValidationLayer) {
+                    enableValidationLayer = checkValidationLayerSupport();
+                }
                 createInstance();
                 if (enableValidationLayer)
                 {
@@ -5905,7 +5913,13 @@ namespace Gek
                 createInfo.pfnUserCallback = [](VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *callbackData, void *userData) -> VkBool32
                 {
                     Gek::Context *context = reinterpret_cast<Gek::Context *>(userData);
-                    context->log(Gek::Context::Info, callbackData->pMessage);
+                    Gek::Context::LogLevel logLevel = Gek::Context::Info;
+                    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+                        logLevel = Gek::Context::Error;
+                    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+                        logLevel = Gek::Context::Warning;
+                    }
+                    context->log(logLevel, callbackData->pMessage);
                     return VK_FALSE;
                 };
 
