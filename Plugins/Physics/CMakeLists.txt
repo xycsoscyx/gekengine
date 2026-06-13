@@ -14,17 +14,17 @@ if(NOT MSVC)
     # Force SSE4.1 alignment (16-byte) on Unix/Linux to match Float4x4 layout
     add_compile_options(-msse4.1)
 endif()
-
+  
 FetchContent_Declare(
 	newton
 	OVERRIDE_FIND_PACKAGE
-	GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git
+	GIT_REPOSITORY https://github.com/JulioJerez/newton-dynamics
 	GIT_TAG master
 	SOURCE_SUBDIR newton-4.00
 	OVERRIDE_FIND_PACKAGE)
 
 FetchContent_MakeAvailable(newton)
-
+  
 # Apply alignment enforcement to Newton libraries as well
 if(TARGET ndCore)
     target_compile_definitions(ndCore PUBLIC D_NEWTON_ENFORCE_CLASS_ALIGNMENT)
@@ -48,6 +48,7 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dChara
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dVehicle")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dMesh")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
 file(GLOB HEADERS "GEK/Newton/*.hpp")

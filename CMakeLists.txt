@@ -69,6 +69,15 @@ endif()
 
 include(FetchContent)
 
+# CMake 4.x may write FetchContent package redirection files before the
+# redirects directory exists during regeneration. Ensure it is present.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    if(NOT DEFINED CMAKE_FIND_PACKAGE_REDIRECTS_DIR)
+        set(CMAKE_FIND_PACKAGE_REDIRECTS_DIR "${CMAKE_BINARY_DIR}/CMakeFiles/pkgRedirects")
+    endif()
+    file(MAKE_DIRECTORY "${CMAKE_FIND_PACKAGE_REDIRECTS_DIR}")
+endif()
+
 # External dependency pinning policy:
 # - Use immutable commit SHAs for new dependencies.
 # - Update pins only via explicit dependency bump changes.
