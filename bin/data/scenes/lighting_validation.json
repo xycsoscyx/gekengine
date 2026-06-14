@@ -3,13 +3,13 @@
         "GlassProbeSphere": {
             "Model": "#sphere",
             "Transform": {
-                "scale": [ 13.0, 13.0, 13.0 ]
+                "scale": [ 1.0, 1.0, 1.0 ]
             }
         },
         "GlassProbeCube": {
             "Model": "#cube",
             "Transform": {
-                "scale": [ 12.5, 12.5, 12.5 ]
+                "scale": [ 1.0, 1.0, 1.0 ]
             }
         }
     },

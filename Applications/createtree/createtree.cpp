@@ -7,6 +7,9 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/String.hpp"
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -187,6 +190,449 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
         }
     }
 
+    return true;
+}
+
+bool SanitizeTreeModel(Context *context, Model &model, std::string const &modelName)
+{
+    struct QuantizedPoint
+    {
+        long long x;
+        long long y;
+        long long z;
+    };
+
+    struct FaceLocation
+    {
+        size_t meshIndex;
+        size_t faceIndex;
+    };
+
+    auto isFiniteFloat3 = [](Math::Float3 const &p) -> bool
+    {
+        return std::isfinite(static_cast<double>(p.x)) && std::isfinite(static_cast<double>(p.y)) && std::isfinite(static_cast<double>(p.z));
+    };
+
+    auto triangleAreaSquared = [](Math::Float3 const &p0, Math::Float3 const &p1, Math::Float3 const &p2) -> double
+    {
+        const double ax = static_cast<double>(p1.x) - static_cast<double>(p0.x);
+        const double ay = static_cast<double>(p1.y) - static_cast<double>(p0.y);
+        const double az = static_cast<double>(p1.z) - static_cast<double>(p0.z);
+
+        const double bx = static_cast<double>(p2.x) - static_cast<double>(p0.x);
+        const double by = static_cast<double>(p2.y) - static_cast<double>(p0.y);
+        const double bz = static_cast<double>(p2.z) - static_cast<double>(p0.z);
+
+        const double cx = ay * bz - az * by;
+        const double cy = az * bx - ax * bz;
+        const double cz = ax * by - ay * bx;
+        return (cx * cx) + (cy * cy) + (cz * cz);
+    };
+
+    auto quantizePoint = [](Math::Float3 const &p, double scale) -> QuantizedPoint
+    {
+        QuantizedPoint q;
+        q.x = static_cast<long long>(std::llround(static_cast<double>(p.x) * scale));
+        q.y = static_cast<long long>(std::llround(static_cast<double>(p.y) * scale));
+        q.z = static_cast<long long>(std::llround(static_cast<double>(p.z) * scale));
+        return q;
+    };
+
+    auto sameQuantizedPoint = [](QuantizedPoint const &a, QuantizedPoint const &b) -> bool
+    {
+        return (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+    };
+
+    auto lessQuantizedPoint = [](QuantizedPoint const &a, QuantizedPoint const &b) -> bool
+    {
+        if (a.x != b.x)
+        {
+            return a.x < b.x;
+        }
+        if (a.y != b.y)
+        {
+            return a.y < b.y;
+        }
+        return a.z < b.z;
+    };
+
+    auto quantizedTriangleAreaSquared = [](QuantizedPoint const &p0, QuantizedPoint const &p1, QuantizedPoint const &p2, double weldTolerance) -> double
+    {
+        const double ax = static_cast<double>(p1.x - p0.x) * weldTolerance;
+        const double ay = static_cast<double>(p1.y - p0.y) * weldTolerance;
+        const double az = static_cast<double>(p1.z - p0.z) * weldTolerance;
+
+        const double bx = static_cast<double>(p2.x - p0.x) * weldTolerance;
+        const double by = static_cast<double>(p2.y - p0.y) * weldTolerance;
+        const double bz = static_cast<double>(p2.z - p0.z) * weldTolerance;
+
+        const double cx = ay * bz - az * by;
+        const double cy = az * bx - ax * bz;
+        const double cz = ax * by - ay * bx;
+        return (cx * cx) + (cy * cy) + (cz * cz);
+    };
+
+    constexpr double MinTriangleAreaSquared = 1.0e-12;
+    constexpr double PolygonSoupWeldTolerance = 1.0e-6;
+    constexpr double PolygonSoupWeldScale = 1.0 / PolygonSoupWeldTolerance;
+    constexpr double MinWeldedEdgeSquared = PolygonSoupWeldTolerance * PolygonSoupWeldTolerance;
+    constexpr double MinQuantizedTriangleAreaSquared = MinWeldedEdgeSquared * MinWeldedEdgeSquared;
+    constexpr double MinTriangleEdgeSquared = 1.0e-10;
+    constexpr double MinTriangleQuality = 1.0e-6;
+    constexpr double MaxEdgeNormalDot = 2.0e-1;
+
+    size_t invalidFaceCount = 0;
+    size_t duplicateIndexFaceCount = 0;
+    size_t nonFiniteFaceCount = 0;
+    size_t weldedEdgeFaceCount = 0;
+    size_t weldedDegenerateFaceCount = 0;
+    size_t duplicateWeldedTriangleFaceCount = 0;
+    size_t nonManifoldFaceCount = 0;
+    size_t invalidAdjacencyFaceCount = 0;
+    size_t shortEdgeFaceCount = 0;
+    size_t sliverFaceCount = 0;
+    size_t degenerateFaceCount = 0;
+
+    std::map<std::array<long long, 9>, size_t> triangleFaceMap;
+    std::map<std::array<long long, 6>, std::vector<size_t>> edgeFaceMap;
+    std::vector<std::array<double, 3>> triangleNormals;
+    std::vector<FaceLocation> acceptedFaces;
+
+    std::vector<std::vector<bool>> faceKeepMask(model.meshList.size());
+    for (size_t meshIndex = 0; meshIndex < model.meshList.size(); ++meshIndex)
+    {
+        faceKeepMask[meshIndex].assign(model.meshList[meshIndex].faceList.size(), false);
+    }
+
+    for (size_t meshIndex = 0; meshIndex < model.meshList.size(); ++meshIndex)
+    {
+        auto &mesh = model.meshList[meshIndex];
+        for (size_t faceIndex = 0; faceIndex < mesh.faceList.size(); ++faceIndex)
+        {
+            auto const &face = mesh.faceList[faceIndex];
+            int32_t i0 = face[0];
+            int32_t i1 = face[1];
+            int32_t i2 = face[2];
+
+            if (i0 < 0 || i1 < 0 || i2 < 0 ||
+                static_cast<size_t>(i0) >= mesh.pointList.size() ||
+                static_cast<size_t>(i1) >= mesh.pointList.size() ||
+                static_cast<size_t>(i2) >= mesh.pointList.size())
+            {
+                ++invalidFaceCount;
+                continue;
+            }
+
+            if ((i0 == i1) || (i1 == i2) || (i2 == i0))
+            {
+                ++duplicateIndexFaceCount;
+                continue;
+            }
+
+            Math::Float3 const &p0 = mesh.pointList[i0];
+            Math::Float3 const &p1 = mesh.pointList[i1];
+            Math::Float3 const &p2 = mesh.pointList[i2];
+
+            if (!isFiniteFloat3(p0) || !isFiniteFloat3(p1) || !isFiniteFloat3(p2))
+            {
+                ++nonFiniteFaceCount;
+                continue;
+            }
+
+            QuantizedPoint const qp0 = quantizePoint(p0, PolygonSoupWeldScale);
+            QuantizedPoint const qp1 = quantizePoint(p1, PolygonSoupWeldScale);
+            QuantizedPoint const qp2 = quantizePoint(p2, PolygonSoupWeldScale);
+            if (sameQuantizedPoint(qp0, qp1) || sameQuantizedPoint(qp1, qp2) || sameQuantizedPoint(qp2, qp0))
+            {
+                ++weldedEdgeFaceCount;
+                continue;
+            }
+
+            if (quantizedTriangleAreaSquared(qp0, qp1, qp2, PolygonSoupWeldTolerance) <= MinQuantizedTriangleAreaSquared)
+            {
+                ++weldedDegenerateFaceCount;
+                continue;
+            }
+
+            QuantizedPoint keyP0 = qp0;
+            QuantizedPoint keyP1 = qp1;
+            QuantizedPoint keyP2 = qp2;
+            if (lessQuantizedPoint(keyP1, keyP0))
+            {
+                std::swap(keyP0, keyP1);
+            }
+            if (lessQuantizedPoint(keyP2, keyP1))
+            {
+                std::swap(keyP1, keyP2);
+            }
+            if (lessQuantizedPoint(keyP1, keyP0))
+            {
+                std::swap(keyP0, keyP1);
+            }
+
+            std::array<long long, 9> const triKey = {
+                keyP0.x, keyP0.y, keyP0.z,
+                keyP1.x, keyP1.y, keyP1.z,
+                keyP2.x, keyP2.y, keyP2.z
+            };
+            if (triangleFaceMap.find(triKey) != triangleFaceMap.end())
+            {
+                ++duplicateWeldedTriangleFaceCount;
+                continue;
+            }
+
+            const double e01x = static_cast<double>(p1.x) - static_cast<double>(p0.x);
+            const double e01y = static_cast<double>(p1.y) - static_cast<double>(p0.y);
+            const double e01z = static_cast<double>(p1.z) - static_cast<double>(p0.z);
+            const double e12x = static_cast<double>(p2.x) - static_cast<double>(p1.x);
+            const double e12y = static_cast<double>(p2.y) - static_cast<double>(p1.y);
+            const double e12z = static_cast<double>(p2.z) - static_cast<double>(p1.z);
+            const double e20x = static_cast<double>(p0.x) - static_cast<double>(p2.x);
+            const double e20y = static_cast<double>(p0.y) - static_cast<double>(p2.y);
+            const double e20z = static_cast<double>(p0.z) - static_cast<double>(p2.z);
+
+            const double edge01Squared = (e01x * e01x) + (e01y * e01y) + (e01z * e01z);
+            const double edge12Squared = (e12x * e12x) + (e12y * e12y) + (e12z * e12z);
+            const double edge20Squared = (e20x * e20x) + (e20y * e20y) + (e20z * e20z);
+            if (edge01Squared <= MinWeldedEdgeSquared ||
+                edge12Squared <= MinWeldedEdgeSquared ||
+                edge20Squared <= MinWeldedEdgeSquared)
+            {
+                ++weldedEdgeFaceCount;
+                continue;
+            }
+
+            if (edge01Squared <= MinTriangleEdgeSquared ||
+                edge12Squared <= MinTriangleEdgeSquared ||
+                edge20Squared <= MinTriangleEdgeSquared)
+            {
+                ++shortEdgeFaceCount;
+                continue;
+            }
+
+            const double areaSquared = triangleAreaSquared(p0, p1, p2);
+            if (areaSquared <= MinTriangleAreaSquared)
+            {
+                ++degenerateFaceCount;
+                continue;
+            }
+
+            const double maxEdgeSquared = std::max(edge01Squared, std::max(edge12Squared, edge20Squared));
+            if (maxEdgeSquared > MinTriangleEdgeSquared)
+            {
+                const double quality = areaSquared / (maxEdgeSquared * maxEdgeSquared);
+                if (quality <= MinTriangleQuality)
+                {
+                    ++sliverFaceCount;
+                    continue;
+                }
+            }
+
+            const double e02x = static_cast<double>(p2.x) - static_cast<double>(p0.x);
+            const double e02y = static_cast<double>(p2.y) - static_cast<double>(p0.y);
+            const double e02z = static_cast<double>(p2.z) - static_cast<double>(p0.z);
+            const double nx = (e01y * e02z) - (e01z * e02y);
+            const double ny = (e01z * e02x) - (e01x * e02z);
+            const double nz = (e01x * e02y) - (e01y * e02x);
+            const double normalLength = std::sqrt((nx * nx) + (ny * ny) + (nz * nz));
+            if (!std::isfinite(normalLength) || normalLength <= 0.0)
+            {
+                ++degenerateFaceCount;
+                continue;
+            }
+
+            size_t const triIndex = acceptedFaces.size();
+            acceptedFaces.push_back({ meshIndex, faceIndex });
+            faceKeepMask[meshIndex][faceIndex] = true;
+            triangleNormals.push_back({ nx / normalLength, ny / normalLength, nz / normalLength });
+            triangleFaceMap[triKey] = triIndex;
+
+            auto registerEdge = [&](QuantizedPoint a, QuantizedPoint b)
+            {
+                if (lessQuantizedPoint(b, a))
+                {
+                    std::swap(a, b);
+                }
+                std::array<long long, 6> const edgeKey = {
+                    a.x, a.y, a.z,
+                    b.x, b.y, b.z
+                };
+                edgeFaceMap[edgeKey].push_back(triIndex);
+            };
+
+            registerEdge(qp0, qp1);
+            registerEdge(qp1, qp2);
+            registerEdge(qp2, qp0);
+        }
+    }
+
+    std::vector<bool> rejected(acceptedFaces.size(), false);
+    for (auto const &edgeEntry : edgeFaceMap)
+    {
+        auto const &facesOnEdge = edgeEntry.second;
+        if (facesOnEdge.size() > 2)
+        {
+            for (size_t const faceIndex : facesOnEdge)
+            {
+                if (!rejected[faceIndex])
+                {
+                    rejected[faceIndex] = true;
+                    ++nonManifoldFaceCount;
+                }
+            }
+        }
+        else if (facesOnEdge.size() == 2)
+        {
+            size_t const face0 = facesOnEdge[0];
+            size_t const face1 = facesOnEdge[1];
+            if ((face0 < triangleNormals.size()) && (face1 < triangleNormals.size()))
+            {
+                std::array<long long, 6> const &edgeKey = edgeEntry.first;
+                double edgeX = static_cast<double>(edgeKey[3] - edgeKey[0]) * PolygonSoupWeldTolerance;
+                double edgeY = static_cast<double>(edgeKey[4] - edgeKey[1]) * PolygonSoupWeldTolerance;
+                double edgeZ = static_cast<double>(edgeKey[5] - edgeKey[2]) * PolygonSoupWeldTolerance;
+                double edgeLengthSquared = (edgeX * edgeX) + (edgeY * edgeY) + (edgeZ * edgeZ);
+                if (edgeLengthSquared <= MinWeldedEdgeSquared)
+                {
+                    if (!rejected[face0])
+                    {
+                        rejected[face0] = true;
+                        ++invalidAdjacencyFaceCount;
+                    }
+                    if (!rejected[face1])
+                    {
+                        rejected[face1] = true;
+                        ++invalidAdjacencyFaceCount;
+                    }
+                    continue;
+                }
+
+                const double inverseEdgeLength = 1.0 / std::sqrt(edgeLengthSquared);
+                edgeX *= inverseEdgeLength;
+                edgeY *= inverseEdgeLength;
+                edgeZ *= inverseEdgeLength;
+
+                auto const &normal0 = triangleNormals[face0];
+                auto const &normal1 = triangleNormals[face1];
+                const double edgeDotNormal0 = std::fabs((edgeX * normal0[0]) + (edgeY * normal0[1]) + (edgeZ * normal0[2]));
+                const double edgeDotNormal1 = std::fabs((edgeX * normal1[0]) + (edgeY * normal1[1]) + (edgeZ * normal1[2]));
+
+                if (!std::isfinite(edgeDotNormal0) || !std::isfinite(edgeDotNormal1) ||
+                    (edgeDotNormal0 >= MaxEdgeNormalDot) || (edgeDotNormal1 >= MaxEdgeNormalDot))
+                {
+                    if (!rejected[face0])
+                    {
+                        rejected[face0] = true;
+                        ++invalidAdjacencyFaceCount;
+                    }
+                    if (!rejected[face1])
+                    {
+                        rejected[face1] = true;
+                        ++invalidAdjacencyFaceCount;
+                    }
+                }
+            }
+        }
+    }
+
+    for (size_t triIndex = 0; triIndex < acceptedFaces.size(); ++triIndex)
+    {
+        if (rejected[triIndex])
+        {
+            FaceLocation const &location = acceptedFaces[triIndex];
+            faceKeepMask[location.meshIndex][location.faceIndex] = false;
+        }
+    }
+
+    for (size_t meshIndex = 0; meshIndex < model.meshList.size(); ++meshIndex)
+    {
+        auto &mesh = model.meshList[meshIndex];
+        auto const &keepMask = faceKeepMask[meshIndex];
+
+        std::vector<Mesh::Face> sanitizedFaces;
+        sanitizedFaces.reserve(mesh.faceList.size());
+        for (size_t faceIndex = 0; faceIndex < mesh.faceList.size(); ++faceIndex)
+        {
+            if (keepMask[faceIndex])
+            {
+                sanitizedFaces.push_back(mesh.faceList[faceIndex]);
+            }
+        }
+
+        mesh.faceList.swap(sanitizedFaces);
+    }
+
+    if (invalidFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} invalid faces while creating tree physics model: {}", invalidFaceCount, modelName);
+    }
+    if (duplicateIndexFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} duplicate-index faces while creating tree physics model: {}", duplicateIndexFaceCount, modelName);
+    }
+    if (nonFiniteFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} non-finite faces while creating tree physics model: {}", nonFiniteFaceCount, modelName);
+    }
+    if (weldedEdgeFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} pre-weld-collapsed faces while creating tree physics model: {}", weldedEdgeFaceCount, modelName);
+    }
+    if (weldedDegenerateFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} weld-space degenerate faces while creating tree physics model: {}", weldedDegenerateFaceCount, modelName);
+    }
+    if (duplicateWeldedTriangleFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} duplicate weld-space triangles while creating tree physics model: {}", duplicateWeldedTriangleFaceCount, modelName);
+    }
+    if (nonManifoldFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} non-manifold welded faces while creating tree physics model: {}", nonManifoldFaceCount, modelName);
+    }
+    if (invalidAdjacencyFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} invalid-adjacency faces while creating tree physics model: {}", invalidAdjacencyFaceCount, modelName);
+    }
+    if (shortEdgeFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} short-edge faces while creating tree physics model: {}", shortEdgeFaceCount, modelName);
+    }
+    if (sliverFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} sliver faces while creating tree physics model: {}", sliverFaceCount, modelName);
+    }
+    if (degenerateFaceCount > 0)
+    {
+        context->log(Context::Warning, "Skipped {} degenerate faces while creating tree physics model: {}", degenerateFaceCount, modelName);
+    }
+
+    if ((nonManifoldFaceCount > 0) || (duplicateWeldedTriangleFaceCount > 0) || (invalidAdjacencyFaceCount > 0))
+    {
+        context->log(Context::Error, "Rejected tree physics model due to invalid welded topology or adjacency: {}", modelName);
+        return false;
+    }
+
+    size_t totalFaceCount = 0;
+    std::vector<Mesh> sanitizedMeshList;
+    sanitizedMeshList.reserve(model.meshList.size());
+    for (auto &mesh : model.meshList)
+    {
+        if (!mesh.faceList.empty())
+        {
+            totalFaceCount += mesh.faceList.size();
+            sanitizedMeshList.push_back(std::move(mesh));
+        }
+    }
+    model.meshList.swap(sanitizedMeshList);
+
+    if (totalFaceCount == 0)
+    {
+        context->log(Context::Error, "No valid faces in tree physics model: {}", modelName);
+        return false;
+    }
+
+    context->log(Context::Info, "Sanitized tree physics model {} to {} mesh(es), {} face(s)", modelName, model.meshList.size(), totalFaceCount);
     return true;
 }
 
@@ -429,6 +875,11 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
             return -__LINE__;
         }
 
+        if (!SanitizeTreeModel(context.get(), model, parameters.sourceName))
+        {
+            return -__LINE__;
+        }
+
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(inputScene);
 
@@ -450,9 +901,15 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
                 materialList.insert(mesh.material);
             }
 
+            if (materialList.size() > std::numeric_limits<uint32_t>::max() || model.meshList.size() > std::numeric_limits<uint32_t>::max())
+            {
+                context->log(Context::Error, "Tree physics model exceeds format limits: {}", parameters.sourceName);
+                return -__LINE__;
+            }
+
             Header header;
-            header.materialCount = materialList.size();
-            header.meshCount = model.meshList.size();
+            header.materialCount = static_cast<uint32_t>(materialList.size());
+            header.meshCount = static_cast<uint32_t>(model.meshList.size());
             FileSystem::Write(file, &header, 1);
             for (auto const &material : materialList)
             {
@@ -470,9 +927,15 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
                 auto materialSearch = materialList.find(mesh.material);
 
                 Header::Mesh meshHeader;
-                meshHeader.materialIndex = std::distance(std::begin(materialList), materialSearch);
-                meshHeader.faceCount = mesh.faceList.size();
-                meshHeader.pointCount = mesh.pointList.size();
+                if (mesh.faceList.size() > std::numeric_limits<uint32_t>::max() || mesh.pointList.size() > std::numeric_limits<uint32_t>::max())
+                {
+                    context->log(Context::Error, "Mesh exceeds format limits while writing tree physics model: {}", parameters.sourceName);
+                    return -__LINE__;
+                }
+
+                meshHeader.materialIndex = static_cast<uint32_t>(std::distance(std::begin(materialList), materialSearch));
+                meshHeader.faceCount = static_cast<uint32_t>(mesh.faceList.size());
+                meshHeader.pointCount = static_cast<uint32_t>(mesh.pointList.size());
                 FileSystem::Write(file, &meshHeader, 1);
                 FileSystem::Write(file, mesh.faceList.data(), meshHeader.faceCount);
                 FileSystem::Write(file, mesh.pointList.data(), meshHeader.pointCount);
