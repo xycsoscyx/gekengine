@@ -136,6 +136,7 @@ namespace Gek
                     for (NodeType *node = points.GetFirst(); node; node = node->GetNext())
                     {
                         const ndContactMaterial &cp = node->GetInfo();
+
                         Plugin::Entity *entity0 = nullptr;
                         Plugin::Entity *entity1 = nullptr;
                         ndBodyKinematic *body0 = (ndBodyKinematic *)contact->GetBody0();
@@ -329,9 +330,16 @@ namespace Gek
                             materialNames.push_back(std::string(mat->name));
                         }
 
-                        // Read meshes
-                        std::vector<TreeHeader::Mesh> meshes;
-                        for (uint32_t i = 0; i < treeHeader->meshCount; ++i)
+                        // Tree assets are sanitized by createtree. Runtime loader assumes valid
+                        // topology and only verifies file integrity/read bounds.
+                        auto *compound = new ndShapeCompound();
+                        compound->BeginAddRemove();
+
+                        static constexpr uint32_t MaxFacesPerChunk = 240;
+
+                        uint32_t totalFaces = 0;
+                        uint32_t validChunkCount = 0;
+                        for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; ++meshIndex)
                         {
                             TreeHeader::Mesh *mesh = reader.read<TreeHeader::Mesh>();
                             if (!mesh)
@@ -341,24 +349,8 @@ namespace Gek
                                 co_return;
                             }
 
-                            meshes.push_back(*mesh);
-                        }
-
-                        // Tree assets are sanitized by createtree. Runtime loader assumes valid
-                        // topology and only verifies file integrity/read bounds.
-                        static constexpr uint32_t MaxFacesPerChunk = 240;
-
-                        struct Triangle
-                        {
-                            ndVector v[3];
-                        };
-                        std::vector<Triangle> allTriangles;
-                        allTriangles.reserve(1024);
-
-                        for (auto &mesh : meshes)
-                        {
-                            TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh.faceCount);
-                            Math::Float3 *meshPoints = reader.read<Math::Float3>(mesh.pointCount);
+                            TreeHeader::Face *faces = reader.read<TreeHeader::Face>(mesh->faceCount);
+                            Math::Float3 *meshPoints = reader.read<Math::Float3>(mesh->pointCount);
                             if (!faces || !meshPoints)
                             {
                                 getContext()->log(Context::Error, "Invalid face/point data in tree physics model: {}", modelComponent.name);
@@ -366,16 +358,20 @@ namespace Gek
                                 co_return;
                             }
 
-                            for (uint32_t f = 0; f < mesh.faceCount; ++f)
+                            ndPolygonSoupBuilder meshBuilder;
+                            meshBuilder.Begin();
+
+                            uint32_t chunkFaceCount = 0;
+                            for (uint32_t f = 0; f < mesh->faceCount; ++f)
                             {
                                 int32_t i0 = faces[f].indices[0];
                                 int32_t i1 = faces[f].indices[1];
                                 int32_t i2 = faces[f].indices[2];
 
                                 if (i0 < 0 || i1 < 0 || i2 < 0 ||
-                                    static_cast<uint32_t>(i0) >= mesh.pointCount ||
-                                    static_cast<uint32_t>(i1) >= mesh.pointCount ||
-                                    static_cast<uint32_t>(i2) >= mesh.pointCount)
+                                    static_cast<uint32_t>(i0) >= mesh->pointCount ||
+                                    static_cast<uint32_t>(i1) >= mesh->pointCount ||
+                                    static_cast<uint32_t>(i2) >= mesh->pointCount)
                                 {
                                     getContext()->log(Context::Error, "Invalid face indices in preprocessed tree physics model: {}", modelComponent.name);
                                     promise->set_value(nullptr);
@@ -386,15 +382,34 @@ namespace Gek
                                 Math::Float3 const &p1 = meshPoints[i1];
                                 Math::Float3 const &p2 = meshPoints[i2];
 
-                                Triangle tri;
-                                tri.v[0] = ndVector(p0.x, p0.y, p0.z, 0.0f);
-                                tri.v[1] = ndVector(p1.x, p1.y, p1.z, 0.0f);
-                                tri.v[2] = ndVector(p2.x, p2.y, p2.z, 0.0f);
-                                allTriangles.push_back(tri);
+                                ndVector tri[3] = {
+                                    ndVector(p0.x, p0.y, p0.z, 0.0f),
+                                    ndVector(p1.x, p1.y, p1.z, 0.0f),
+                                    ndVector(p2.x, p2.y, p2.z, 0.0f)
+                                };
+                                meshBuilder.AddFace(tri, 3, mesh->materialIndex);
+                                totalFaces++;
+                                chunkFaceCount++;
+
+                                if (chunkFaceCount >= MaxFacesPerChunk)
+                                {
+                                    meshBuilder.End(false);
+                                    compound->AddCollision(new ndShapeInstance(new ndShapeStatic_bvh(meshBuilder)));
+                                    validChunkCount++;
+
+                                    meshBuilder.Begin();
+                                    chunkFaceCount = 0;
+                                }
+                            }
+
+                            if (chunkFaceCount > 0)
+                            {
+                                meshBuilder.End(false);
+                                compound->AddCollision(new ndShapeInstance(new ndShapeStatic_bvh(meshBuilder)));
+                                validChunkCount++;
                             }
                         }
 
-                        uint32_t totalFaces = static_cast<uint32_t>(allTriangles.size());
                         if (totalFaces == 0)
                         {
                             getContext()->log(Context::Error, "No valid faces in tree physics model: {}", modelComponent.name);
@@ -402,28 +417,7 @@ namespace Gek
                             co_return;
                         }
 
-                        uint32_t chunkCount = (totalFaces + MaxFacesPerChunk - 1) / MaxFacesPerChunk;
-                        getContext()->log(Context::Info, "Building BVH for {}: {} faces in {} chunk(s) of max {}", modelComponent.name, totalFaces, chunkCount, MaxFacesPerChunk);
-
-                        auto *compound = new ndShapeCompound();
-                        compound->BeginAddRemove();
-
-                        for (uint32_t chunk = 0; chunk < chunkCount; ++chunk)
-                        {
-                            uint32_t start = chunk * MaxFacesPerChunk;
-                            uint32_t end = std::min(start + MaxFacesPerChunk, totalFaces);
-
-                            ndPolygonSoupBuilder builder;
-                            builder.Begin();
-                            for (uint32_t f = start; f < end; ++f)
-                            {
-                                builder.AddFace(&allTriangles[f].v[0], 3, 0);
-                            }
-                            builder.End(false);
-
-                            compound->AddCollision(new ndShapeInstance(new ndShapeStatic_bvh(builder)));
-                        }
-
+                        getContext()->log(Context::Info, "Building BVH for {}: {} faces across {} chunks of max {} faces", modelComponent.name, totalFaces, validChunkCount, MaxFacesPerChunk);
                         compound->EndAddRemove();
                         shape = compound;
                     }
@@ -470,26 +464,57 @@ namespace Gek
             }
 
             // concurrency::critical_section criticalSection;
+            ndShapeInstance makeScaledShapeInstance(ndShape * shape, Components::Transform const &transformComponent) const
+            {
+                ndShapeInstance shapeInstance(shape);
+
+                // Physics must apply entity scale on collision shapes because body matrices
+                // are rigid transforms and do not carry non-uniform scale.
+                Math::Float3 const &s = transformComponent.scale;
+                ndVector scale(
+                    std::max(std::abs(s.x), 1.0e-4f),
+                    std::max(std::abs(s.y), 1.0e-4f),
+                    std::max(std::abs(s.z), 1.0e-4f),
+                    0.0f);
+                shapeInstance.SetScale(scale);
+
+                return shapeInstance;
+            }
+
             void addEntity(Plugin::Entity *const entity)
             {
                 getContext()->log(Context::Info, "Adding entity to physics processor");
 
+                if (entityBodyMap.find(entity) != std::end(entityBodyMap))
+                {
+                    return;
+                }
+
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
                 {
-                    // Handle static scene geometry (Model + Scene, no Physical)
-                    if (entity->hasComponents<Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>())
+                    // Handle static scene geometry (Model, no Physical).
+                    // Some scene entities may not carry a Scene marker at runtime.
+                    if (entity->hasComponent<Components::Model>() && !entity->hasComponent<Components::Physical>())
                     {
                         auto const &modelComponent = entity->getComponent<Components::Model>();
+                        if (!entity->hasComponent<Components::Scene>())
+                        {
+                            getContext()->log(Context::Warning, "Adding static physics body for model '{}' without Scene marker", modelComponent.name);
+                        }
+
                         auto shape = loadShape(modelComponent);
                         if (shape)
                         {
                             auto &transformComponent = entity->getComponent<Components::Transform>();
-                            auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
+                            auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), makeScaledShapeInstance(shape, transformComponent));
                             if (newtonWorld)
                             {
-                                newtonWorld->AddBody(staticBody->getAsNewtonBody());
+                                ndSharedPtr<ndBody> sharedBody(staticBody->getAsNewtonBody());
+                                newtonWorld->AddBody(sharedBody);
                             }
+
+                            getContext()->log(Context::Info, "Added static physics body for model '{}'", modelComponent.name);
 
                             entityBodyMap[entity] = staticBody.release();
                         }
@@ -511,8 +536,10 @@ namespace Gek
                                 body = createRigidBody(this, entity);
                                 if (body)
                                 {
-                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
-                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
+                                    auto &transformComponent = entity->getComponent<Components::Transform>();
+                                    auto shapeInstance = makeScaledShapeInstance(shape, transformComponent);
+                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(shapeInstance);
+                                    body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
                                 }
                             }
                         }
@@ -529,6 +556,16 @@ namespace Gek
                         newtonWorld->AddBody(sharedBody);
                     }
 
+                    if (entity->hasComponent<Components::Model>())
+                    {
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
+                        getContext()->log(Context::Info, "Added dynamic physics body for model '{}'", modelComponent.name);
+                    }
+                    else if (entity->hasComponent<Components::Player>())
+                    {
+                        getContext()->log(Context::Info, "Added player physics body");
+                    }
+
                     entityBodyMap[entity] = body.release();
                 }
             }
@@ -538,6 +575,12 @@ namespace Gek
                 auto entitySearch = entityBodyMap.find(entity);
                 if (entitySearch != std::end(entityBodyMap))
                 {
+                    if (entity->hasComponent<Components::Model>())
+                    {
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
+                        getContext()->log(Context::Warning, "Removing physics body for model '{}'", modelComponent.name);
+                    }
+
                     newtonWorld->RemoveBody(entitySearch->second->getAsNewtonBody());
                     entityBodyMap.unsafe_erase(entitySearch);
                 }
@@ -591,26 +634,81 @@ namespace Gek
                         auto const &transformComponent = entity->getComponent<Components::Transform>();
                         auto matrix(transformComponent.getMatrix());
                         body->getAsNewtonBody()->SetMatrix(MakeNewtonMatrix(matrix));
+
+                        if (entity->hasComponent<Components::Model>())
+                        {
+                            auto const &modelComponent = entity->getComponent<Components::Model>();
+                            auto shape = loadShape(modelComponent);
+                            if (shape)
+                            {
+                                auto shapeInstance = makeScaledShapeInstance(shape, transformComponent);
+                                if (auto dynamicBody = body->getAsNewtonBody()->GetAsBodyDynamic())
+                                {
+                                    dynamicBody->SetCollisionShape(shapeInstance);
+
+                                    if (entity->hasComponent<Components::Physical>())
+                                    {
+                                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                                        dynamicBody->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                                    }
+                                }
+                                else
+                                {
+                                    if (auto kinematicBody = body->getAsNewtonBody()->GetAsBodyKinematic())
+                                    {
+                                        kinematicBody->SetCollisionShape(shapeInstance);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (type == Components::Model::GetIdentifier())
                 {
-                    if (!entity->hasComponent<Components::Physical>())
+                    if (entity->hasComponent<Components::Model>())
                     {
-                        auto const &physicalComponent = entity->getComponent<Components::Physical>();
                         auto const &modelComponent = entity->getComponent<Components::Model>();
+                        auto const &transformComponent = entity->getComponent<Components::Transform>();
                         auto shape = loadShape(modelComponent);
-                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
-                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
+                        if (shape)
+                        {
+                            auto shapeInstance = makeScaledShapeInstance(shape, transformComponent);
+                            if (auto dynamicBody = body->getAsNewtonBody()->GetAsBodyDynamic())
+                            {
+                                dynamicBody->SetCollisionShape(shapeInstance);
+                                if (entity->hasComponent<Components::Physical>())
+                                {
+                                    auto const &physicalComponent = entity->getComponent<Components::Physical>();
+                                    dynamicBody->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                                }
+                            }
+                            else
+                            {
+                                if (auto kinematicBody = body->getAsNewtonBody()->GetAsBodyKinematic())
+                                {
+                                    kinematicBody->SetCollisionShape(shapeInstance);
+                                }
+                            }
+                        }
                     }
                 }
                 else if (type == Components::Physical::GetIdentifier())
                 {
-                    if (!entity->hasComponent<Components::Model>())
+                    if (entity->hasComponents<Components::Model, Components::Physical, Components::Transform>())
                     {
                         auto const &physicalComponent = entity->getComponent<Components::Physical>();
-                        auto &shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
-                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                        auto const &modelComponent = entity->getComponent<Components::Model>();
+                        auto const &transformComponent = entity->getComponent<Components::Transform>();
+                        auto shape = loadShape(modelComponent);
+                        if (shape)
+                        {
+                            auto shapeInstance = makeScaledShapeInstance(shape, transformComponent);
+                            if (auto dynamicBody = body->getAsNewtonBody()->GetAsBodyDynamic())
+                            {
+                                dynamicBody->SetCollisionShape(shapeInstance);
+                                dynamicBody->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                            }
+                        }
                     }
                 }
             }
@@ -650,7 +748,9 @@ namespace Gek
 
             void onComponentRemoved(Plugin::Entity *const entity)
             {
-                if (!entity->hasComponents<Components::Transform, Components::Physical>())
+                bool const isStaticSceneBody = entity->hasComponents<Components::Transform, Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>();
+                bool const isDynamicBody = entity->hasComponents<Components::Transform, Components::Physical>();
+                if (!(isStaticSceneBody || isDynamicBody))
                 {
                     removeEntity(entity);
                 }

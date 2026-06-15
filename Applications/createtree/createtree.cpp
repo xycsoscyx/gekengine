@@ -93,6 +93,8 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
     }
 
     aiMatrix4x4 transform(parentTransform * inputNode->mTransformation);
+    Math::Float4x4 localTransform(&transform.a1);
+    localTransform.transpose();
     if (inputNode->mNumMeshes > 0)
     {
         if (inputNode->mMeshes == nullptr)
@@ -142,10 +144,8 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 mesh.pointList.resize(inputMesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
-                    auto vertex = inputMesh->mVertices[vertexIndex];
-                    aiTransformVecByMatrix4(&vertex, &transform);
-                    mesh.pointList[vertexIndex].set(vertex.x, vertex.y, vertex.z);
-                    mesh.pointList[vertexIndex] *= parameters.feetPerUnit;
+                    Math::Float3 position(inputMesh->mVertices[vertexIndex].x, inputMesh->mVertices[vertexIndex].y, inputMesh->mVertices[vertexIndex].z);
+                    mesh.pointList[vertexIndex] = localTransform.transform(position) * parameters.feetPerUnit;
                     model.boundingBox.extend(mesh.pointList[vertexIndex]);
                 }
 
@@ -748,7 +748,30 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
         // aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
-        auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
+        auto filePath = [&]() -> FileSystem::Path
+        {
+            // Accept explicit paths first.
+            FileSystem::Path requested(parameters.sourceName);
+            bool const hasExplicitPath = (parameters.sourceName.find('\\') != std::string::npos) ||
+                                         (parameters.sourceName.find('/') != std::string::npos) ||
+                                         (parameters.sourceName.find(':') != std::string::npos);
+            if (hasExplicitPath)
+            {
+                if (requested.isFile())
+                {
+                    return requested;
+                }
+
+                auto directDataPath = context->findDataPath(requested);
+                if (directDataPath.isFile())
+                {
+                    return directDataPath;
+                }
+            }
+
+            // Default physics workflow: load simplified source from physics directory.
+            return context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
+        }();
         context->log(Context::Info, "Loading: {}", filePath.getString());
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
@@ -810,6 +833,18 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
         };
 
         std::map<std::string, std::string> albedoToMaterialMap;
+        auto addMaterialLookupKey = [&](std::string key, std::string const &materialName) -> void
+        {
+            key = String::GetLower(key);
+            if (key.empty())
+            {
+                return;
+            }
+
+            std::replace(key.begin(), key.end(), '\\', '/');
+            albedoToMaterialMap[key] = materialName;
+        };
+
         std::function<bool(FileSystem::Path const &)> findMaterials;
         findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
@@ -824,9 +859,23 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
             auto &albedoNode = dataNode["albedo"];
             auto albedoFile = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoPath = removeRoot("textures", context->findDataPath(albedoFile));
+            auto materialName = String::GetLower(removeRoot("materials", filePath).getString());
+
+            FileSystem::Path albedoFilePath(albedoFile);
+            FileSystem::Path normalizedAlbedoPath(removeRoot("textures", albedoPath));
 
             context->log(Context::Info, "Found material: {}, , with albedo: {}", filePath.getString(), albedoFile);
-            albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
+
+            // Index several albedo key forms to tolerate differing path roots in source assets.
+            addMaterialLookupKey(albedoFile, materialName);
+            addMaterialLookupKey(albedoFilePath.withoutExtension().getString(), materialName);
+            addMaterialLookupKey(albedoFilePath.getFileName(), materialName);
+            addMaterialLookupKey(albedoFilePath.withoutExtension().getFileName(), materialName);
+
+            addMaterialLookupKey(normalizedAlbedoPath.getString(), materialName);
+            addMaterialLookupKey(normalizedAlbedoPath.withoutExtension().getString(), materialName);
+            addMaterialLookupKey(normalizedAlbedoPath.getFileName(), materialName);
+            addMaterialLookupKey(normalizedAlbedoPath.withoutExtension().getFileName(), materialName);
             return true;
         };
 
@@ -841,6 +890,49 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
         {
             context->log(Context::Info, "> Searching for : {}, {}", diffuseName, (filePath / diffuseName).getString());
 
+            auto findMaterialByKey = [&](std::string key) -> std::string
+            {
+                key = String::GetLower(key);
+                if (key.empty())
+                {
+                    return String::Empty;
+                }
+
+                std::replace(key.begin(), key.end(), '\\', '/');
+                auto albedoSearch = albedoToMaterialMap.find(key);
+                if (albedoSearch != std::end(albedoToMaterialMap))
+                {
+                    return albedoSearch->second;
+                }
+
+                return String::Empty;
+            };
+
+            FileSystem::Path diffusePath(diffuseName);
+            if (auto material = findMaterialByKey(diffuseName); !material.empty())
+            {
+                context->log(Context::Info, "  Found material for albedo key: {} belongs to {}", diffuseName, material);
+                return material;
+            }
+
+            if (auto material = findMaterialByKey(diffusePath.withoutExtension().getString()); !material.empty())
+            {
+                context->log(Context::Info, "  Found material for albedo key: {} belongs to {}", diffusePath.withoutExtension().getString(), material);
+                return material;
+            }
+
+            if (auto material = findMaterialByKey(diffusePath.getFileName()); !material.empty())
+            {
+                context->log(Context::Info, "  Found material for albedo key: {} belongs to {}", diffusePath.getFileName(), material);
+                return material;
+            }
+
+            if (auto material = findMaterialByKey(diffusePath.withoutExtension().getFileName()); !material.empty())
+            {
+                context->log(Context::Info, "  Found material for albedo key: {} belongs to {}", diffusePath.withoutExtension().getFileName(), material);
+                return material;
+            }
+
             FileSystem::Path albedoPath = FileSystem::GetCanonicalPath(filePath / diffuseName);
             if (!albedoPath.isFile())
             {
@@ -851,20 +943,30 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
             if (albedoPath.isFile())
             {
                 albedoPath = removeRoot("textures", albedoPath);
-                auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
-                if (albedoSearch == std::end(albedoToMaterialMap))
+                if (auto material = findMaterialByKey(albedoPath.withoutExtension().getString()); !material.empty())
                 {
-                    albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.getString()));
+                    context->log(Context::Info, "  Found material for albedo: {}, belongs to {}", albedoPath.getString(), material);
+                    return material;
                 }
 
-                if (albedoSearch != std::end(albedoToMaterialMap))
+                if (auto material = findMaterialByKey(albedoPath.getString()); !material.empty())
                 {
-                    context->log(Context::Info, "  Found material for albedo: {}, belongs to {}", albedoPath.getString(), albedoSearch->second);
-                    return albedoSearch->second;
+                    context->log(Context::Info, "  Found material for albedo: {}, belongs to {}", albedoPath.getString(), material);
+                    return material;
                 }
             }
 
             context->log(Context::Error, "! Unable to find material for albedo: {}, {}", diffuseName, albedoPath.getString());
+
+            // Fallback: keep mesh geometry for physics generation even when source
+            // texture paths are absolute or don't map cleanly to known materials.
+            if (!albedoToMaterialMap.empty())
+            {
+                auto fallback = albedoToMaterialMap.begin()->second;
+                context->log(Context::Warning, "  Using fallback material '{}' for unresolved albedo '{}'", fallback, diffuseName);
+                return fallback;
+            }
+
             return "";
         };
 
@@ -887,7 +989,25 @@ int main(int argumentCount, char const *const argumentList[], char const *const 
         context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
         context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
 
-        auto outputPath(filePath.withoutExtension().withExtension(".gek"));
+        auto outputPath = [&]() -> FileSystem::Path
+        {
+            auto physicsRoot = context->findDataPath("physics");
+            if (!parameters.targetName.empty())
+            {
+                FileSystem::Path requested(parameters.targetName);
+                bool const hasExplicitPath = (parameters.targetName.find('\\') != std::string::npos) ||
+                                             (parameters.targetName.find('/') != std::string::npos) ||
+                                             (parameters.targetName.find(':') != std::string::npos);
+                if (hasExplicitPath)
+                {
+                    return requested.withExtension(".gek");
+                }
+
+                return (physicsRoot / requested).withExtension(".gek");
+            }
+
+            return (physicsRoot / filePath.getFileName()).withoutExtension().withExtension(".gek");
+        }();
         context->log(Context::Info, "Writing: {}", outputPath.getString());
         outputPath.getParentPath().createChain();
 

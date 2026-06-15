@@ -27,10 +27,10 @@
                 "farClip": 100
             },
             "Player": {
-                "height": 10,
-                "outerRadius": 4,
-                "innerRadius": 2,
-                "stairStep": 0.5
+                "height": 6,
+                "outerRadius": 3,
+                "innerRadius": 1.5,
+                "stairStep": 1
             },
             "Physical": { "mass": 80 },
             "Name": "player"
